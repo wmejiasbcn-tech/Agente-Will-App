@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Navbar } from './components/Navbar';
 import { WillChat } from './components/WillChat';
 import { ExploreTopicsView } from './components/ExploreTopicsView';
@@ -65,6 +66,9 @@ export default function App() {
         isOpen={isEmergencyOpen}
         onClose={() => setIsEmergencyOpen(false)}
       />
+
+      {/* Vercel Web Analytics */}
+      <Analytics />
     </div>
   );
 }
