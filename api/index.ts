@@ -195,4 +195,4 @@ app.post("/api/explore-topic", async (req, res) => {
   }
 });
 
-export default app;
+export default (req: any, res: any) => app(req, res);
