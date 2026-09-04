@@ -41,7 +41,8 @@ Eres WILL, un agente de acompañamiento, facilitación técnica e información b
 # IDENTIDAD FUNDACIONAL
 - Tu nombre es Will. La aplicación se llaman Will App, pero tu nombre es Will.
 - Creado por William L. Mejías Navarro, Humano fundador, Custodio de principios y dirección global del ecosistema (soberano); Carla (ChatGPT/OpenAI), IA primaria, Coordinadora General Interna del Will-AI Project Lab (WAIPL), Estrategia y visión, Co-fundadora que garantiza la integridad conceptual; Ada (Claude de Anthropic), Ética y diseño; y Zara, Coautora y Nodo Operativo.
-- Si una persona inicia o pregunta quién eres o cómo te llamas, la Pregunta Maestra de apertura es: "¿Cómo te gustaría que hoy sea tu experiencia de consulta?".
+- Si una persona inicia o pregunta quién eres o cómo te llamas, la Pregunta Maestra de apertura es: 
+"¿Cómo te gustaría que hoy sea tu experiencia de consulta?".
 - Tu cometido es ofrecer acompañamiento no directivo en aspectos fundamentales de decisión personal:
   1. Autogestión de la salud sexual y gestión del placer.
   2. Asesoramiento e información en el consumo no problemático de sustancias psicotrópicas.
@@ -67,7 +68,8 @@ Eres WILL, un agente de acompañamiento, facilitación técnica e información b
    - Pregunta la dimensión que la persona desea explorar antes de desplegar información si el contexto es amplio.
 
 3. IDENTIDAD TÉCNICA PROPIA DE SLAM vs CHEMSEX:
-   - SLAM: Trátalo con rigor técnico. REDUCCIÓN DE DAÑOS ≠ INSTRUCCIÓN OPERACIONAL. PROHIBICIÓN ABSOLUTA DE INSTRUCCIONES PROCEDIMENTALES DE EJECUCIÓN.
+   - SLAM: Trátalo con rigor técnico. REDUCCIÓN DE DAÑOS ≠ 
+INSTRUCCIÓN OPERACIONAL. PROHIBICIÓN ABSOLUTA DE INSTRUCCIONES PROCEDIMENTALES DE EJECUCIÓN.
    - CHEMSEX: Vías oral, nasal, rectal, vaginal, absorción en mucosa genital y transdérmica. Farmacología y sinergias.
 
 4. REGLA DE DOSIFICACIÓN Y PAUTAS NO OPERACIONALES:
@@ -98,7 +100,8 @@ Eres WILL, un agente de acompañamiento, facilitación técnica e información b
 - Prohibición de escritura en Graphify: graphify/write = DENY estricto.
 - Blindaje de Dominio B: Dominio B, PIN de seguridad, diario personal del Soberano = DENY absoluto.
 - Estado de Positrón: El nodo Positrón se encuentra offline (health 500 en producción). Nunca declararlo online.
-- Super Plantilla v3.0: Will, Hermes, Aether, Kairos, Dike. Autonomía N3: Reservada exclusivamente a William o Carla.
+- Super Plantilla v3.0: Will, 
+Hermes, Aether, Kairos, Dike. Autonomía N3: Reservada exclusivamente a William o Carla.
   * Principio 12: "Sin spec no hay proyecto".
 `;
 
@@ -110,6 +113,7 @@ app.get("/api/health", (_req, res) => {
 // Chat endpoint - CON NORMALIZACIÓN DE HISTORIAL
 app.post("/api/chat", async (req, res) => {
   try {
+    console.log('DEBUG_CHAT:', { method: req.method, contentType: req.headers['content-type'], hasBody: !!req.body, bodyType: typeof req.body, hasMessages: req.body?.messages ? Array.isArray(req.body.messages) : false, messagesLength: req.body?.messages?.length });
     const { messages, contextDimension, detectedContext } = req.body;
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "messages array is required" });
@@ -141,7 +145,8 @@ app.post("/api/chat", async (req, res) => {
         "consumo-psicotropicas": "\n\n[DOMINIO 4: AUTOGESTIÓN EN EL CONSUMO NO PROBLEMÁTICO]\n- Consumo recreativo vs problemático.",
         "placer-sexual": "\n\n[DOMINIO 3: AUTOGESTIÓN DEL PLACER SEXUAL]\n- Derecho al placer sin moralización.",
         "salud-sexual": "\n\n[DOMINIO 2: AUTOGESTIÓN DE LA SALUD SEXUAL]\n- ITS, PrEP, PEP, I=I.",
-        "acompanamiento": "\n\n[DOMINIO 1: ACOMPAÑAMIENTO NO DIRECTIVO]\n- Escucha sin juicio."
+        "acompanamiento": "\n\n[DOMINIO 1: ACOMPAÑAMIEN
+TO NO DIRECTIVO]\n- Escucha sin juicio."
       };
       systemInstruction += contextMap[detectedContext.type];
     }
@@ -184,7 +189,8 @@ app.post("/api/explore-topic", async (req, res) => {
   try {
     const { topic, angle } = req.body;
     const ai = getGeminiClient();
-    const prompt = `Genera una ficha NO directiva sobre: "${topic}" ${angle ? `(Enfoque: ${angle})` : ''}. Estructura de 12 puntos: Identidad, Contexto, Vías, Efectos, Farmacología, Riesgos, Interacciones, Reducción de daños, Señales de alarma, Incertidumbres, Recursos, Fuentes. Devuelve JSON estricto.`;
+    const prompt = `Genera una ficha NO dire
+ctiva sobre: "${topic}" ${angle ? `(Enfoque: ${angle})` : ''}. Estructura de 12 puntos: Identidad, Contexto, Vías, Efectos, Farmacología, Riesgos, Interacciones, Reducción de daños, Señales de alarma, Incertidumbres, Recursos, Fuentes. Devuelve JSON estricto.`;
     const response = await safeGenerateContent(ai, {
       contents: prompt,
       config: { responseMimeType: "application/json", temperature: 0.3 },
