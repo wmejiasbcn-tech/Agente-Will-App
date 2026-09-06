@@ -145,8 +145,7 @@ app.post("/api/chat", async (req, res) => {
         "consumo-psicotropicas": "\n\n[DOMINIO 4: AUTOGESTIÓN EN EL CONSUMO NO PROBLEMÁTICO]\n- Consumo recreativo vs problemático.",
         "placer-sexual": "\n\n[DOMINIO 3: AUTOGESTIÓN DEL PLACER SEXUAL]\n- Derecho al placer sin moralización.",
         "salud-sexual": "\n\n[DOMINIO 2: AUTOGESTIÓN DE LA SALUD SEXUAL]\n- ITS, PrEP, PEP, I=I.",
-        "acompanamiento": "\n\n[DOMINIO 1: ACOMPAÑAMIEN
-TO NO DIRECTIVO]\n- Escucha sin juicio."
+        "acompanamiento": "\n\n[DOMINIO 1: ACOMPAÑAMIENTO NO DIRECTIVO]\n- Escucha sin juicio."
       };
       systemInstruction += contextMap[detectedContext.type];
     }
@@ -189,8 +188,7 @@ app.post("/api/explore-topic", async (req, res) => {
   try {
     const { topic, angle } = req.body;
     const ai = getGeminiClient();
-    const prompt = `Genera una ficha NO dire
-ctiva sobre: "${topic}" ${angle ? `(Enfoque: ${angle})` : ''}. Estructura de 12 puntos: Identidad, Contexto, Vías, Efectos, Farmacología, Riesgos, Interacciones, Reducción de daños, Señales de alarma, Incertidumbres, Recursos, Fuentes. Devuelve JSON estricto.`;
+    const prompt = `Genera una ficha NO directiva sobre: "${topic}" ${angle ? `(Enfoque: ${angle})` : ''}. Estructura de 12 puntos: Identidad, Contexto, Vías, Efectos, Farmacología, Riesgos, Interacciones, Reducción de daños, Señales de alarma, Incertidumbres, Recursos, Fuentes. Devuelve JSON estricto.`;
     const response = await safeGenerateContent(ai, {
       contents: prompt,
       config: { responseMimeType: "application/json", temperature: 0.3 },
