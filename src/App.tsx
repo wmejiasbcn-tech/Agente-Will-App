@@ -19,16 +19,18 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-900 selection:text-amber-100">
-      {/* Top Navigation */}
+    <div className="min-h-dvh h-dvh bg-[#0A0A0B] text-stone-100 flex flex-col font-sans selection:bg-amber-900 selection:text-amber-100">
+      <a href="#contenido-principal" className="skip-link">
+        Saltar al contenido
+      </a>
+
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenEmergency={() => setIsEmergencyOpen(true)}
       />
 
-      {/* Main Content View Container */}
-      <main className="flex-1 pb-8">
+      <main id="contenido-principal" className="flex-1 min-h-0 overflow-y-auto flex flex-col" tabIndex={-1}>
         {activeTab === 'chat' && (
           <WillChat
             currentDimension={currentDimension}
@@ -60,7 +62,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Global Emergency SOS Modal */}
       <EmergencyModal
         isOpen={isEmergencyOpen}
         onClose={() => setIsEmergencyOpen(false)}
