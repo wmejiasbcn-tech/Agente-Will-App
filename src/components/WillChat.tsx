@@ -245,8 +245,8 @@ export const WillChat: React.FC<WillChatProps> = ({
                       key={i}
                       className={
                         i === 0
-                          ? 'font-serif text-3xl sm:text-[2.5rem] tracking-tight will-copy leading-[1.15]'
-                          : 'text-[15px] sm:text-base will-copy-muted leading-relaxed'
+                          ? 'font-serif text-3xl sm:text-[2.6rem] tracking-tight will-copy leading-[1.12] font-semibold'
+                          : 'text-[15px] sm:text-[17px] will-copy-muted leading-relaxed'
                       }
                     >
                       {para}
@@ -270,10 +270,10 @@ export const WillChat: React.FC<WillChatProps> = ({
                             {num}
                           </span>
                           <span className="min-w-0">
-                            <span className="block font-serif text-[16px] will-copy">
+                            <span className="block font-serif text-[17px] will-copy">
                               {door.doorTitle}
                             </span>
-                            <span className="block text-[12px] will-copy-muted mt-0.5 leading-relaxed opacity-80">
+                            <span className="block text-[13px] will-copy-muted mt-0.5 leading-relaxed">
                               {door.humanSubtitle}
                             </span>
                           </span>
