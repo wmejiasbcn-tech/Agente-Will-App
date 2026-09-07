@@ -213,6 +213,22 @@ export const WillChat: React.FC<WillChatProps> = ({
     }
   };
 
+  const fitComposer = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const mobile = window.innerWidth < 768;
+    const max = mobile
+      ? Math.min(Math.round(window.innerHeight * 0.42), 280)
+      : 220;
+    const min = mobile ? 72 : 52;
+    el.style.height = `${Math.max(min, Math.min(el.scrollHeight, max))}px`;
+  };
+
+  useEffect(() => {
+    fitComposer();
+  }, [input]);
+
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -472,7 +488,7 @@ export const WillChat: React.FC<WillChatProps> = ({
                 : activeDoor?.doorTitle || 'Conversación'
             }
           />
-          <div className="will-composer px-2 py-1 flex items-end gap-1">
+          <div className="will-composer px-2 py-1.5 flex items-end gap-1">
             <textarea
               ref={textareaRef}
               id="chat-user-input"
@@ -480,13 +496,13 @@ export const WillChat: React.FC<WillChatProps> = ({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Escribe lo que quieras contar, preguntar o explorar..."
-              rows={1}
-              className="w-full bg-transparent text-[#ead6b4] placeholder-[#cbbba0]/45 text-sm resize-none focus:outline-none px-4 py-2.5 max-h-32 min-h-[44px]"
+              rows={2}
+              className="will-composer-input flex-1 min-w-0 bg-transparent will-copy placeholder:text-[#ead6b4]/55 text-[15px] sm:text-sm leading-relaxed focus:outline-none px-3 py-2.5"
             />
             <button
               type="button"
               onClick={() => setShowDimensionBar(!showDimensionBar)}
-              className="p-2.5 text-[#ead6b4]/35 hover:text-[#e8c37a] min-h-11 min-w-11 flex items-center justify-center"
+              className="p-2.5 text-[#ead6b4]/35 hover:text-[#e8c37a] min-h-11 min-w-11 shrink-0 flex items-center justify-center"
               title="Ajustar lentes de conversación"
               aria-label="Lentes P.R.E.S.E.N.T.E."
             >
@@ -495,7 +511,7 @@ export const WillChat: React.FC<WillChatProps> = ({
             <button
               type="button"
               onClick={handleClearChat}
-              className="p-2.5 text-[#ead6b4]/35 hover:text-[#e8c37a] min-h-11 min-w-11 flex items-center justify-center"
+              className="p-2.5 text-[#ead6b4]/35 hover:text-[#e8c37a] min-h-11 min-w-11 shrink-0 flex items-center justify-center"
               title="Reiniciar conversación"
               aria-label="Reiniciar conversación"
             >
