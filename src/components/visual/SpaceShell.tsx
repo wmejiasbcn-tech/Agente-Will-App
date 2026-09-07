@@ -56,7 +56,10 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
         />
       </picture>
       <div className={`will-veil will-veil-${scene}`} aria-hidden="true" />
-      <div className="will-light-breath" aria-hidden="true" />
+      <div
+        className={`will-light-breath${scene === 'chat' ? ' will-light-breath-quiet' : ''}`}
+        aria-hidden="true"
+      />
 
       {cfg.marks.includes('sphere') && (
         <img
