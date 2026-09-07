@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, AlertTriangle, Phone, Activity, Heart, ShieldAlert } from 'lucide-react';
 
 interface EmergencyModalProps {
@@ -7,19 +7,46 @@ interface EmergencyModalProps {
 }
 
 export const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose }) => {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previous = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      previous?.focus?.();
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-stone-900 border border-stone-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden text-stone-100 max-h-[90vh] flex flex-col">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="emergency-dialog-title"
+        className="bg-stone-900 border border-stone-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden text-stone-100 max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-800 bg-rose-950/40">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-rose-900/80 border border-rose-700/60 flex items-center justify-center text-rose-300">
-              <ShieldAlert className="w-5 h-5" />
+              <ShieldAlert className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-rose-200">
+              <h2 id="emergency-dialog-title" className="text-base font-semibold text-rose-200">
                 Información de Urgencia y Emergencias
               </h2>
               <p className="text-xs text-rose-300/80">
@@ -28,9 +55,12 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose 
             </div>
           </div>
           <button
+            ref={closeRef}
+            type="button"
             id="close-emergency-modal"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors"
+            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors min-h-11 min-w-11 flex items-center justify-center"
+            aria-label="Cerrar información de urgencias"
           >
             <X className="w-5 h-5" />
           </button>
@@ -46,7 +76,7 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose 
                 <p className="text-xl font-bold text-amber-400 font-mono">112</p>
                 <p className="text-[11px] text-stone-400">Ambulancia, bomberos y urgencias médicas</p>
               </div>
-              <Phone className="w-6 h-6 text-amber-500/80" />
+              <Phone className="w-6 h-6 text-amber-500/80" aria-hidden="true" />
             </div>
 
             <div className="p-4 rounded-xl bg-stone-950 border border-stone-800 flex items-center justify-between">
@@ -55,14 +85,14 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose 
                 <p className="text-xl font-bold text-amber-400 font-mono">91 562 04 20</p>
                 <p className="text-[11px] text-stone-400">Atención médica 24h por intoxicaciones</p>
               </div>
-              <Activity className="w-6 h-6 text-amber-500/80" />
+              <Activity className="w-6 h-6 text-amber-500/80" aria-hidden="true" />
             </div>
           </div>
 
           {/* Posición Lateral de Seguridad (PLS) */}
           <div className="p-4 rounded-xl bg-stone-800/60 border border-stone-700/80 space-y-3">
             <div className="flex items-center gap-2 text-amber-300 font-medium">
-              <AlertTriangle className="w-4 h-4" />
+              <AlertTriangle className="w-4 h-4" aria-hidden="true" />
               <span>Persona inconsciente que respira: Posición Lateral de Seguridad (PLS)</span>
             </div>
             <p className="text-xs text-stone-300 leading-relaxed">
@@ -80,7 +110,7 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose 
           {/* Signos de Alarma Críticos */}
           <div className="space-y-2">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-300 flex items-center gap-2">
-              <Heart className="w-3.5 h-3.5 text-rose-400" />
+              <Heart className="w-3.5 h-3.5 text-rose-400" aria-hidden="true" />
               Signos que requieren atención médica urgente
             </h3>
             <div className="grid sm:grid-cols-2 gap-2 text-xs text-stone-300">
@@ -108,8 +138,9 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose 
         <div className="px-6 py-3 border-t border-stone-800 bg-stone-950/60 flex items-center justify-between text-xs text-stone-400">
           <span>Los servicios médicos de urgencias no juzgan ni sancionan. La prioridad es la salud.</span>
           <button
+            type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 font-medium transition-colors"
+            className="px-4 py-1.5 min-h-11 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 font-medium transition-colors"
           >
             Entendido
           </button>

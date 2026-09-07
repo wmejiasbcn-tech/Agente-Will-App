@@ -6,6 +6,7 @@ import {
   Shield,
   PhoneCall,
 } from 'lucide-react';
+import { OfficialBlason } from './OfficialBlason';
 
 interface NavbarProps {
   activeTab: string;
@@ -46,19 +47,19 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-stone-900/95 backdrop-blur-md border-b border-stone-800 text-stone-100">
+    <header className="sticky top-0 z-40 bg-[#0A0A0B]/95 backdrop-blur-md border-b border-stone-800 text-stone-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo & Identity */}
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between min-h-16 py-2">
+          {/* Identidad: blasón oficial flotando en negro mate, sin contenedor */}
+          <div className="flex items-center gap-3 min-w-0">
             <button
+              type="button"
               onClick={() => setActiveTab('chat')}
-              className="flex items-center gap-3 text-left focus:outline-none group"
+              className="flex items-center gap-3 text-left rounded-xl group"
+              aria-label="Will, ir a Hablar con Will"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-stone-950 font-serif font-black text-xl shadow-md group-hover:scale-105 transition-transform">
-                W
-              </div>
-              <div>
+              <OfficialBlason size={40} className="h-10 w-10 shrink-0" />
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-serif text-lg font-bold tracking-wide text-stone-100">
                     WILL
@@ -74,24 +75,37 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
 
-          {/* Desktop Nav Items */}
-          <nav className="hidden md:flex items-center gap-1.5">
+          <nav
+            className="hidden md:flex items-center gap-1.5"
+            aria-label="Principal"
+          >
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              const isHome = item.id === 'chat';
               return (
                 <button
                   key={item.id}
+                  type="button"
                   id={`nav-btn-${item.id}`}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 min-h-11 rounded-xl text-xs font-medium transition-all ${
                     isActive
-                      ? 'bg-stone-800 text-amber-300 shadow-inner border border-stone-700'
+                      ? isHome
+                        ? 'bg-amber-500 text-stone-950 shadow-sm border border-amber-400'
+                        : 'bg-stone-800 text-amber-300 shadow-inner border border-stone-700'
                       : 'text-stone-300 hover:text-stone-100 hover:bg-stone-800/50'
                   }`}
                 >
                   <Icon
-                    className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-stone-400'}`}
+                    className={`w-4 h-4 ${
+                      isActive
+                        ? isHome
+                          ? 'text-stone-950'
+                          : 'text-amber-400'
+                        : 'text-stone-400'
+                    }`}
                   />
                   <span>{item.label}</span>
                 </button>
@@ -99,13 +113,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Right Actions */}
           <div className="flex items-center gap-2">
             <button
+              type="button"
               id="emergency-btn-header"
               onClick={onOpenEmergency}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-800 text-xs font-medium transition-colors shadow-sm"
+              className="flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-800 text-xs font-medium transition-colors"
               title="Atención médica urgente y teléfonos 112 / 061"
+              aria-haspopup="dialog"
             >
               <PhoneCall className="w-3.5 h-3.5 text-rose-400" />
               <span className="hidden sm:inline">SOS / Urgencias</span>
@@ -114,18 +129,25 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Mobile secondary scrollable bar */}
-        <div className="md:hidden flex items-center gap-1 py-2 overflow-x-auto no-scrollbar border-t border-stone-800/60">
+        <nav
+          className="md:hidden flex items-center gap-1 py-2 overflow-x-auto no-scrollbar border-t border-stone-800/60"
+          aria-label="Principal móvil"
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+            const isHome = item.id === 'chat';
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap shrink-0 transition-colors ${
+                aria-current={isActive ? 'page' : undefined}
+                className={`flex items-center gap-1.5 px-3 py-2.5 min-h-11 rounded-xl text-xs font-medium whitespace-nowrap shrink-0 transition-colors ${
                   isActive
-                    ? 'bg-stone-800 text-amber-300 border border-stone-700 font-semibold'
+                    ? isHome
+                      ? 'bg-amber-500 text-stone-950 font-semibold'
+                      : 'bg-stone-800 text-amber-300 border border-stone-700 font-semibold'
                     : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/40'
                 }`}
               >
@@ -134,7 +156,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             );
           })}
-        </div>
+        </nav>
       </div>
     </header>
   );

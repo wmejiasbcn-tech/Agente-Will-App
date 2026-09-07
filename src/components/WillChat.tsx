@@ -29,6 +29,7 @@ import {
   HUMAN_ENTRANCE_DOORS,
   HUMAN_EPISTEMIC_LABELS,
 } from '../data/canonicalArchitectureData';
+import { OfficialBlason } from './OfficialBlason';
 
 interface WillChatProps {
   onSelectDimension?: (code: PresenteCode) => void;
@@ -283,7 +284,7 @@ export const WillChat: React.FC<WillChatProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4.5rem)] max-w-5xl mx-auto px-2 sm:px-4 py-2">
+    <div className="flex flex-col flex-1 min-h-0 max-w-5xl mx-auto w-full px-2 sm:px-4 py-2">
       {/* Top Subtle Status Bar */}
       <div className="bg-stone-900/80 border border-stone-800/80 rounded-2xl p-2.5 mb-2 shrink-0 flex items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2 overflow-hidden">
@@ -436,8 +437,8 @@ export const WillChat: React.FC<WillChatProps> = ({
                 {!isUser && (
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-stone-800 text-[11px] text-stone-400">
                     <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-md bg-amber-600 flex items-center justify-center text-stone-950 font-serif font-black text-xs">
-                        W
+                      <div className="w-5 h-5 shrink-0">
+                        <OfficialBlason size={20} className="h-5 w-5" />
                       </div>
                       <span className="font-medium text-stone-300">Will</span>
                       <span className="font-mono text-[10px] text-stone-500">
@@ -468,11 +469,14 @@ export const WillChat: React.FC<WillChatProps> = ({
                   <div className="mt-3 pt-2 border-t border-stone-800/80 flex flex-wrap items-center justify-between gap-2 text-xs text-stone-400">
                     <div className="flex items-center gap-1">
                       <button
+                        type="button"
                         onClick={() => handleToggleSpeak(msg.id, msg.content)}
                         className={`p-1.5 rounded-lg hover:bg-stone-800 transition-colors ${
                           speakingId === msg.id ? 'text-amber-400 bg-stone-800' : 'text-stone-400'
                         }`}
                         title={speakingId === msg.id ? 'Detener lectura' : 'Escuchar en voz alta'}
+                        aria-label={speakingId === msg.id ? 'Detener lectura' : 'Escuchar en voz alta'}
+                        aria-pressed={speakingId === msg.id}
                       >
                         {speakingId === msg.id ? (
                           <VolumeX className="w-3.5 h-3.5" />
@@ -541,8 +545,8 @@ export const WillChat: React.FC<WillChatProps> = ({
 
         {isLoading && (
           <div className="flex items-center gap-3 p-4 rounded-2xl bg-stone-900/90 border border-stone-800 max-w-[75%]">
-            <div className="w-5 h-5 rounded-md bg-amber-600 flex items-center justify-center text-stone-950 text-xs font-serif font-black animate-pulse">
-              W
+            <div className="w-5 h-5 shrink-0">
+              <OfficialBlason size={20} className="h-5 w-5" />
             </div>
             <div className="flex items-center gap-1.5 text-xs text-stone-400">
               <span>Will está preparando la respuesta...</span>
