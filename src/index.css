@@ -103,18 +103,18 @@
 }
 .will-photo-chat {
   animation-name: will-space-unfold-chat;
-  filter: brightness(0.68) saturate(0.78) contrast(0.96);
+  filter: brightness(0.5) saturate(0.72) contrast(0.94);
 }
 @keyframes will-space-unfold-chat {
   from {
     opacity: 0.22;
     transform: scale(1.04);
-    filter: brightness(0.35) saturate(0.7);
+    filter: brightness(0.3) saturate(0.65);
   }
   to {
     opacity: 1;
     transform: scale(1);
-    filter: brightness(0.68) saturate(0.78) contrast(0.96);
+    filter: brightness(0.5) saturate(0.72) contrast(0.94);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -131,15 +131,20 @@
   pointer-events: none;
 }
 .will-veil-chat {
-  background: linear-gradient(
-    90deg,
-    rgba(7, 8, 10, 0.93) 0%,
-    rgba(7, 8, 10, 0.86) 28%,
-    rgba(7, 8, 10, 0.58) 44%,
-    rgba(7, 8, 10, 0.28) 58%,
-    rgba(7, 8, 10, 0.12) 72%,
-    rgba(7, 8, 10, 0.08) 100%
-  );
+  background:
+    linear-gradient(
+      90deg,
+      rgba(7, 8, 10, 0.94) 0%,
+      rgba(7, 8, 10, 0.88) 38%,
+      rgba(7, 8, 10, 0.78) 62%,
+      rgba(7, 8, 10, 0.7) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(7, 8, 10, 0.18) 0%,
+      rgba(7, 8, 10, 0) 30%,
+      rgba(7, 8, 10, 0.22) 100%
+    );
 }
 .will-veil-topics,
 .will-veil-resources,
@@ -155,10 +160,9 @@
   .will-veil-chat {
     background: linear-gradient(
       180deg,
-      rgba(7, 8, 10, 0.88) 0%,
-      rgba(7, 8, 10, 0.62) 32%,
-      rgba(7, 8, 10, 0.28) 58%,
-      rgba(7, 8, 10, 0.7) 100%
+      rgba(7, 8, 10, 0.9) 0%,
+      rgba(7, 8, 10, 0.78) 40%,
+      rgba(7, 8, 10, 0.72) 100%
     );
   }
   .will-veil-topics,
@@ -401,12 +405,28 @@
 
 .will-msg-will {
   background: transparent;
+  color: #f8efd8;
+  text-shadow:
+    0 0 1px #000,
+    0 1px 2px #000,
+    0 2px 8px rgba(0, 0, 0, 0.9);
 }
 .will-msg-user {
-  background: rgba(10, 14, 20, 0.38);
+  background: rgba(10, 14, 20, 0.55);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(232, 195, 122, 0.14);
+  color: #f8efd8;
+  text-shadow: 0 1px 2px #000;
+}
+
+.will-thread {
+  background: linear-gradient(
+    180deg,
+    rgba(7, 8, 10, 0.42) 0%,
+    rgba(7, 8, 10, 0.28) 100%
+  );
+  border-radius: 2px;
 }
 
 .glass-panel {

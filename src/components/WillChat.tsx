@@ -37,6 +37,25 @@ interface WillChatProps {
 const WELCOME_TEXT =
   'Hola. Soy Will.\n\nEste es un espacio confidencial para hablar, preguntar o informarte con rigor y sin que nadie te juzgue ni te diga lo que tienes que hacer.\n\nTú marcas el ritmo y el contenido. Puedes elegir uno de los temas de abajo o simplemente escribir lo que te pasa.';
 
+function WillSpoken({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+?\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        const bold = part.match(/^\*\*([^*]+)\*\*$/);
+        if (bold) {
+          return (
+            <strong key={i} className="font-semibold">
+              {bold[1]}
+            </strong>
+          );
+        }
+        return <React.Fragment key={i}>{part}</React.Fragment>;
+      })}
+    </>
+  );
+}
+
 export const WillChat: React.FC<WillChatProps> = ({
   currentDimension,
   setCurrentDimension,
@@ -328,7 +347,7 @@ export const WillChat: React.FC<WillChatProps> = ({
         )}
 
         {!isEntrance && (
-          <div className="max-w-2xl mx-auto w-full px-5 sm:px-8 py-8 space-y-8">
+          <div className="max-w-2xl mx-auto w-full px-5 sm:px-8 py-8 space-y-8 will-thread">
             {messages
               .filter((m) => m.id !== 'welcome-msg' && !m.id.startsWith('welcome-'))
               .map((msg) => {
@@ -346,13 +365,11 @@ export const WillChat: React.FC<WillChatProps> = ({
                     )}
 
                     <div
-                      className={`max-w-[94%] text-sm leading-relaxed whitespace-pre-wrap ${
-                        isUser
-                          ? 'will-msg-user rounded-sm px-4 py-3 text-[#ead6b4]'
-                          : 'will-msg-will text-[#ead6b4]/90'
+                      className={`max-w-[94%] text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap ${
+                        isUser ? 'will-msg-user rounded-sm px-4 py-3' : 'will-msg-will'
                       }`}
                     >
-                      {msg.content}
+                      <WillSpoken text={msg.content} />
                     </div>
 
                     {!isUser && (
