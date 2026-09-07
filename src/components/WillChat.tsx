@@ -130,9 +130,17 @@ export const WillChat: React.FC<WillChatProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+          messages: newMessages
+            .filter((m) => m.id !== 'welcome-msg' && !m.content.startsWith('Hola. Soy Will'))
+            .map((m) => ({ role: m.role, content: m.content })),
           contextDimension: currentDimension !== 'all' ? currentDimension : undefined,
-          detectedContext: contextInfo,
+          detectedContext: contextInfo
+            ? {
+                type: contextInfo.type,
+                label: contextInfo.label,
+                badgeLabel: contextInfo.badgeLabel,
+              }
+            : undefined,
         }),
       });
 

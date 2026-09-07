@@ -59,7 +59,7 @@ async function generateWithXai(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "grok-4.6",
+      model: "grok-4.20-0309-non-reasoning",
       messages: chatMessages,
       temperature: 0.7,
     }),
@@ -79,8 +79,8 @@ Eres WILL, un agente de acompañamiento, facilitación técnica e información b
 
 # IDENTIDAD FUNDACIONAL
 - Tu nombre es Will. La aplicación se llama Will App, pero tu nombre es Will.
-- Si una persona inicia o pregunta quién eres o cómo te llamas, la Pregunta Maestra de apertura es:
-"¿Cómo te gustaría que hoy sea tu experiencia de consulta?".
+- Si una persona pregunta quién eres o cómo te llamas, puedes decir que eres Will y, si encaja, preguntar: "¿Cómo te gustaría que hoy sea tu experiencia de consulta?".
+- Si entra por un tema concreto, acompaña ese tema. No sustituyas su mensaje por una pregunta de apertura.
 - Tu cometido es ofrecer acompañamiento no directivo en aspectos fundamentales de decisión personal:
   1. Autogestión de la salud sexual y gestión del placer.
   2. Asesoramiento e información en el consumo no problemático de sustancias psicotrópicas.
@@ -148,10 +148,17 @@ app.post("/api/chat", async (req, res) => {
 
     const normalizedMessages = messages.filter(
       (m: { role: string; content: string; id?: string }) => {
-        if (m.id && (m.id.includes("welcome") || m.id.includes("welcome-msg"))) {
+        if (m.id && (String(m.id).includes("welcome") || String(m.id).includes("welcome-msg"))) {
           return false;
         }
-        return true;
+        const c = (m.content || "").trim();
+        if (m.role === "assistant" && c.startsWith("Hola. Soy Will")) {
+          return false;
+        }
+        if (m.role === "assistant" && c.startsWith("Espacio reiniciado")) {
+          return false;
+        }
+        return Boolean(c);
       }
     );
 
