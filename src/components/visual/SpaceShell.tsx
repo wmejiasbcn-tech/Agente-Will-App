@@ -43,7 +43,7 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
   const cfg = SCENE[scene];
 
   return (
-    <div className="relative min-h-dvh h-dvh overflow-hidden text-[#f4efe6] flex flex-col font-sans selection:bg-amber-900/40 selection:text-amber-100">
+    <div className="relative min-h-dvh h-dvh overflow-hidden text-[#e8d4b0] flex flex-col font-sans selection:bg-amber-900/40 selection:text-amber-100">
       <picture className="will-photo-layer" aria-hidden="true">
         {cfg.photoMobile && (
           <source media="(max-width: 767px)" srcSet={cfg.photoMobile} />

@@ -10,7 +10,7 @@
   --color-stone-950: #07080a;
   --color-petroleum: #0c141c;
   --color-accent: #e8c37a;
-  --color-warm: #f4efe6;
+  --color-warm: #e8d4b0;
   --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, sans-serif;
   --font-serif: "Newsreader", Georgia, Cambria, "Times New Roman", Times, serif;
@@ -22,7 +22,7 @@
   html,
   body {
     background-color: #07080a;
-    color: #f4efe6;
+    color: #e8d4b0;
   }
 
   body {
@@ -165,19 +165,16 @@
   }
 }
 
-/* Texto de la app: resalta sobre la fotografía. */
+/* Texto de la app: marfil cálido. Se lee sobre la foto sin deslumbrar. */
 .will-copy {
-  color: #f7f1e6;
+  color: #ead6b4;
   text-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.95),
-    0 2px 14px rgba(0, 0, 0, 0.72),
-    0 0 28px rgba(0, 0, 0, 0.4);
+    0 1px 2px rgba(8, 6, 2, 0.72),
+    0 0 14px rgba(8, 6, 2, 0.32);
 }
 .will-copy-muted {
-  color: rgba(247, 241, 230, 0.9);
-  text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.92),
-    0 2px 10px rgba(0, 0, 0, 0.55);
+  color: #cbbba0;
+  text-shadow: 0 1px 2px rgba(8, 6, 2, 0.65);
 }
 
 /* Marcas extraídas del documento */

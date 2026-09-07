@@ -78,7 +78,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
   const ActiveIcon = getDomainIcon(activeDomain.id);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#f4efe6] font-sans">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#ead6b4] font-sans">
       <div className="space-y-2 pb-2">
         <h1 className="text-2xl sm:text-3xl font-serif font-bold will-copy">
           Explorar Áreas y Temas
@@ -110,7 +110,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
               <div className="flex items-center justify-between w-full mb-2">
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                    isSelected ? 'text-[#e8c37a] bg-[rgba(232,195,122,0.12)]' : 'bg-white/5 text-[#f4efe6]/50'
+                    isSelected ? 'text-[#e8c37a] bg-[rgba(232,195,122,0.12)]' : 'bg-white/5 text-[#ead6b4]/50'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -121,7 +121,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
               </div>
               <span
                 className={`text-xs font-semibold leading-tight line-clamp-1 ${
-                  isSelected ? 'text-[#e8c37a]' : 'text-[#f4efe6]/85'
+                  isSelected ? 'text-[#e8c37a]' : 'text-[#ead6b4]/85'
                 }`}
               >
                 {domain.doorTitle || domain.shortTitle}
@@ -139,7 +139,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
           <h2 className="text-xs font-mono uppercase tracking-[0.16em] text-[#e8c37a]">
             {RRDD_CLASSIFICATION.title}
           </h2>
-          <span className="text-[10px] text-[#f4efe6]/45">
+          <span className="text-[10px] text-[#ead6b4]/45">
             Clasificación obligatoria. No fusiona Chemsex ni SLAM.
           </span>
         </div>
@@ -154,7 +154,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
                 className="glass-panel-strong rounded-xl px-4 py-3"
               >
                 <p className="text-sm font-serif text-[#e8c37a] tracking-wide">{branch.label}</p>
-                <p className="text-[11px] text-[#f4efe6]/50 mt-1">
+                <p className="text-[11px] text-[#ead6b4]/50 mt-1">
                   {branch.id === 'rrdd-sexual'
                     ? 'Clasificación. Relación no significa equivalencia con Prevención ni con un dominio único.'
                     : 'Clasificación. Chemsex y SLAM conservan identidad propia. Relación no significa equivalencia.'}
@@ -163,7 +163,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
             ))}
           </div>
         </div>
-        <p className="text-[11px] text-[#f4efe6]/45 leading-relaxed">{RRDD_CLASSIFICATION.rule}</p>
+        <p className="text-[11px] text-[#ead6b4]/45 leading-relaxed">{RRDD_CLASSIFICATION.rule}</p>
       </div>
 
       {/* Active Area Banner */}
@@ -284,16 +284,16 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
           <div className="p-8 rounded-2xl glass-panel text-center space-y-3">
             {activeDomain.id === 'prevencion' && searchQuery.trim() === '' ? (
               <>
-                <p className="text-sm text-[#f4efe6]/70">
+                <p className="text-sm text-[#ead6b4]/70">
                   Este dominio no tiene fichas. No se ha inventado contenido. Pregunta a Will.
                 </p>
-                <p className="text-[11px] text-[#f4efe6]/45 max-w-xl mx-auto leading-relaxed">
+                <p className="text-[11px] text-[#ead6b4]/45 max-w-xl mx-auto leading-relaxed">
                   Prevención es un dominio autónomo. Relación no significa equivalencia. No se
                   fusiona con RRDD.
                 </p>
               </>
             ) : (
-              <p className="text-sm text-[#f4efe6]/60">
+              <p className="text-sm text-[#ead6b4]/60">
                 No se encontraron fichas específicas con los términos de búsqueda en esta área.
               </p>
             )}
@@ -306,7 +306,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
                   activeDomain.id
                 )
               }
-              className="text-xs text-[#e8c37a] hover:text-[#f4efe6] font-medium inline-flex items-center gap-1"
+              className="text-xs text-[#e8c37a] hover:text-[#ead6b4] font-medium inline-flex items-center gap-1"
             >
               Preguntárselo directamente a Will en el chat <ArrowRight className="w-3 h-3" />
             </button>

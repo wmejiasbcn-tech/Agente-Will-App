@@ -21,7 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-40 will-nav text-[#f4efe6]">
+    <header className="sticky top-0 z-40 will-nav text-[#e8d4b0]">
       <div className="max-w-6xl mx-auto px-5 sm:px-8">
         <div className="flex items-center justify-between min-h-14 py-2 gap-4">
           <button
@@ -31,7 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             aria-label="Will, ir a Hablar con Will"
           >
             <OfficialBlason size={32} className="h-8 w-8 shrink-0" />
-            <span className="font-serif text-[17px] tracking-[0.18em] text-[#f4efe6]">
+            <span className="font-serif text-[17px] tracking-[0.18em] will-copy">
               WILL
             </span>
           </button>
@@ -49,7 +49,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`text-[12px] tracking-wide py-2 min-h-11 ${
                     isActive
                       ? 'will-nav-item-active'
-                      : 'text-[#f4efe6]/48 hover:text-[#f4efe6]'
+                      : 'text-[#cbbba0]/70 hover:text-[#ead6b4]'
                   }`}
                 >
                   {item.label}
@@ -62,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             id="emergency-btn-header"
             onClick={onOpenEmergency}
-            className="flex items-center gap-1.5 min-h-11 px-2.5 py-1.5 text-[11px] tracking-wide text-[#e8c37a] hover:text-[#f4efe6]"
+            className="flex items-center gap-1.5 min-h-11 px-2.5 py-1.5 text-[11px] tracking-wide text-[#e8c37a] hover:text-[#ead6b4]"
             title="Atención médica urgente y teléfonos 112 / 061"
             aria-haspopup="dialog"
           >
@@ -85,7 +85,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setActiveTab(item.id)}
                 aria-current={isActive ? 'page' : undefined}
                 className={`text-[12px] whitespace-nowrap py-2 min-h-11 ${
-                  isActive ? 'will-nav-item-active' : 'text-[#f4efe6]/45'
+                  isActive ? 'will-nav-item-active' : 'text-[#cbbba0]/70'
                 }`}
               >
                 {item.label}

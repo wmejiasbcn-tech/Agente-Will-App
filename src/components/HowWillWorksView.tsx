@@ -47,7 +47,7 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
   >('principios');
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#f4efe6] font-sans">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#ead6b4] font-sans">
       {/* Header */}
       <div className="text-center sm:text-left space-y-2 border-b border-stone-800 pb-5">
         <div className="flex flex-wrap items-center gap-2">
@@ -74,7 +74,7 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'principios'
               ? 'will-nav-item-active font-semibold'
-              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
+              : 'glass-panel text-[#ead6b4]/55 hover:text-[#ead6b4]'
           }`}
         >
           <Shield className="w-3.5 h-3.5" />
@@ -87,7 +87,7 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'constitucion'
               ? 'will-nav-item-active font-semibold'
-              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
+              : 'glass-panel text-[#ead6b4]/55 hover:text-[#ead6b4]'
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" />
@@ -100,7 +100,7 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'presente'
               ? 'will-nav-item-active font-semibold'
-              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
+              : 'glass-panel text-[#ead6b4]/55 hover:text-[#ead6b4]'
           }`}
         >
           <Compass className="w-3.5 h-3.5" />
@@ -113,7 +113,7 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'auditor'
               ? 'will-nav-item-active font-semibold'
-              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
+              : 'glass-panel text-[#ead6b4]/55 hover:text-[#ead6b4]'
           }`}
         >
           <Scale className="w-3.5 h-3.5" />
@@ -126,7 +126,7 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'riesgo-dano'
               ? 'will-nav-item-active font-semibold'
-              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
+              : 'glass-panel text-[#ead6b4]/55 hover:text-[#ead6b4]'
           }`}
         >
           <Workflow className="w-3.5 h-3.5" />
@@ -139,7 +139,7 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'epistemologia'
               ? 'will-nav-item-active font-semibold'
-              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
+              : 'glass-panel text-[#ead6b4]/55 hover:text-[#ead6b4]'
           }`}
         >
           <Eye className="w-3.5 h-3.5" />
@@ -152,7 +152,7 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'knowledge'
               ? 'will-nav-item-active font-semibold'
-              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
+              : 'glass-panel text-[#ead6b4]/55 hover:text-[#ead6b4]'
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
@@ -363,20 +363,20 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
             <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-[#e8c37a]">
               Infraestructura de conocimiento
             </span>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#f4efe6]">
+            <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#ead6b4]">
               {WAIPL_KNOWLEDGE_LAYER.title}
             </h2>
             <p className="text-base font-serif italic text-[#e8c37a]">
               {WAIPL_KNOWLEDGE_LAYER.principle}
             </p>
-            <p className="text-sm text-[#f4efe6]/70 leading-relaxed">
+            <p className="text-sm text-[#ead6b4]/70 leading-relaxed">
               Esto constituye una infraestructura de conocimiento del ecosistema, no simplemente una
               colección de documentos. No es un motor ejecutándose en esta pantalla.
             </p>
           </div>
 
           <div className="glass-panel rounded-2xl p-5 space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">
               Componentes
             </h3>
             <div className="flex flex-wrap gap-1.5">
@@ -392,18 +392,18 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           </div>
 
           <div className="glass-panel rounded-2xl p-5 space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">
               Relación Will ↔ Knowledge Layer
             </h3>
             <ol className="space-y-1.5">
               {WAIPL_KNOWLEDGE_LAYER.flow.map((step, idx) => (
-                <li key={step} className="flex items-center gap-3 text-sm text-[#f4efe6]/80">
+                <li key={step} className="flex items-center gap-3 text-sm text-[#ead6b4]/80">
                   <span className="font-mono text-[10px] text-[#e8c37a]/80 w-5">{idx + 1}</span>
                   <span>{step}</span>
                 </li>
               ))}
             </ol>
-            <p className="text-[11px] text-[#f4efe6]/45 pt-2">
+            <p className="text-[11px] text-[#ead6b4]/45 pt-2">
               Will no necesita cargar toda la biblioteca. El RAG recupera únicamente el conocimiento
               pertinente.
             </p>
@@ -412,55 +412,55 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           <div className="grid md:grid-cols-2 gap-4">
             <div className="glass-panel rounded-2xl p-5 space-y-3">
               <h3 className="font-serif text-lg text-[#e8c37a]">{WAIPL_KNOWLEDGE_LAYER.kairos.name}</h3>
-              <p className="text-xs font-mono text-[#f4efe6]/50">
+              <p className="text-xs font-mono text-[#ead6b4]/50">
                 {WAIPL_KNOWLEDGE_LAYER.kairos.dimension}
               </p>
-              <p className="text-sm text-[#f4efe6]/80 italic">
+              <p className="text-sm text-[#ead6b4]/80 italic">
                 {WAIPL_KNOWLEDGE_LAYER.kairos.role}
               </p>
-              <ul className="text-xs text-[#f4efe6]/65 space-y-1">
+              <ul className="text-xs text-[#ead6b4]/65 space-y-1">
                 {WAIPL_KNOWLEDGE_LAYER.kairos.functions.map((fn) => (
                   <li key={fn}>— {fn}</li>
                 ))}
               </ul>
-              <p className="text-[11px] text-[#f4efe6]/45">{WAIPL_KNOWLEDGE_LAYER.kairos.limit}</p>
+              <p className="text-[11px] text-[#ead6b4]/45">{WAIPL_KNOWLEDGE_LAYER.kairos.limit}</p>
             </div>
             <div className="glass-panel rounded-2xl p-5 space-y-3">
               <h3 className="font-serif text-lg text-[#e8c37a]">{WAIPL_KNOWLEDGE_LAYER.dike.name}</h3>
-              <p className="text-xs font-mono text-[#f4efe6]/50">
+              <p className="text-xs font-mono text-[#ead6b4]/50">
                 {WAIPL_KNOWLEDGE_LAYER.dike.dimension}
               </p>
-              <ul className="text-xs text-[#f4efe6]/65 space-y-1">
+              <ul className="text-xs text-[#ead6b4]/65 space-y-1">
                 {WAIPL_KNOWLEDGE_LAYER.dike.functions.map((fn) => (
                   <li key={fn}>— {fn}</li>
                 ))}
               </ul>
-              <p className="text-[11px] text-[#f4efe6]/45">{WAIPL_KNOWLEDGE_LAYER.dike.limit}</p>
+              <p className="text-[11px] text-[#ead6b4]/45">{WAIPL_KNOWLEDGE_LAYER.dike.limit}</p>
             </div>
           </div>
 
           <div className="glass-panel rounded-2xl p-5 space-y-2">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">RAG</h3>
-            <p className="text-sm text-[#f4efe6]/80">{WAIPL_KNOWLEDGE_LAYER.ragRule}</p>
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">RAG</h3>
+            <p className="text-sm text-[#ead6b4]/80">{WAIPL_KNOWLEDGE_LAYER.ragRule}</p>
           </div>
 
           <div className="glass-panel rounded-2xl p-5 space-y-2">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">Internet</h3>
-            <p className="text-sm text-[#f4efe6]/80">{WAIPL_KNOWLEDGE_LAYER.internetRule}</p>
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">Internet</h3>
+            <p className="text-sm text-[#ead6b4]/80">{WAIPL_KNOWLEDGE_LAYER.internetRule}</p>
           </div>
 
           <div className="glass-panel rounded-2xl p-5 space-y-2">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">
               Procedencia
             </h3>
             <p className="text-sm font-mono text-[#e8c37a]/90">{WAIPL_KNOWLEDGE_LAYER.provenance}</p>
-            <p className="text-[11px] text-[#f4efe6]/45">
+            <p className="text-[11px] text-[#ead6b4]/45">
               Todo conocimiento recuperable debe poder responder: «¿De dónde sale esta información?»
             </p>
           </div>
 
           <div className="glass-panel rounded-2xl p-5 space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">
               Epistemología
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -473,20 +473,20 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
                 </span>
               ))}
             </div>
-            <p className="text-[11px] text-[#f4efe6]/45 leading-relaxed">
+            <p className="text-[11px] text-[#ead6b4]/45 leading-relaxed">
               La incorporación de una fuente al RAG no significa automáticamente que toda afirmación
               derivada de ella sea universalmente válida.
             </p>
           </div>
 
           <div className="glass-panel rounded-2xl p-5 space-y-2">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">
               Identidad visual y sonora
             </h3>
-            <p className="text-sm text-[#f4efe6]/80">
+            <p className="text-sm text-[#ead6b4]/80">
               La identidad visual y la voz deben sentirse como EL MISMO WILL.
             </p>
-            <p className="text-[11px] text-[#f4efe6]/45 leading-relaxed">
+            <p className="text-[11px] text-[#ead6b4]/45 leading-relaxed">
               La especificación maestra de voz permanece íntegramente vigente. Esta entrega no
               sustituye el motor de voz.
             </p>

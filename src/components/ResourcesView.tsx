@@ -73,7 +73,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
   });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#f4efe6] font-sans">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#ead6b4] font-sans">
       <div className="space-y-2 pb-2">
         <h1 className="text-2xl sm:text-3xl font-serif font-bold will-copy">
           Recursos de Apoyo y Servicios
