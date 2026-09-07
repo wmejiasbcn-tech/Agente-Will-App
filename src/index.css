@@ -113,6 +113,10 @@
   animation-name: will-space-unfold-chat;
   filter: brightness(0.72) saturate(0.82) contrast(0.96);
 }
+.will-photo-how {
+  animation-name: will-space-unfold-chat;
+  filter: brightness(0.78) saturate(0.85) contrast(0.96);
+}
 @keyframes will-space-unfold-chat {
   from {
     opacity: 0.22;
@@ -165,9 +169,9 @@
 .will-veil-how-it-works {
   background: linear-gradient(
     90deg,
-    rgba(7, 8, 10, 0.22) 0%,
-    rgba(7, 8, 10, 0.08) 46%,
-    rgba(7, 8, 10, 0.04) 100%
+    rgba(7, 8, 10, 0.52) 0%,
+    rgba(7, 8, 10, 0.32) 50%,
+    rgba(7, 8, 10, 0.22) 100%
   );
 }
 @media (max-width: 767px) {
@@ -196,6 +200,13 @@
     );
   }
   .will-veil-how-it-works {
+    background: linear-gradient(
+      180deg,
+      rgba(7, 8, 10, 0.5) 0%,
+      rgba(7, 8, 10, 0.34) 50%,
+      rgba(7, 8, 10, 0.48) 100%
+    );
+  }
     background: rgba(7, 8, 10, 0.16);
   }
 }

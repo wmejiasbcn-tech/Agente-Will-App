@@ -28,8 +28,8 @@ const SCENE: Record<
     marks: [],
   },
   'how-it-works': {
-    photo: '/visual-system/waves-page03.jpg?v=fid',
-    position: '80% 45%',
+    photo: '/visual-system/waves-page03.jpg?v=noletras',
+    position: '58% 48%',
     marks: [],
   },
 };
@@ -58,7 +58,9 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
                 ? 'will-photo will-photo-topics'
                 : scene === 'resources'
                   ? 'will-photo will-photo-resources'
-                  : 'will-photo'
+                  : scene === 'how-it-works'
+                    ? 'will-photo will-photo-how'
+                    : 'will-photo'
           }
           style={{ objectPosition: cfg.position }}
         />
@@ -66,7 +68,10 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
       <div className={`will-veil will-veil-${scene}`} aria-hidden="true" />
       <div
         className={`will-light-breath${
-          scene === 'chat' || scene === 'topics' || scene === 'resources'
+          scene === 'chat' ||
+          scene === 'topics' ||
+          scene === 'resources' ||
+          scene === 'how-it-works'
             ? ' will-light-breath-quiet'
             : ''
         }`}
