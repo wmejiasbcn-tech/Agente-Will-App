@@ -3,13 +3,11 @@ import {
   Shield,
   BookOpen,
   Compass,
-  Scale,
   CheckCircle2,
   AlertCircle,
   HelpCircle,
   Sparkles,
   ArrowRight,
-  Layers,
   FileText,
   Lock,
   Workflow,
@@ -17,7 +15,6 @@ import {
 } from 'lucide-react';
 import { ConstitutionView } from './ConstitutionView';
 import { PresenteView } from './PresenteView';
-import { AuditorView } from './AuditorView';
 import {
   CANONICAL_CORE_PRINCIPLE,
   CANONICAL_RISK_VS_HARM,
@@ -25,7 +22,6 @@ import {
   CANONICAL_EPISTEMIC_HARNESS,
   HUMAN_EPISTEMIC_LABELS,
 } from '../data/canonicalArchitectureData';
-import { WAIPL_KNOWLEDGE_LAYER } from '../data/knowledgeLayerData';
 
 interface HowWillWorksViewProps {
   onNavigateToChat: (prompt?: string) => void;
@@ -40,29 +36,19 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
     | 'principios'
     | 'constitucion'
     | 'presente'
-    | 'auditor'
     | 'epistemologia'
     | 'riesgo-dano'
-    | 'knowledge'
   >('principios');
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#ead6b4] font-sans">
       {/* Header */}
       <div className="text-center sm:text-left space-y-2 border-b border-stone-800 pb-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded-full bg-amber-950/80 text-amber-300 border border-amber-800">
-            Transparencia & Gobernanza Ética
-          </span>
-          <span className="text-xs font-mono text-stone-400">ADN WAIPL</span>
-        </div>
         <h1 className="text-2xl sm:text-3xl font-serif font-bold will-copy">
           Cómo Funciona Will
         </h1>
         <p className="text-sm sm:text-base will-copy-muted max-w-3xl leading-relaxed">
-          Will está regido por un marco constitucional inmutable de No Directividad Radical. Aquí
-          puedes auditar los principios éticos, la Constitución WAIPL, las 8 dimensiones
-          P.R.E.S.E.N.T.E. y el Auditor Constitucional que supervisa cada respuesta.
+          Will no te conduce. Aquí puedes ver qué hace, qué no hará nunca, y cómo trata lo que sabe.
         </p>
       </div>
 
@@ -91,7 +77,7 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" />
-          <span>Constitución WAIPL (8 Arts)</span>
+          <span>Los 8 principios</span>
         </button>
 
         <button
@@ -104,20 +90,7 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           }`}
         >
           <Compass className="w-3.5 h-3.5" />
-          <span>Marco P.R.E.S.E.N.T.E.</span>
-        </button>
-
-        <button
-          id="tab-btn-auditor"
-          onClick={() => setActiveSection('auditor')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
-            activeSection === 'auditor'
-              ? 'will-nav-item-active font-semibold'
-              : 'glass-panel text-[#ead6b4]/55 hover:text-[#ead6b4]'
-          }`}
-        >
-          <Scale className="w-3.5 h-3.5" />
-          <span>Auditor Constitucional</span>
+          <span>Cómo te escucha Will</span>
         </button>
 
         <button
@@ -143,21 +116,9 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           }`}
         >
           <Eye className="w-3.5 h-3.5" />
-          <span>Arnés de Evidencia</span>
+          <span>Lo que se sabe y lo que no</span>
         </button>
 
-        <button
-          id="tab-btn-knowledge"
-          onClick={() => setActiveSection('knowledge')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
-            activeSection === 'knowledge'
-              ? 'will-nav-item-active font-semibold'
-              : 'glass-panel text-[#ead6b4]/55 hover:text-[#ead6b4]'
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Knowledge Layer</span>
-        </button>
       </div>
 
       {/* Section 1: Principios y Compromiso */}
@@ -215,28 +176,13 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
       )}
 
       {/* Section 2: Constitución WAIPL */}
-      {activeSection === 'constitucion' && (
-        <ConstitutionView
-          onOpenAuditorWithPrompt={(prompt) => {
-            setActiveSection('auditor');
-          }}
-        />
-      )}
+      {activeSection === 'constitucion' && <ConstitutionView />}
 
       {/* Section 3: Marco P.R.E.S.E.N.T.E. */}
       {activeSection === 'presente' && (
         <PresenteView
           onLaunchInDimension={(dim) => {
             onNavigateToChat(`Quiero explorar esto bajo la dimensión ${dim}`);
-          }}
-        />
-      )}
-
-      {/* Section 4: Auditor Constitucional */}
-      {activeSection === 'auditor' && (
-        <AuditorView
-          onSendToChat={(prompt) => {
-            onNavigateToChat(prompt);
           }}
         />
       )}
@@ -353,143 +299,6 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
                 </p>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {activeSection === 'knowledge' && (
-        <div className="space-y-6">
-          <div className="glass-panel rounded-3xl p-6 sm:p-8 space-y-4">
-            <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-[#e8c37a]">
-              Infraestructura de conocimiento
-            </span>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#ead6b4]">
-              {WAIPL_KNOWLEDGE_LAYER.title}
-            </h2>
-            <p className="text-base font-serif italic text-[#e8c37a]">
-              {WAIPL_KNOWLEDGE_LAYER.principle}
-            </p>
-            <p className="text-sm text-[#ead6b4]/70 leading-relaxed">
-              Esto constituye una infraestructura de conocimiento del ecosistema, no simplemente una
-              colección de documentos. No es un motor ejecutándose en esta pantalla.
-            </p>
-          </div>
-
-          <div className="glass-panel rounded-2xl p-5 space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">
-              Componentes
-            </h3>
-            <div className="flex flex-wrap gap-1.5">
-              {WAIPL_KNOWLEDGE_LAYER.stack.map((item) => (
-                <span
-                  key={item}
-                  className="text-[11px] font-mono px-2.5 py-1 rounded-lg glass-panel-strong text-[#e8c37a]"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="glass-panel rounded-2xl p-5 space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">
-              Relación Will ↔ Knowledge Layer
-            </h3>
-            <ol className="space-y-1.5">
-              {WAIPL_KNOWLEDGE_LAYER.flow.map((step, idx) => (
-                <li key={step} className="flex items-center gap-3 text-sm text-[#ead6b4]/80">
-                  <span className="font-mono text-[10px] text-[#e8c37a]/80 w-5">{idx + 1}</span>
-                  <span>{step}</span>
-                </li>
-              ))}
-            </ol>
-            <p className="text-[11px] text-[#ead6b4]/45 pt-2">
-              Will no necesita cargar toda la biblioteca. El RAG recupera únicamente el conocimiento
-              pertinente.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="glass-panel rounded-2xl p-5 space-y-3">
-              <h3 className="font-serif text-lg text-[#e8c37a]">{WAIPL_KNOWLEDGE_LAYER.kairos.name}</h3>
-              <p className="text-xs font-mono text-[#ead6b4]/50">
-                {WAIPL_KNOWLEDGE_LAYER.kairos.dimension}
-              </p>
-              <p className="text-sm text-[#ead6b4]/80 italic">
-                {WAIPL_KNOWLEDGE_LAYER.kairos.role}
-              </p>
-              <ul className="text-xs text-[#ead6b4]/65 space-y-1">
-                {WAIPL_KNOWLEDGE_LAYER.kairos.functions.map((fn) => (
-                  <li key={fn}>— {fn}</li>
-                ))}
-              </ul>
-              <p className="text-[11px] text-[#ead6b4]/45">{WAIPL_KNOWLEDGE_LAYER.kairos.limit}</p>
-            </div>
-            <div className="glass-panel rounded-2xl p-5 space-y-3">
-              <h3 className="font-serif text-lg text-[#e8c37a]">{WAIPL_KNOWLEDGE_LAYER.dike.name}</h3>
-              <p className="text-xs font-mono text-[#ead6b4]/50">
-                {WAIPL_KNOWLEDGE_LAYER.dike.dimension}
-              </p>
-              <ul className="text-xs text-[#ead6b4]/65 space-y-1">
-                {WAIPL_KNOWLEDGE_LAYER.dike.functions.map((fn) => (
-                  <li key={fn}>— {fn}</li>
-                ))}
-              </ul>
-              <p className="text-[11px] text-[#ead6b4]/45">{WAIPL_KNOWLEDGE_LAYER.dike.limit}</p>
-            </div>
-          </div>
-
-          <div className="glass-panel rounded-2xl p-5 space-y-2">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">RAG</h3>
-            <p className="text-sm text-[#ead6b4]/80">{WAIPL_KNOWLEDGE_LAYER.ragRule}</p>
-          </div>
-
-          <div className="glass-panel rounded-2xl p-5 space-y-2">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">Internet</h3>
-            <p className="text-sm text-[#ead6b4]/80">{WAIPL_KNOWLEDGE_LAYER.internetRule}</p>
-          </div>
-
-          <div className="glass-panel rounded-2xl p-5 space-y-2">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">
-              Procedencia
-            </h3>
-            <p className="text-sm font-mono text-[#e8c37a]/90">{WAIPL_KNOWLEDGE_LAYER.provenance}</p>
-            <p className="text-[11px] text-[#ead6b4]/45">
-              Todo conocimiento recuperable debe poder responder: «¿De dónde sale esta información?»
-            </p>
-          </div>
-
-          <div className="glass-panel rounded-2xl p-5 space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">
-              Epistemología
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {WAIPL_KNOWLEDGE_LAYER.epistemic.map((state) => (
-                <span
-                  key={state}
-                  className="px-3 py-1.5 rounded-full glass-panel-strong text-xs font-mono text-[#e8c37a]"
-                >
-                  {state}
-                </span>
-              ))}
-            </div>
-            <p className="text-[11px] text-[#ead6b4]/45 leading-relaxed">
-              La incorporación de una fuente al RAG no significa automáticamente que toda afirmación
-              derivada de ella sea universalmente válida.
-            </p>
-          </div>
-
-          <div className="glass-panel rounded-2xl p-5 space-y-2">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#ead6b4]/50">
-              Identidad visual y sonora
-            </h3>
-            <p className="text-sm text-[#ead6b4]/80">
-              La identidad visual y la voz deben sentirse como EL MISMO WILL.
-            </p>
-            <p className="text-[11px] text-[#ead6b4]/45 leading-relaxed">
-              La especificación maestra de voz permanece íntegramente vigente. Esta entrega no
-              sustituye el motor de voz.
-            </p>
           </div>
         </div>
       )}

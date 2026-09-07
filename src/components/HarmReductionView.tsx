@@ -183,7 +183,7 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
           </div>
 
           <div className="text-xs font-mono text-stone-400">
-            WILL APP • BASE CONSTITUCIONAL WAIPL
+            Información para decidir
           </div>
         </div>
 
@@ -737,7 +737,7 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-amber-400" />
           <h3 className="text-lg font-serif font-bold text-stone-100">
-            Consultar otra sustancia, mezcla o duda técnica con ADN WAIPL
+            Consultar otra sustancia, mezcla o duda
           </h3>
         </div>
         <p className="text-xs text-stone-400 leading-relaxed">

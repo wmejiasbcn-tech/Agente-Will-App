@@ -18,7 +18,7 @@ export const OfficialBlason: React.FC<OfficialBlasonProps> = ({
   return (
     <img
       src="/blason-oficial-waipl.png"
-      alt="Blasón oficial WAIPL"
+      alt="Will"
       width={size}
       height={size}
       className={`object-contain select-none bg-transparent ${className}`.trim()}

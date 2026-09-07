@@ -118,7 +118,7 @@ export const AuditorView: React.FC<AuditorViewProps> = ({
             <span>La Prueba de No Directividad</span>
           </h1>
           <p className="text-sm sm:text-base text-stone-300 max-w-3xl leading-relaxed">
-            Evalúa cualquier interacción, mensaje, prompt o respuesta frente a las dos pruebas canónicas del ADN WAIPL para desenmascarar el paternalismo encubierto y las trayectorias predeterminadas.
+            Evalúa si un mensaje conduce a la persona o la deja decidir.
           </p>
         </div>
 
@@ -199,7 +199,7 @@ export const AuditorView: React.FC<AuditorViewProps> = ({
             {isLoading ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Auditando según ADN WAIPL...</span>
+                <span>Revisando el mensaje...</span>
               </>
             ) : (
               <>

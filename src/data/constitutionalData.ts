@@ -166,11 +166,11 @@ export const CONSTITUTIONAL_ARTICLES: ConstitutionalArticle[] = [
   {
     number: "VIII",
     title: "CANONIZACIÓN",
-    subtitle: "Inmutabilidad del ADN WAIPL",
+    subtitle: "Estos principios no se cambian por conveniencia",
     fullText: [
-      "Este principio forma parte del ADN constitucional de Will App dentro del WAIPL.",
-      "No podrá ser modificado por una decisión de diseño, por una optimización técnica, por una preferencia de UX, por una recomendación de otro modelo de IA ni por una simplificación destinada a facilitar la implementación.",
-      "Cualquier modificación futura deberá ser considerada una modificación del propio ADN del proyecto y, por tanto, no podrá realizarse como un simple ajuste técnico."
+      "Esto no es un estilo. Es el modo en que Will te acompaña.",
+      "No podrá ser modificado por una decisión de diseño, por una optimización técnica, por una preferencia de interfaz, por una recomendación de otro sistema ni por una simplificación destinada a facilitar la implementación.",
+      "Cualquier cambio futuro no puede hacerse como un simple ajuste técnico.",
     ],
     keyQuotes: [
       "No podrá ser modificado por una decisión de diseño, por una optimización técnica ni por una preferencia de UX.",

@@ -114,7 +114,7 @@ export const CanonicalArchitectureView: React.FC<CanonicalArchitectureViewProps>
             </span>
           </div>
           <span className="text-xs font-mono text-amber-400/90 font-semibold tracking-wide">
-            ADN WAIPL • INMUTABLE
+            Cómo te acompaña Will
           </span>
         </div>
 
@@ -761,7 +761,7 @@ export const CanonicalArchitectureView: React.FC<CanonicalArchitectureViewProps>
               </h2>
             </div>
             <p className="text-xs sm:text-sm text-stone-400 mt-0.5">
-              12 Puntos de rigor estructurados según el ADN WAIPL para cada sustancia y práctica.
+              12 puntos de rigor para cada sustancia y práctica.
             </p>
           </div>
 

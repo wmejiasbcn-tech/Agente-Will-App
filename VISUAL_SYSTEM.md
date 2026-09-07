@@ -3,6 +3,17 @@
 El espacio de The Architecture of Sovereignty es el espacio de Will App.
 No es una paleta. No es una inspiración. Es el lugar.
 
+## Separación absoluta: sistema interno / experiencia de usuario
+
+Invisible para quien entra a hablar:
+autoría, dirección creativa, herramientas, procedencia de imágenes,
+decisiones de arquitectura, versiones, auditorías internas, instrucciones
+para agentes, ADN de gobernanza, notas técnicas, metadatos de diseño.
+
+Visible:
+el espacio, Will, la conversación, las opciones, los recursos,
+la información necesaria para comprender y decidir.
+
 ## Test de fidelidad
 
 Para cada instrucción concreta: ¿hice exactamente X?

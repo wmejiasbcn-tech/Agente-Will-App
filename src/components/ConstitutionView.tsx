@@ -10,12 +10,8 @@ import {
   Award,
   Zap,
   ArrowRight,
-  Network,
-  Globe2,
-  Cpu,
-  Layers,
 } from 'lucide-react';
-import { CONSTITUTIONAL_HEADER, CONSTITUTIONAL_ARTICLES, ECOSYSTEM_APPENDIX } from '../data/constitutionalData';
+import { CONSTITUTIONAL_HEADER, CONSTITUTIONAL_ARTICLES } from '../data/constitutionalData';
 
 interface ConstitutionViewProps {
   onOpenAuditorWithPrompt?: (prompt: string) => void;
@@ -64,37 +60,12 @@ export const ConstitutionView: React.FC<ConstitutionViewProps> = ({
         </div>
 
         <div className="relative z-10 space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-mono tracking-wider font-semibold">
-              DOCUMENTO CONSTITUCIONAL
-            </span>
-            <span className="px-2.5 py-1 rounded-full bg-stone-800 text-stone-300 text-xs font-mono">
-              ADN WAIPL • INMUTABLE
-            </span>
-          </div>
-
-          <h1 className="text-2xl sm:text-4xl font-serif font-bold text-stone-100 tracking-tight">
-            {CONSTITUTIONAL_HEADER.title}
+          <h1 className="text-2xl sm:text-4xl font-serif font-bold will-copy tracking-tight">
+            Cómo te acompaña Will
           </h1>
 
-          <div className="p-4 sm:p-5 rounded-2xl bg-amber-950/60 border border-amber-700/80 text-amber-100 font-serif text-base sm:text-xl italic leading-snug">
+          <div className="p-4 sm:p-5 arch-glass font-serif text-base sm:text-xl italic leading-snug will-copy">
             «{CONSTITUTIONAL_HEADER.canonicalMotto}»
-          </div>
-
-          <p className="text-sm sm:text-base text-stone-300 leading-relaxed max-w-3xl">
-            {CONSTITUTIONAL_HEADER.declaration}
-          </p>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-            {CONSTITUTIONAL_HEADER.notices.map((notice, i) => (
-              <div
-                key={i}
-                className="px-3 py-2 rounded-xl bg-stone-950/70 border border-stone-800 text-xs text-stone-400 font-mono flex items-center gap-1.5"
-              >
-                <span className="text-[#e8c37a] font-bold">✕</span>
-                <span>{notice}</span>
-              </div>
-            ))}
           </div>
         </div>
       </div>
@@ -107,7 +78,7 @@ export const ConstitutionView: React.FC<ConstitutionViewProps> = ({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar en los 8 artículos canónicos..."
+            placeholder="Buscar un principio..."
             className="w-full pl-9 pr-4 py-2 rounded-xl bg-stone-950 border border-stone-800 text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-amber-600"
           />
         </div>
@@ -246,101 +217,6 @@ export const ConstitutionView: React.FC<ConstitutionViewProps> = ({
             </div>
           );
         })}
-      </div>
-
-      {/* Canonical Ecosystem Appendix & Graphify */}
-      <div className="pt-8 border-t border-stone-800 space-y-6">
-        <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-stone-900 via-stone-900 to-stone-950 border border-stone-750 shadow-xl space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-semibold">
-              APÉNDICE CANÓNICO
-            </span>
-            <span className="px-2.5 py-1 rounded-full bg-stone-800 text-stone-300 text-xs font-mono">
-              GRAPHIFY & GOBERNANZA WAIPL
-            </span>
-          </div>
-
-          <h2 className="text-xl sm:text-3xl font-serif font-bold text-stone-100">
-            {ECOSYSTEM_APPENDIX.header.title}
-          </h2>
-
-          <p className="text-xs sm:text-sm text-stone-400 font-mono">
-            {ECOSYSTEM_APPENDIX.header.subtitle}
-          </p>
-
-          <p className="text-xs sm:text-sm text-stone-300 leading-relaxed pt-1">
-            {ECOSYSTEM_APPENDIX.header.declaration}
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {ECOSYSTEM_APPENDIX.sections.map((section) => (
-            <div
-              key={section.id}
-              className="rounded-2xl bg-stone-900/90 border border-stone-800 p-5 sm:p-6 space-y-4 hover:border-stone-700 transition-colors"
-            >
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="px-2 py-0.5 rounded bg-stone-950 border border-stone-800 text-[11px] font-mono font-semibold text-amber-400">
-                    {section.badge}
-                  </span>
-                  {section.id === 'graphify-cns' && (
-                    <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
-                      <Network className="w-3 h-3" />
-                      82 Nodos Base
-                    </span>
-                  )}
-                  {section.id === 'fuentes-rigor' && (
-                    <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
-                      <Globe2 className="w-3 h-3" />
-                      Pentágono + Oficial
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-base font-serif font-bold text-stone-100">
-                  {section.title}
-                </h3>
-                <p className="text-xs text-stone-400 leading-relaxed">
-                  {section.summary}
-                </p>
-              </div>
-
-              <div className="space-y-2.5 pt-2">
-                {section.items.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-xl bg-stone-950/70 border border-stone-800/80 space-y-1"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-stone-200">
-                        {item.label}
-                      </span>
-                      <span
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                          item.status === 'VERIFICADO'
-                            ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/80'
-                            : item.status === 'INFERIDO'
-                            ? 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
-                            : 'bg-[rgba(10,14,20,0.55)] text-[#e8c37a] border border-[rgba(232,195,122,0.28)]'
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-stone-400 leading-relaxed font-sans">
-                      {item.description}
-                    </p>
-                    {item.detail && (
-                      <p className="text-[11px] text-stone-500 font-mono pt-0.5">
-                        ↳ {item.detail}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
