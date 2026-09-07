@@ -12,9 +12,9 @@ const SCENE: Record<
   }
 > = {
   chat: {
-    photo: '/visual-system/space-page09.jpg?v=fid',
-    photoMobile: '/visual-system/space-page09-mobile.jpg?v=fid',
-    position: '62% 58%',
+    photo: '/visual-system/space-page09.jpg?v=txt1',
+    photoMobile: '/visual-system/space-page09-mobile.jpg?v=txt1',
+    position: '70% 58%',
     marks: [],
   },
   topics: {

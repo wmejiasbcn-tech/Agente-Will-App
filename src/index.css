@@ -129,9 +129,11 @@
 .will-veil-chat {
   background: linear-gradient(
     90deg,
-    rgba(7, 8, 10, 0.1) 0%,
-    rgba(7, 8, 10, 0.02) 28%,
-    rgba(7, 8, 10, 0) 48%,
+    rgba(7, 8, 10, 0.84) 0%,
+    rgba(7, 8, 10, 0.7) 20%,
+    rgba(7, 8, 10, 0.38) 36%,
+    rgba(7, 8, 10, 0.1) 50%,
+    rgba(7, 8, 10, 0) 62%,
     rgba(7, 8, 10, 0) 100%
   );
 }
@@ -149,9 +151,10 @@
   .will-veil-chat {
     background: linear-gradient(
       180deg,
-      rgba(7, 8, 10, 0.12) 0%,
-      rgba(7, 8, 10, 0.02) 40%,
-      rgba(7, 8, 10, 0.1) 100%
+      rgba(7, 8, 10, 0.72) 0%,
+      rgba(7, 8, 10, 0.42) 38%,
+      rgba(7, 8, 10, 0.18) 62%,
+      rgba(7, 8, 10, 0.55) 100%
     );
   }
   .will-veil-topics,
@@ -185,14 +188,17 @@
 
 /* Texto de la app: marfil cálido. Se lee sobre la foto sin deslumbrar. */
 .will-copy {
-  color: #ead6b4;
+  color: #f4e6c8;
   text-shadow:
-    0 1px 2px rgba(8, 6, 2, 0.72),
-    0 0 14px rgba(8, 6, 2, 0.32);
+    0 1px 1px rgba(0, 0, 0, 0.98),
+    0 2px 14px rgba(0, 0, 0, 0.82),
+    0 0 22px rgba(0, 0, 0, 0.5);
 }
 .will-copy-muted {
-  color: #cbbba0;
-  text-shadow: 0 1px 2px rgba(8, 6, 2, 0.65);
+  color: #e4d4b4;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 2px 12px rgba(0, 0, 0, 0.7);
 }
 
 /* Marcas extraídas del documento */
