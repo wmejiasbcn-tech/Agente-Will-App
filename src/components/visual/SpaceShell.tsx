@@ -18,8 +18,8 @@ const SCENE: Record<
     marks: [],
   },
   topics: {
-    photo: '/visual-system/interior-page05.jpg?v=fid',
-    position: '78% 48%',
+    photo: '/visual-system/interior-page05.jpg?v=txt3',
+    position: '52% 48%',
     marks: [],
   },
   resources: {
@@ -51,13 +51,21 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
         <img
           src={cfg.photo}
           alt=""
-          className={scene === 'chat' ? 'will-photo will-photo-chat' : 'will-photo'}
+          className={
+            scene === 'chat'
+              ? 'will-photo will-photo-chat'
+              : scene === 'topics'
+                ? 'will-photo will-photo-topics'
+                : 'will-photo'
+          }
           style={{ objectPosition: cfg.position }}
         />
       </picture>
       <div className={`will-veil will-veil-${scene}`} aria-hidden="true" />
       <div
-        className={`will-light-breath${scene === 'chat' ? ' will-light-breath-quiet' : ''}`}
+        className={`will-light-breath${
+          scene === 'chat' || scene === 'topics' ? ' will-light-breath-quiet' : ''
+        }`}
         aria-hidden="true"
       />
 

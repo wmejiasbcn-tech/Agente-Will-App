@@ -105,6 +105,10 @@
   animation-name: will-space-unfold-chat;
   filter: brightness(0.62) saturate(0.7) contrast(0.95);
 }
+.will-photo-topics {
+  animation-name: will-space-unfold-chat;
+  filter: brightness(0.55) saturate(0.68) contrast(0.95);
+}
 @keyframes will-space-unfold-chat {
   from {
     opacity: 0.22;
@@ -138,7 +142,14 @@
     rgba(7, 8, 10, 0.4) 100%
   );
 }
-.will-veil-topics,
+.will-veil-topics {
+  background: linear-gradient(
+    90deg,
+    rgba(7, 8, 10, 0.66) 0%,
+    rgba(7, 8, 10, 0.54) 50%,
+    rgba(7, 8, 10, 0.44) 100%
+  );
+}
 .will-veil-resources,
 .will-veil-how-it-works {
   background: linear-gradient(
@@ -157,7 +168,14 @@
       rgba(7, 8, 10, 0.55) 100%
     );
   }
-  .will-veil-topics,
+  .will-veil-topics {
+    background: linear-gradient(
+      180deg,
+      rgba(7, 8, 10, 0.62) 0%,
+      rgba(7, 8, 10, 0.5) 50%,
+      rgba(7, 8, 10, 0.58) 100%
+    );
+  }
   .will-veil-resources,
   .will-veil-how-it-works {
     background: rgba(7, 8, 10, 0.16);
