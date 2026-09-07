@@ -289,7 +289,7 @@ export const ECOSYSTEM_APPENDIX = {
         },
         {
           label: "División Operativa del Lab",
-          description: "Hermes = Dirección operativa 24/7; Aether = Nodo Grok (Aether-Hermes derogado); Kairos = RAG científico; Dike = Compliance ético; Carla = Coordinadora General; William L. Mejías = Soberano / Fundador.",
+          description: "Hermes = Dirección operativa 24/7; Aether = Nodo Grok/xAI; Kairos = RAG científico; Dike = Compliance ético; Carla = Coordinadora General; William L. Mejías = Soberano / Fundador.",
           status: "VERIFICADO" as const,
           detail: "Autonomía N3 (publicar, desplegar, borrar) reservada exclusivamente a William y Carla."
         },
