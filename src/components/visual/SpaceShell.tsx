@@ -18,8 +18,8 @@ const SCENE: Record<
     marks: [],
   },
   topics: {
-    photo: '/visual-system/interior-page05.jpg?v=esfera1',
-    position: '68% 46%',
+    photo: '/visual-system/interior-page05.jpg?v=esfera2',
+    position: '78% 48%',
     marks: [],
   },
   resources: {
