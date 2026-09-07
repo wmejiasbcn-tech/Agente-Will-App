@@ -40,16 +40,16 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose 
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-800 bg-rose-950/40">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[rgba(232,195,122,0.16)] bg-[rgba(10,14,20,0.6)]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-rose-900/80 border border-rose-700/60 flex items-center justify-center text-rose-300">
+            <div className="w-9 h-9 border border-[rgba(232,195,122,0.4)] flex items-center justify-center text-[#e8c37a]">
               <ShieldAlert className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
-              <h2 id="emergency-dialog-title" className="text-base font-semibold text-rose-200">
+              <h2 id="emergency-dialog-title" className="text-base font-semibold will-copy">
                 Información de Urgencia y Emergencias
               </h2>
-              <p className="text-xs text-rose-300/80">
+              <p className="text-xs will-copy-muted">
                 Datos objetivos de primeros auxilios y contacto rápido sin juicio
               </p>
             </div>
@@ -110,7 +110,7 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose 
           {/* Signos de Alarma Críticos */}
           <div className="space-y-2">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-300 flex items-center gap-2">
-              <Heart className="w-3.5 h-3.5 text-rose-400" aria-hidden="true" />
+              <Heart className="w-3.5 h-3.5 text-[#e8c37a]" aria-hidden="true" />
               Signos que requieren atención médica urgente
             </h3>
             <div className="grid sm:grid-cols-2 gap-2 text-xs text-stone-300">

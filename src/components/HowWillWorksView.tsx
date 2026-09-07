@@ -56,10 +56,10 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           </span>
           <span className="text-xs font-mono text-stone-400">ADN WAIPL</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-100">
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold will-copy">
           Cómo Funciona Will
         </h1>
-        <p className="text-sm sm:text-base text-stone-400 max-w-3xl leading-relaxed">
+        <p className="text-sm sm:text-base will-copy-muted max-w-3xl leading-relaxed">
           Will está regido por un marco constitucional inmutable de No Directividad Radical. Aquí
           puedes auditar los principios éticos, la Constitución WAIPL, las 8 dimensiones
           P.R.E.S.E.N.T.E. y el Auditor Constitucional que supervisa cada respuesta.
@@ -196,15 +196,15 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
             </div>
 
             {/* What Will NEVER Does */}
-            <div className="p-6 rounded-2xl bg-stone-900/80 border border-rose-900/40 space-y-3">
-              <span className="text-xs font-mono font-bold uppercase text-rose-400 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-400" />
+            <div className="p-6 rounded-2xl arch-glass space-y-3">
+              <span className="text-xs font-mono font-bold uppercase text-[#e8c37a] flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-[#e8c37a]" />
                 Lo que Will NUNCA hace:
               </span>
               <ul className="space-y-2 text-xs text-stone-300">
                 {CANONICAL_CORE_PRINCIPLE.willNeverDoes.map((item, idx) => (
                   <li key={idx} className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1 shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#e8c37a] mt-1 shrink-0" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -268,14 +268,14 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-rose-950/30 border border-rose-800/60 space-y-2">
-                <span className="text-xs font-mono font-bold text-rose-300 uppercase">
+              <div className="p-4 rounded-2xl arch-glass space-y-2">
+                <span className="text-xs font-mono font-bold text-[#e8c37a] uppercase">
                   {CANONICAL_RISK_VS_HARM.harmDefinition.title}
                 </span>
                 <p className="text-xs text-stone-200">
                   {CANONICAL_RISK_VS_HARM.harmDefinition.meaning}
                 </p>
-                <div className="text-[11px] font-mono text-rose-400 bg-stone-950/80 p-2 rounded-lg">
+                <div className="text-[11px] font-mono text-[#e8c37a] bg-stone-950/80 p-2 rounded-lg">
                   {CANONICAL_RISK_VS_HARM.harmDefinition.actionChain}
                 </div>
                 <p className="text-xs text-stone-400">
@@ -494,11 +494,8 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
         </div>
       )}
 
-      <p className="text-[10px] text-[#f4efe6]/35 leading-relaxed max-w-3xl pt-4">
-        The Architecture of Sovereignty — Dirección conceptual: Will / WAIPL. Dirección creativa:
-        propietario del ecosistema. Herramienta de materialización: Gemini Notebook (antiguamente
-        NotebookLM). No atribuir su creación a Gemini / Ítaca.
-      </p>
+        </div>
+      )}
     </div>
   );
 };

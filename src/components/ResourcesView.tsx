@@ -75,34 +75,36 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#f4efe6] font-sans">
       <div className="space-y-2 pb-2">
-        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-100">
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold will-copy">
           Recursos de Apoyo y Servicios
         </h1>
-        <p className="text-sm sm:text-base text-stone-400 max-w-3xl leading-relaxed">
+        <p className="text-sm sm:text-base will-copy-muted max-w-3xl leading-relaxed">
           Acceso estructurado a servicios asistenciales, sanitarios y comunitarios. Cada recurso
           cumple una función distinta y complementaria.
         </p>
       </div>
 
-      {/* Emergency Quick Action Banner */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-rose-950/70 via-stone-900 to-stone-900 border border-rose-800/80 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Emergency — same visual language, not ambulance chrome */}
+      <div className="p-5 sm:p-6 arch-glass flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-rose-600 flex items-center justify-center text-stone-950 shrink-0 shadow-md">
+          <div className="w-10 h-10 flex items-center justify-center text-[#e8c37a] shrink-0 border border-[rgba(232,195,122,0.35)]">
             <PhoneCall className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-serif font-bold text-stone-100">
+            <h2 className="text-base font-serif font-bold will-copy">
               ¿Estás en una situación de urgencia o sospecha de sobredosis?
             </h2>
-            <p className="text-xs text-rose-200/90 mt-0.5">
-              Llama directamente al <strong>112</strong> o <strong>061</strong>. La atención médica de urgencias es prioritaria y no juzga.
+            <p className="text-xs will-copy-muted mt-0.5">
+              Llama directamente al <strong className="text-[#e8c37a]">112</strong> o{' '}
+              <strong className="text-[#e8c37a]">061</strong>. La atención médica de urgencias es
+              prioritaria y no juzga.
             </p>
           </div>
         </div>
 
         <button
           onClick={onOpenEmergency}
-          className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-stone-950 text-xs font-bold transition-colors shrink-0 shadow-md"
+          className="px-4 py-2.5 text-xs font-medium transition-colors shrink-0 border border-[rgba(232,195,122,0.45)] text-[#e8c37a] hover:bg-[rgba(232,195,122,0.08)]"
         >
           Ver protocolo de urgencias SOS
         </button>
@@ -152,32 +154,14 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
         {/* Resources Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredResources.map((res, idx) => {
-            const isUrgency = res.type === 'URGENCIAS';
-            const isSanitary = res.type === 'SANITARIO_CLASICO';
-            const isHarmReduction = res.type === 'REDUCCION_RIESGOS_DANOS';
-
             return (
               <div
                 key={idx}
-                className={`rounded-2xl p-5 border transition-all flex flex-col justify-between space-y-4 ${
-                  isUrgency
-                    ? 'bg-rose-950/20 border-rose-900/60 hover:border-rose-700'
-                    : isSanitary
-                    ? 'bg-cyan-950/20 border-cyan-900/60 hover:border-cyan-700'
-                    : 'bg-amber-950/20 border-amber-900/60 hover:border-amber-700'
-                }`}
+                className="arch-glass p-5 flex flex-col justify-between space-y-4"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={`text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full border ${
-                        isUrgency
-                          ? 'bg-rose-950/80 border-rose-800 text-rose-300'
-                          : isSanitary
-                          ? 'bg-cyan-950/80 border-cyan-800 text-cyan-300'
-                          : 'bg-amber-950/80 border-amber-800 text-amber-300'
-                      }`}
-                    >
+                    <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 border border-[rgba(232,195,122,0.28)] text-[#e8c37a]">
                       {res.typeLabel}
                     </span>
                   </div>

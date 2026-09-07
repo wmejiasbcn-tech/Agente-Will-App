@@ -80,10 +80,10 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#f4efe6] font-sans">
       <div className="space-y-2 pb-2">
-        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#f4efe6]">
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold will-copy">
           Explorar Áreas y Temas
         </h1>
-        <p className="text-sm sm:text-base text-[#f4efe6]/60 max-w-3xl leading-relaxed">
+        <p className="text-sm sm:text-base will-copy-muted max-w-3xl leading-relaxed">
           Información clara, independiente y basada en evidencia sobre cada área. Consulta lo que
           necesites y amplía los detalles a tu ritmo, sin juicios ni prescripciones.
         </p>

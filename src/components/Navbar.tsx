@@ -62,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             id="emergency-btn-header"
             onClick={onOpenEmergency}
-            className="flex items-center gap-1.5 min-h-11 px-2.5 py-1.5 text-[11px] tracking-wide text-rose-300/90 hover:text-rose-200"
+            className="flex items-center gap-1.5 min-h-11 px-2.5 py-1.5 text-[11px] tracking-wide text-[#e8c37a] hover:text-[#f4efe6]"
             title="Atención médica urgente y teléfonos 112 / 061"
             aria-haspopup="dialog"
           >
