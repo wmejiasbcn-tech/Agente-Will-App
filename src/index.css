@@ -1,14 +1,18 @@
 @import "tailwindcss";
 
 /*
-  Sistema visual extraído de la interfaz existente (stone + amber + rose).
-  Lienzo alineado al negro mate canónico del blasón: #0A0A0B.
-  No se introduce una paleta nueva.
+  Canon visual Will — recalibración D1
+  Principio: «Tecnología del futuro habitando un espacio humano.»
+  Paleta: negro profundo, azul petróleo, ámbar/dorado como LUZ, blanco cálido, vidrio.
+  No cyberpunk. No neón. No HUD. No dashboard. No tematización italiana.
+  Referencia atmosférica: página 9 — espacio íntimo, vidrio, luz dorada suave.
 */
 @theme {
   --color-void: #0a0a0b;
   --color-stone-950: #0a0a0b;
-  --color-accent: #f59e0b;
+  --color-petroleum: #0c141c;
+  --color-accent: #e8c37a;
+  --color-warm: #f4efe6;
   --color-sos: #e11d48;
   --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, sans-serif;
@@ -21,6 +25,7 @@
   html,
   body {
     background-color: #0a0a0b;
+    color: #f4efe6;
   }
 
   body {
@@ -46,7 +51,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid #f59e0b;
+    outline: 2px solid rgba(232, 195, 122, 0.7);
     outline-offset: 2px;
   }
 }
@@ -75,7 +80,7 @@
   top: -3rem;
   z-index: 60;
   border-radius: 0.75rem;
-  background: #f59e0b;
+  background: #e8c37a;
   color: #0a0a0b;
   padding: 0.5rem 0.75rem;
   font-size: 0.75rem;
@@ -84,4 +89,125 @@
 
 .skip-link:focus {
   top: 0.75rem;
+}
+
+/* Espacio: luz dorada suave (finales de verano) + profundidad petróleo. */
+.will-space {
+  background-color: #0a0a0b;
+  background-image:
+    radial-gradient(ellipse 80% 48% at 50% -8%, rgba(232, 195, 122, 0.18), transparent 55%),
+    radial-gradient(ellipse 36% 28% at 50% 42%, rgba(232, 195, 122, 0.07), transparent 70%),
+    radial-gradient(ellipse 55% 42% at 8% 100%, rgba(12, 20, 28, 1), transparent 58%),
+    radial-gradient(ellipse 50% 38% at 96% 78%, rgba(8, 16, 24, 0.95), transparent 55%);
+}
+
+.glass-panel {
+  background: rgba(244, 239, 230, 0.035);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(232, 195, 122, 0.14);
+}
+
+.glass-panel-strong {
+  background: rgba(12, 20, 28, 0.58);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(232, 195, 122, 0.2);
+}
+
+.will-nav {
+  background: rgba(10, 10, 11, 0.55);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-bottom: 1px solid rgba(232, 195, 122, 0.1);
+}
+
+.will-nav-item-active {
+  background: rgba(232, 195, 122, 0.1);
+  border: 1px solid rgba(232, 195, 122, 0.28);
+  color: #e8c37a;
+  box-shadow: 0 0 22px rgba(232, 195, 122, 0.08);
+}
+
+/* Presencia: esfera de luz, no avatar de chatbot. El blasón flota sobre el resplandor. */
+.will-presence {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.will-presence::before {
+  content: "";
+  position: absolute;
+  inset: -28px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(232, 195, 122, 0.38) 0%, rgba(232, 195, 122, 0.08) 42%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.will-presence > * {
+  position: relative;
+  z-index: 1;
+}
+
+.will-presence-sm {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.will-presence-sm::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(232, 195, 122, 0.32), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.will-presence-sm > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* El envío es un punto de luz, no un botón ámbar relleno. */
+.will-send {
+  background: radial-gradient(circle at 32% 28%, #f6e2b2, #d4ae62 58%, #9a7435);
+  color: #0a0a0b;
+  box-shadow: 0 0 22px rgba(232, 195, 122, 0.38);
+}
+
+.will-send:disabled {
+  background: rgba(244, 239, 230, 0.06);
+  color: rgba(244, 239, 230, 0.28);
+  box-shadow: none;
+}
+
+.will-composer {
+  background: rgba(12, 20, 28, 0.45);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(232, 195, 122, 0.18);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35), 0 0 40px rgba(232, 195, 122, 0.05);
+}
+
+.will-composer:focus-within {
+  border-color: rgba(232, 195, 122, 0.42);
+  box-shadow: 0 0 32px rgba(232, 195, 122, 0.12);
+}
+
+.will-msg-will {
+  background: rgba(244, 239, 230, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(232, 195, 122, 0.12);
+}
+
+.will-msg-user {
+  background: rgba(12, 20, 28, 0.55);
+  border: 1px solid rgba(244, 239, 230, 0.08);
 }

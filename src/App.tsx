@@ -19,7 +19,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-dvh h-dvh bg-[#0A0A0B] text-stone-100 flex flex-col font-sans selection:bg-amber-900 selection:text-amber-100">
+    <div className="min-h-dvh h-dvh will-space text-[#f4efe6] flex flex-col font-sans selection:bg-amber-900/40 selection:text-amber-100">
       <a href="#contenido-principal" className="skip-link">
         Saltar al contenido
       </a>

@@ -432,6 +432,36 @@ export const CANONICAL_CONTEXT_PATTERNS: ContextCategoryConfig[] = [
       'Información científica y de mitigación sin manuales ni recetas operacionales de punción',
     ],
   },
+
+  // 7. PREVENCIÓN — dominio autónomo. Solo se activa con lenguaje explícito.
+  // No incluye sexo, preservativo, ITS ni placer: relación ≠ equivalencia.
+  {
+    type: 'prevencion',
+    number: 7,
+    label: '7. Prevención',
+    shortLabel: '7. Prevención',
+    badgeLabel: '7. Prevención',
+    description:
+      'Dominio autónomo. Prevención NO queda dentro de Reducción de Riesgos y Daños. Relación no significa equivalencia. No activar prevención automáticamente porque aparezca sexo.',
+    aphorism:
+      'Relación no significa equivalencia. Los dominios organizan conocimiento y contexto. No etiquetan automáticamente a la persona.',
+    keywords: [
+      'prevención',
+      'prevencion',
+      'prevenir',
+      'preventivo',
+      'preventiva',
+      'preventivos',
+      'preventivas',
+    ],
+    regexList: [/\bprevenci[oó]n\b/i, /\bprevenir\b/i, /\bpreventiv[oa]s?\b/i],
+    technicalFocus: [
+      'Prevención es un dominio autónomo. No queda dentro de RRDD.',
+      'Relación no significa equivalencia.',
+      'No convertir sexo en prevención.',
+      'Puede relacionarse con salud sexual, sustancias, RRDD, anticoncepción, ITS, embarazo, prácticas sexuales.',
+    ],
+  },
 ];
 
 export function detectContext(
@@ -460,7 +490,20 @@ export function detectContext(
     contextPool = `${recent} ${contextPool}`;
   }
 
-  // Priority check: SLAM (most specific) -> Chemsex -> Salud Sexual -> Placer -> Psicotrópicas -> Acompañamiento
+  // Priority: SLAM → Chemsex → Prevención (explícita) → Salud Sexual → Placer → Psicotrópicas → Acompañamiento
+  // Prevención no se activa por sexo/preservativo/ITS: solo por lenguaje explícito de prevención.
+  const PRIORITY: ContextCategory[] = [
+    'slam',
+    'chemsex',
+    'prevencion',
+    'salud-sexual',
+    'placer-sexual',
+    'consumo-psicotropicas',
+    'acompanamiento',
+  ];
+
+  const hits: Array<{ pattern: ContextCategoryConfig; matchedKeywords: string[] }> = [];
+
   for (const pattern of CANONICAL_CONTEXT_PATTERNS) {
     const matchedKeywords: string[] = [];
 
@@ -473,13 +516,20 @@ export function detectContext(
     const regexMatched = pattern.regexList.some((regex) => regex.test(contextPool));
 
     if (matchedKeywords.length >= 1 || regexMatched) {
+      hits.push({ pattern, matchedKeywords });
+    }
+  }
+
+  for (const type of PRIORITY) {
+    const hit = hits.find((h) => h.pattern.type === type);
+    if (hit) {
       return {
-        type: pattern.type,
-        label: pattern.label,
-        badgeLabel: pattern.badgeLabel,
-        description: pattern.description,
-        keywordsMatched: matchedKeywords.slice(0, 5),
-        technicalFocus: pattern.technicalFocus,
+        type: hit.pattern.type,
+        label: hit.pattern.label,
+        badgeLabel: hit.pattern.badgeLabel,
+        description: hit.pattern.description,
+        keywordsMatched: hit.matchedKeywords.slice(0, 5),
+        technicalFocus: hit.pattern.technicalFocus,
       };
     }
   }

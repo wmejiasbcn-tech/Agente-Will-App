@@ -25,6 +25,7 @@ import {
   CANONICAL_EPISTEMIC_HARNESS,
   HUMAN_EPISTEMIC_LABELS,
 } from '../data/canonicalArchitectureData';
+import { WAIPL_KNOWLEDGE_LAYER } from '../data/knowledgeLayerData';
 
 interface HowWillWorksViewProps {
   onNavigateToChat: (prompt?: string) => void;
@@ -36,7 +37,13 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
   onOpenEmergency,
 }) => {
   const [activeSection, setActiveSection] = useState<
-    'principios' | 'constitucion' | 'presente' | 'auditor' | 'epistemologia' | 'riesgo-dano'
+    | 'principios'
+    | 'constitucion'
+    | 'presente'
+    | 'auditor'
+    | 'epistemologia'
+    | 'riesgo-dano'
+    | 'knowledge'
   >('principios');
 
   return (
@@ -66,8 +73,8 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           onClick={() => setActiveSection('principios')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'principios'
-              ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              ? 'will-nav-item-active font-semibold'
+              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
           }`}
         >
           <Shield className="w-3.5 h-3.5" />
@@ -79,8 +86,8 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           onClick={() => setActiveSection('constitucion')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'constitucion'
-              ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              ? 'will-nav-item-active font-semibold'
+              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" />
@@ -92,8 +99,8 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           onClick={() => setActiveSection('presente')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'presente'
-              ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              ? 'will-nav-item-active font-semibold'
+              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
           }`}
         >
           <Compass className="w-3.5 h-3.5" />
@@ -105,8 +112,8 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           onClick={() => setActiveSection('auditor')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'auditor'
-              ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              ? 'will-nav-item-active font-semibold'
+              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
           }`}
         >
           <Scale className="w-3.5 h-3.5" />
@@ -118,8 +125,8 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           onClick={() => setActiveSection('riesgo-dano')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'riesgo-dano'
-              ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              ? 'will-nav-item-active font-semibold'
+              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
           }`}
         >
           <Workflow className="w-3.5 h-3.5" />
@@ -131,12 +138,25 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           onClick={() => setActiveSection('epistemologia')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
             activeSection === 'epistemologia'
-              ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              ? 'will-nav-item-active font-semibold'
+              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
           }`}
         >
           <Eye className="w-3.5 h-3.5" />
           <span>Arnés de Evidencia</span>
+        </button>
+
+        <button
+          id="tab-btn-knowledge"
+          onClick={() => setActiveSection('knowledge')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
+            activeSection === 'knowledge'
+              ? 'will-nav-item-active font-semibold'
+              : 'glass-panel text-[#f4efe6]/55 hover:text-[#f4efe6]'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>Knowledge Layer</span>
         </button>
       </div>
 
@@ -152,6 +172,9 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
             </div>
             <p className="text-sm text-stone-300 leading-relaxed">
               Will no es un terapeuta, ni un médico prescriptor, ni una herramienta de persuasión encubierta. Su propósito es ofrecer acompañamiento no directivo y rigor científico para que cada persona decida sobre su propia vida con total autonomía.
+            </p>
+            <p className="text-sm font-serif italic text-[#e8c37a]/90">
+              Tecnología del futuro habitando un espacio humano.
             </p>
           </div>
 
@@ -330,6 +353,143 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeSection === 'knowledge' && (
+        <div className="space-y-6">
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 space-y-4">
+            <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-[#e8c37a]">
+              Infraestructura de conocimiento
+            </span>
+            <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#f4efe6]">
+              {WAIPL_KNOWLEDGE_LAYER.title}
+            </h2>
+            <p className="text-base font-serif italic text-[#e8c37a]">
+              {WAIPL_KNOWLEDGE_LAYER.principle}
+            </p>
+            <p className="text-sm text-[#f4efe6]/70 leading-relaxed">
+              Esto constituye una infraestructura de conocimiento del ecosistema, no simplemente una
+              colección de documentos. No es un motor ejecutándose en esta pantalla.
+            </p>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-5 space-y-3">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">
+              Componentes
+            </h3>
+            <div className="flex flex-wrap gap-1.5">
+              {WAIPL_KNOWLEDGE_LAYER.stack.map((item) => (
+                <span
+                  key={item}
+                  className="text-[11px] font-mono px-2.5 py-1 rounded-lg glass-panel-strong text-[#e8c37a]"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-5 space-y-3">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">
+              Relación Will ↔ Knowledge Layer
+            </h3>
+            <ol className="space-y-1.5">
+              {WAIPL_KNOWLEDGE_LAYER.flow.map((step, idx) => (
+                <li key={step} className="flex items-center gap-3 text-sm text-[#f4efe6]/80">
+                  <span className="font-mono text-[10px] text-[#e8c37a]/80 w-5">{idx + 1}</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="text-[11px] text-[#f4efe6]/45 pt-2">
+              Will no necesita cargar toda la biblioteca. El RAG recupera únicamente el conocimiento
+              pertinente.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="glass-panel rounded-2xl p-5 space-y-3">
+              <h3 className="font-serif text-lg text-[#e8c37a]">{WAIPL_KNOWLEDGE_LAYER.kairos.name}</h3>
+              <p className="text-xs font-mono text-[#f4efe6]/50">
+                {WAIPL_KNOWLEDGE_LAYER.kairos.dimension}
+              </p>
+              <p className="text-sm text-[#f4efe6]/80 italic">
+                {WAIPL_KNOWLEDGE_LAYER.kairos.role}
+              </p>
+              <ul className="text-xs text-[#f4efe6]/65 space-y-1">
+                {WAIPL_KNOWLEDGE_LAYER.kairos.functions.map((fn) => (
+                  <li key={fn}>— {fn}</li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-[#f4efe6]/45">{WAIPL_KNOWLEDGE_LAYER.kairos.limit}</p>
+            </div>
+            <div className="glass-panel rounded-2xl p-5 space-y-3">
+              <h3 className="font-serif text-lg text-[#e8c37a]">{WAIPL_KNOWLEDGE_LAYER.dike.name}</h3>
+              <p className="text-xs font-mono text-[#f4efe6]/50">
+                {WAIPL_KNOWLEDGE_LAYER.dike.dimension}
+              </p>
+              <ul className="text-xs text-[#f4efe6]/65 space-y-1">
+                {WAIPL_KNOWLEDGE_LAYER.dike.functions.map((fn) => (
+                  <li key={fn}>— {fn}</li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-[#f4efe6]/45">{WAIPL_KNOWLEDGE_LAYER.dike.limit}</p>
+            </div>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-5 space-y-2">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">RAG</h3>
+            <p className="text-sm text-[#f4efe6]/80">{WAIPL_KNOWLEDGE_LAYER.ragRule}</p>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-5 space-y-2">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">Internet</h3>
+            <p className="text-sm text-[#f4efe6]/80">{WAIPL_KNOWLEDGE_LAYER.internetRule}</p>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-5 space-y-2">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">
+              Procedencia
+            </h3>
+            <p className="text-sm font-mono text-[#e8c37a]/90">{WAIPL_KNOWLEDGE_LAYER.provenance}</p>
+            <p className="text-[11px] text-[#f4efe6]/45">
+              Todo conocimiento recuperable debe poder responder: «¿De dónde sale esta información?»
+            </p>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-5 space-y-3">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">
+              Epistemología
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {WAIPL_KNOWLEDGE_LAYER.epistemic.map((state) => (
+                <span
+                  key={state}
+                  className="px-3 py-1.5 rounded-full glass-panel-strong text-xs font-mono text-[#e8c37a]"
+                >
+                  {state}
+                </span>
+              ))}
+            </div>
+            <p className="text-[11px] text-[#f4efe6]/45 leading-relaxed">
+              La incorporación de una fuente al RAG no significa automáticamente que toda afirmación
+              derivada de ella sea universalmente válida.
+            </p>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-5 space-y-2">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f4efe6]/50">
+              Identidad visual y sonora
+            </h3>
+            <p className="text-sm text-[#f4efe6]/80">
+              La identidad visual y la voz deben sentirse como EL MISMO WILL.
+            </p>
+            <p className="text-[11px] text-[#f4efe6]/45 leading-relaxed">
+              La especificación maestra de voz permanece íntegramente vigente. Esta entrega no
+              sustituye el motor de voz.
+            </p>
           </div>
         </div>
       )}

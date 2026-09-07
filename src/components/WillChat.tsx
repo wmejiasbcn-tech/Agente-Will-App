@@ -17,7 +17,6 @@ import {
   Activity,
   Heart,
   Stethoscope,
-  Info,
   Shield,
   ArrowRight,
   SlidersHorizontal,
@@ -27,7 +26,6 @@ import { PRESENTE_DIMENSIONS } from '../data/presenteData';
 import { detectContext, getAllContextCategories } from '../utils/contextDetector';
 import {
   HUMAN_ENTRANCE_DOORS,
-  HUMAN_EPISTEMIC_LABELS,
 } from '../data/canonicalArchitectureData';
 import { OfficialBlason } from './OfficialBlason';
 
@@ -39,6 +37,12 @@ interface WillChatProps {
   onClearInitialPrompt?: () => void;
 }
 
+const WELCOME_TEXT =
+  'Hola. Soy Will.\n\nEste es un espacio confidencial para hablar, preguntar o informarte con rigor y sin que nadie te juzgue ni te diga lo que tienes que hacer.\n\nTú marcas el ritmo y el contenido. Puedes elegir uno de los temas de abajo o simplemente escribir lo que te pasa.';
+
+const RESET_TEXT =
+  'Espacio reiniciado. Recuerda: tú marcas el rumbo, el ritmo y el contenido de esta conversación.';
+
 export const WillChat: React.FC<WillChatProps> = ({
   currentDimension,
   setCurrentDimension,
@@ -49,8 +53,7 @@ export const WillChat: React.FC<WillChatProps> = ({
     {
       id: 'welcome-msg',
       role: 'assistant',
-      content:
-        'Hola. Soy Will.\n\nEste es un espacio confidencial para hablar, preguntar o informarte con rigor y sin que nadie te juzgue ni te diga lo que tienes que hacer.\n\nTú marcas el ritmo y el contenido. Puedes elegir uno de los temas de abajo o simplemente escribir lo que te pasa.',
+      content: WELCOME_TEXT,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -61,7 +64,6 @@ export const WillChat: React.FC<WillChatProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showDimensionBar, setShowDimensionBar] = useState(false);
   const [expandedInspectId, setExpandedInspectId] = useState<string | null>(null);
-  const [expandedContextId, setExpandedContextId] = useState<string | null>(null);
   const [selectedContextOverride, setSelectedContextOverride] = useState<ContextCategory | 'auto'>('auto');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -75,7 +77,6 @@ export const WillChat: React.FC<WillChatProps> = ({
     scrollToBottom();
   }, [messages, isLoading]);
 
-  // Handle initialPrompt from external tabs
   useEffect(() => {
     if (initialPrompt && initialPrompt.trim()) {
       handleSend(initialPrompt);
@@ -83,7 +84,6 @@ export const WillChat: React.FC<WillChatProps> = ({
     }
   }, [initialPrompt]);
 
-  // Live context analysis as user types
   const liveContext = useMemo(() => {
     if (!input.trim()) return null;
     return detectContext(
@@ -92,11 +92,12 @@ export const WillChat: React.FC<WillChatProps> = ({
     );
   }, [input, messages]);
 
+  const isEntrance = messages.length <= 1;
+
   const handleSend = async (textToSend?: string) => {
     const query = textToSend || input.trim();
     if (!query || isLoading) return;
 
-    // Detect specialized context for this inquiry
     let contextInfo: DetectedContextInfo;
     if (selectedContextOverride !== 'auto') {
       const all = getAllContextCategories();
@@ -209,8 +210,7 @@ export const WillChat: React.FC<WillChatProps> = ({
       {
         id: `welcome-${Date.now()}`,
         role: 'assistant',
-        content:
-          'Espacio reiniciado. Recuerda: tú marcas el rumbo, el ritmo y el contenido de esta conversación.',
+        content: RESET_TEXT,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -230,6 +230,8 @@ export const WillChat: React.FC<WillChatProps> = ({
         return Flame;
       case 'Syringe':
         return Syringe;
+      case 'Shield':
+        return Shield;
       default:
         return Sparkles;
     }
@@ -241,55 +243,54 @@ export const WillChat: React.FC<WillChatProps> = ({
         return {
           icon: Syringe,
           badgeBg: 'bg-red-950/80 border-red-700 text-red-200',
-          dotBg: 'bg-red-400',
           title: 'SLAM (Uso Intravenoso)',
         };
       case 'chemsex':
         return {
           icon: Flame,
           badgeBg: 'bg-amber-950/80 border-amber-600 text-amber-200',
-          dotBg: 'bg-amber-400',
           title: 'Chemsex (Sexo y Sustancias)',
         };
       case 'consumo-psicotropicas':
         return {
           icon: Activity,
           badgeBg: 'bg-indigo-950/80 border-indigo-700 text-indigo-200',
-          dotBg: 'bg-indigo-400',
           title: 'Sustancias (Farmacología)',
         };
       case 'placer-sexual':
         return {
           icon: Heart,
           badgeBg: 'bg-rose-950/80 border-rose-700 text-rose-200',
-          dotBg: 'bg-rose-400',
           title: 'Placer Sexual & Acuerdos',
         };
       case 'salud-sexual':
         return {
           icon: Stethoscope,
           badgeBg: 'bg-cyan-950/80 border-cyan-700 text-cyan-200',
-          dotBg: 'bg-cyan-400',
           title: 'Salud Sexual & PrEP',
+        };
+      case 'prevencion':
+        return {
+          icon: Shield,
+          badgeBg: 'bg-petroleum/80 border-[rgba(232,195,122,0.35)] text-[#e8c37a]',
+          title: 'Prevención',
         };
       case 'acompanamiento':
       default:
         return {
           icon: Compass,
-          badgeBg: 'bg-stone-800 border-stone-700 text-stone-300',
-          dotBg: 'bg-amber-400',
+          badgeBg: 'bg-stone-800/80 border-stone-700 text-stone-300',
           title: 'Acompañamiento Libre',
         };
     }
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 max-w-5xl mx-auto w-full px-2 sm:px-4 py-2">
-      {/* Top Subtle Status Bar */}
-      <div className="bg-stone-900/80 border border-stone-800/80 rounded-2xl p-2.5 mb-2 shrink-0 flex items-center justify-between gap-2 text-xs">
+    <div className="relative flex flex-col flex-1 min-h-0 max-w-5xl mx-auto w-full px-3 sm:px-5 py-2">
+      <div className="glass-panel rounded-2xl p-2.5 mb-2 shrink-0 flex items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2 overflow-hidden">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-          <span className="text-stone-300 text-xs truncate">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#e8c37a] shrink-0" />
+          <span className="text-[#f4efe6]/70 text-xs truncate">
             Acompañamiento no directivo • Sin juicios ni prescripciones
           </span>
         </div>
@@ -297,16 +298,16 @@ export const WillChat: React.FC<WillChatProps> = ({
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => setShowDimensionBar(!showDimensionBar)}
-            className="flex items-center gap-1 text-[11px] font-medium text-stone-400 hover:text-stone-200 px-2 py-1 rounded-lg bg-stone-800/60 hover:bg-stone-800 transition-colors"
+            className="flex items-center gap-1 text-[11px] font-medium text-[#f4efe6]/60 hover:text-[#f4efe6] px-2 py-1 rounded-lg hover:bg-white/5 transition-colors"
             title="Ajustar lentes de conversación"
           >
-            <SlidersHorizontal className="w-3 h-3 text-amber-400" />
+            <SlidersHorizontal className="w-3 h-3 text-[#e8c37a]" />
             <span className="hidden sm:inline">Lentes P.R.E.S.E.N.T.E.</span>
             <span className="sm:hidden">Lentes</span>
           </button>
           <button
             onClick={handleClearChat}
-            className="p-1.5 rounded-lg text-stone-500 hover:text-rose-400 hover:bg-stone-800/80 transition-colors"
+            className="p-1.5 rounded-lg text-[#f4efe6]/40 hover:text-rose-300 hover:bg-white/5 transition-colors"
             title="Reiniciar conversación"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -314,10 +315,9 @@ export const WillChat: React.FC<WillChatProps> = ({
         </div>
       </div>
 
-      {/* Expandable Dimension Filter Bar */}
       {showDimensionBar && (
-        <div className="mb-2 p-2.5 rounded-xl bg-stone-900/90 border border-stone-800 shrink-0 space-y-1.5 animate-in fade-in duration-100">
-          <span className="text-[10px] uppercase font-mono text-stone-400 block">
+        <div className="mb-2 p-2.5 rounded-xl glass-panel-strong shrink-0 space-y-1.5">
+          <span className="text-[10px] uppercase font-mono text-[#f4efe6]/50 block">
             Lentes opcionales de acompañamiento (no obligatorios):
           </span>
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
@@ -325,8 +325,8 @@ export const WillChat: React.FC<WillChatProps> = ({
               onClick={() => setCurrentDimension('all')}
               className={`px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-colors ${
                 currentDimension === 'all'
-                  ? 'bg-amber-500 text-stone-950 font-semibold'
-                  : 'bg-stone-800 text-stone-400 hover:text-stone-200'
+                  ? 'will-nav-item-active'
+                  : 'bg-white/5 text-[#f4efe6]/60 hover:text-[#f4efe6]'
               }`}
             >
               Libre / Sin lente
@@ -339,8 +339,8 @@ export const WillChat: React.FC<WillChatProps> = ({
                   onClick={() => setCurrentDimension(dim.name)}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
                     isActive
-                      ? 'bg-amber-500 text-stone-950 font-semibold'
-                      : 'bg-stone-800 text-stone-400 hover:text-stone-200'
+                      ? 'will-nav-item-active'
+                      : 'bg-white/5 text-[#f4efe6]/60 hover:text-[#f4efe6]'
                   }`}
                 >
                   <span className="font-mono font-bold">{dim.letter}</span>
@@ -352,21 +352,31 @@ export const WillChat: React.FC<WillChatProps> = ({
         </div>
       )}
 
-      {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto space-y-4 px-1 pr-2 py-2">
-        {/* If chat just started, show the 7 Human Entrance Doors prominently */}
-        {messages.length <= 1 && (
-          <div className="space-y-4 py-2">
-            <div className="space-y-1">
-              <span className="text-xs font-mono uppercase tracking-wider text-amber-400 block">
+        {isEntrance && (
+          <div className="flex flex-col items-center text-center pt-4 pb-4 px-4">
+            <div className="will-presence mb-6">
+              <OfficialBlason size={64} className="h-16 w-16" />
+            </div>
+            <p className="font-serif text-2xl tracking-wide text-[#f4efe6]">Will</p>
+            <p className="mt-3 max-w-lg text-sm sm:text-[15px] text-[#f4efe6]/80 leading-relaxed whitespace-pre-wrap">
+              {messages[0]?.content || WELCOME_TEXT}
+            </p>
+          </div>
+        )}
+
+        {isEntrance && (
+          <div className="space-y-3 pb-4">
+            <div className="space-y-1 px-1">
+              <span className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#e8c37a]/80 block">
                 Puertas de entrada
               </span>
-              <p className="text-xs text-stone-400">
+              <p className="text-xs text-[#f4efe6]/50">
                 Elige por dónde empezar o escribe directamente abajo lo que quieras:
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {HUMAN_ENTRANCE_DOORS.map((door) => {
                 const Icon = getDoorIcon(door.iconName);
                 const isLibre = door.id === 'libre';
@@ -376,10 +386,8 @@ export const WillChat: React.FC<WillChatProps> = ({
                     key={door.id}
                     id={`door-btn-${door.id}`}
                     onClick={() => handleSend(door.quickPrompt)}
-                    className={`flex flex-col items-start p-3.5 rounded-2xl border text-left transition-all group ${
-                      isLibre
-                        ? 'bg-stone-900 border-stone-700 hover:border-amber-500/80 sm:col-span-2 lg:col-span-3'
-                        : `bg-stone-900/80 ${door.borderColor} hover:bg-stone-850`
+                    className={`flex flex-col items-start p-3.5 rounded-2xl glass-panel text-left transition-all group ${
+                      isLibre ? 'sm:col-span-2' : ''
                     }`}
                   >
                     <div className="flex items-center justify-between w-full mb-2">
@@ -392,17 +400,17 @@ export const WillChat: React.FC<WillChatProps> = ({
                         </span>
                       </div>
                       {door.number && (
-                        <span className="text-[10px] font-mono text-stone-500">
+                        <span className="text-[10px] font-mono text-[#f4efe6]/35">
                           0{door.number}
                         </span>
                       )}
                     </div>
 
-                    <p className="text-[11px] text-stone-300 line-clamp-2 leading-relaxed">
+                    <p className="text-[11px] text-[#f4efe6]/70 line-clamp-2 leading-relaxed">
                       {door.humanSubtitle}
                     </p>
 
-                    <div className="mt-2.5 pt-2 border-t border-stone-800/80 w-full flex items-center justify-between text-[10px] text-stone-400 group-hover:text-amber-300 transition-colors">
+                    <div className="mt-2.5 pt-2 border-t border-[rgba(232,195,122,0.1)] w-full flex items-center justify-between text-[10px] text-[#f4efe6]/45 group-hover:text-[#e8c37a] transition-colors">
                       <span className="truncate">«{door.quickPrompt}»</span>
                       <ArrowRight className="w-3 h-3 shrink-0 ml-1 opacity-60 group-hover:opacity-100" />
                     </div>
@@ -413,144 +421,137 @@ export const WillChat: React.FC<WillChatProps> = ({
           </div>
         )}
 
-        {/* Message Stream */}
-        {messages.map((msg) => {
-          const isUser = msg.role === 'user';
-          const isInspectOpen = expandedInspectId === msg.id;
-          const isContextOpen = expandedContextId === msg.id;
-          const contextVisuals = getContextVisuals(msg.detectedContext?.type);
-          const ContextIcon = contextVisuals.icon;
+        {!isEntrance &&
+          messages.map((msg) => {
+            const isUser = msg.role === 'user';
+            const isInspectOpen = expandedInspectId === msg.id;
+            const contextVisuals = getContextVisuals(msg.detectedContext?.type);
+            const ContextIcon = contextVisuals.icon;
 
-          return (
-            <div
-              key={msg.id}
-              className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} space-y-1.5`}
-            >
+            return (
               <div
-                className={`max-w-[94%] sm:max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-wrap transition-all shadow-sm ${
-                  isUser
-                    ? 'bg-stone-800 text-stone-100 border border-stone-700 rounded-tr-sm'
-                    : 'bg-stone-900/90 text-stone-200 border border-stone-800 rounded-tl-sm'
-                }`}
+                key={msg.id}
+                className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} space-y-1.5`}
               >
-                {/* Assistant Label and Badges */}
-                {!isUser && (
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-stone-800 text-[11px] text-stone-400">
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 shrink-0">
-                        <OfficialBlason size={20} className="h-5 w-5" />
-                      </div>
-                      <span className="font-medium text-stone-300">Will</span>
-                      <span className="font-mono text-[10px] text-stone-500">
-                        • {msg.timestamp}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {msg.detectedContext && msg.detectedContext.type !== 'general' && (
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono border ${contextVisuals.badgeBg}`}
-                        >
-                          <ContextIcon className="w-3 h-3 shrink-0" />
-                          <span>{msg.detectedContext.badgeLabel}</span>
+                <div
+                  className={`max-w-[94%] sm:max-w-[82%] rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-wrap ${
+                    isUser ? 'will-msg-user text-[#f4efe6]' : 'will-msg-will text-[#f4efe6]/90'
+                  }`}
+                >
+                  {!isUser && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-[rgba(232,195,122,0.1)] text-[11px] text-[#f4efe6]/50">
+                      <div className="flex items-center gap-2">
+                        <div className="will-presence-sm w-5 h-5 shrink-0">
+                          <OfficialBlason size={20} className="h-5 w-5" />
+                        </div>
+                        <span className="font-medium text-[#f4efe6]/80">Will</span>
+                        <span className="font-mono text-[10px] text-[#f4efe6]/35">
+                          • {msg.timestamp}
                         </span>
-                      )}
-                    </div>
-                  </div>
-                )}
+                      </div>
 
-                {/* Message Body */}
-                <div className="prose prose-invert prose-stone max-w-none text-stone-200 font-sans text-sm leading-relaxed">
-                  {msg.content}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {msg.detectedContext && msg.detectedContext.type !== 'general' && (
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono border ${contextVisuals.badgeBg}`}
+                          >
+                            <ContextIcon className="w-3 h-3 shrink-0" />
+                            <span>{msg.detectedContext.badgeLabel}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="prose prose-invert max-w-none font-sans text-sm leading-relaxed text-[#f4efe6]/90">
+                    {msg.content}
+                  </div>
+
+                  {!isUser && (
+                    <div className="mt-3 pt-2 border-t border-[rgba(232,195,122,0.1)] flex flex-wrap items-center justify-between gap-2 text-xs text-[#f4efe6]/45">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSpeak(msg.id, msg.content)}
+                          className={`p-1.5 rounded-lg hover:bg-white/5 transition-colors ${
+                            speakingId === msg.id ? 'text-[#e8c37a] bg-white/5' : 'text-[#f4efe6]/45'
+                          }`}
+                          title={speakingId === msg.id ? 'Detener lectura' : 'Escuchar en voz alta'}
+                          aria-label={speakingId === msg.id ? 'Detener lectura' : 'Escuchar en voz alta'}
+                          aria-pressed={speakingId === msg.id}
+                        >
+                          {speakingId === msg.id ? (
+                            <VolumeX className="w-3.5 h-3.5" />
+                          ) : (
+                            <Volume2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => handleCopy(msg.id, msg.content)}
+                          className="p-1.5 rounded-lg text-[#f4efe6]/45 hover:text-[#f4efe6] hover:bg-white/5 transition-colors"
+                          title="Copiar texto"
+                        >
+                          {copiedId === msg.id ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setExpandedInspectId(isInspectOpen ? null : msg.id)}
+                          className="flex items-center gap-1 text-[11px] text-[#f4efe6]/50 hover:text-[#e8c37a] transition-colors px-2 py-1 rounded bg-white/5"
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                          <span>Verificación ética</span>
+                          {isInspectOpen ? (
+                            <ChevronUp className="w-3 h-3" />
+                          ) : (
+                            <ChevronDown className="w-3 h-3" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Action Footers: Speak, Copy, Transparency */}
-                {!isUser && (
-                  <div className="mt-3 pt-2 border-t border-stone-800/80 flex flex-wrap items-center justify-between gap-2 text-xs text-stone-400">
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleSpeak(msg.id, msg.content)}
-                        className={`p-1.5 rounded-lg hover:bg-stone-800 transition-colors ${
-                          speakingId === msg.id ? 'text-amber-400 bg-stone-800' : 'text-stone-400'
-                        }`}
-                        title={speakingId === msg.id ? 'Detener lectura' : 'Escuchar en voz alta'}
-                        aria-label={speakingId === msg.id ? 'Detener lectura' : 'Escuchar en voz alta'}
-                        aria-pressed={speakingId === msg.id}
-                      >
-                        {speakingId === msg.id ? (
-                          <VolumeX className="w-3.5 h-3.5" />
-                        ) : (
-                          <Volume2 className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => handleCopy(msg.id, msg.content)}
-                        className="p-1.5 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition-colors"
-                        title="Copiar texto"
-                      >
-                        {copiedId === msg.id ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
+                {!isUser && isInspectOpen && (
+                  <div className="max-w-[94%] sm:max-w-[82%] rounded-2xl p-4 glass-panel-strong text-xs text-[#f4efe6]/80 space-y-2">
+                    <div className="flex items-center gap-1.5 text-emerald-400 font-medium border-b border-[rgba(232,195,122,0.1)] pb-2">
+                      <Shield className="w-3.5 h-3.5" />
+                      <span>Garantía de No Directividad y Rigor</span>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setExpandedInspectId(isInspectOpen ? null : msg.id)}
-                        className="flex items-center gap-1 text-[11px] text-stone-400 hover:text-amber-300 transition-colors px-2 py-1 rounded bg-stone-800/50"
-                      >
-                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                        <span>Verificación ética</span>
-                        {isInspectOpen ? (
-                          <ChevronUp className="w-3 h-3" />
-                        ) : (
-                          <ChevronDown className="w-3 h-3" />
-                        )}
-                      </button>
-                    </div>
+                    <ul className="text-[11px] text-[#f4efe6]/60 space-y-1.5 pt-1">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-emerald-400 font-bold">✓</span>
+                        <span><strong>Sin juicios ni prescripciones:</strong> No se imponen decisiones ni metas clínicas.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-emerald-400 font-bold">✓</span>
+                        <span><strong>Diferenciación clara:</strong> Cada práctica se trata con su propia identidad técnica.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-emerald-400 font-bold">✓</span>
+                        <span><strong>Soberanía de la persona:</strong> La decisión final sobre tu cuerpo permanece 100% en ti.</span>
+                      </li>
+                    </ul>
                   </div>
                 )}
               </div>
-
-              {/* Ethical & Constitutional Check info */}
-              {!isUser && isInspectOpen && (
-                <div className="max-w-[94%] sm:max-w-[85%] rounded-2xl p-4 bg-stone-950 border border-stone-800 text-xs text-stone-300 space-y-2 animate-in fade-in duration-150 shadow-inner">
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-medium border-b border-stone-800 pb-2">
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Garantía de No Directividad y Rigor</span>
-                  </div>
-                  <ul className="text-[11px] text-stone-400 space-y-1.5 pt-1">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-emerald-400 font-bold">✓</span>
-                      <span><strong>Sin juicios ni prescripciones:</strong> No se imponen decisiones ni metas clínicas.</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-emerald-400 font-bold">✓</span>
-                      <span><strong>Diferenciación clara:</strong> Cada práctica se trata con su propia identidad técnica.</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-emerald-400 font-bold">✓</span>
-                      <span><strong>Soberanía de la persona:</strong> La decisión final sobre tu cuerpo permanece 100% en ti.</span>
-                    </li>
-                  </ul>
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
 
         {isLoading && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl bg-stone-900/90 border border-stone-800 max-w-[75%]">
-            <div className="w-5 h-5 shrink-0">
+          <div className="flex items-center gap-3 p-4 rounded-2xl will-msg-will max-w-[75%]">
+            <div className="will-presence-sm w-5 h-5 shrink-0">
               <OfficialBlason size={20} className="h-5 w-5" />
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-stone-400">
+            <div className="flex items-center gap-1.5 text-xs text-[#f4efe6]/55">
               <span>Will está preparando la respuesta...</span>
-              <RefreshCw className="w-3 h-3 animate-spin text-amber-400" />
+              <RefreshCw className="w-3 h-3 animate-spin text-[#e8c37a]" />
             </div>
           </div>
         )}
@@ -558,13 +559,12 @@ export const WillChat: React.FC<WillChatProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Typing Context Indicator */}
       {liveContext && liveContext.type !== 'general' && (
-        <div className="mb-1.5 px-3 py-1.5 rounded-xl bg-stone-900 border border-stone-800 flex items-center justify-between text-xs text-stone-300 shrink-0">
+        <div className="mb-1.5 px-3 py-1.5 rounded-xl glass-panel flex items-center justify-between text-xs text-[#f4efe6]/80 shrink-0">
           <div className="flex items-center gap-1.5 overflow-hidden">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-            <span className="text-[11px] text-stone-400">Tema identificado:</span>
-            <span className="font-semibold text-stone-200 text-[11px] truncate">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#e8c37a]" />
+            <span className="text-[11px] text-[#f4efe6]/45">Tema identificado:</span>
+            <span className="font-semibold text-[#f4efe6]/90 text-[11px] truncate">
               {liveContext.label}
             </span>
           </div>
@@ -574,8 +574,7 @@ export const WillChat: React.FC<WillChatProps> = ({
         </div>
       )}
 
-      {/* Input Composer Box */}
-      <div className="bg-stone-900 border border-stone-800 rounded-2xl p-2 shrink-0 focus-within:border-amber-500/80 transition-colors shadow-lg">
+      <div className="will-composer rounded-2xl p-2 shrink-0">
         <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -585,15 +584,16 @@ export const WillChat: React.FC<WillChatProps> = ({
             onKeyDown={handleKeyDown}
             placeholder="Escribe lo que quieras contar, preguntar o explorar..."
             rows={1}
-            className="w-full bg-transparent text-stone-100 placeholder-stone-500 text-sm resize-none focus:outline-none px-3 py-2 max-h-32 min-h-[40px]"
+            className="w-full bg-transparent text-[#f4efe6] placeholder-[#f4efe6]/35 text-sm resize-none focus:outline-none px-3 py-2 max-h-32 min-h-[40px]"
           />
 
           <button
             id="chat-send-btn"
             onClick={() => handleSend()}
             disabled={!input.trim() || isLoading}
-            className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-stone-800 disabled:text-stone-600 text-stone-950 font-bold transition-all shrink-0 shadow-sm"
+            className="will-send p-2.5 rounded-full font-bold transition-all shrink-0 min-h-11 min-w-11 flex items-center justify-center disabled:cursor-not-allowed"
             title="Enviar mensaje"
+            aria-label="Enviar mensaje"
           >
             <Send className="w-4 h-4" />
           </button>

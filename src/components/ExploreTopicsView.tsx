@@ -6,6 +6,7 @@ import {
   Activity,
   Flame,
   Syringe,
+  Shield,
   Sparkles,
   ArrowRight,
   Search,
@@ -15,16 +16,15 @@ import {
   ChevronDown,
   ChevronUp,
   MessageSquare,
-  Shield,
   Layers,
   ExternalLink,
 } from 'lucide-react';
 import {
   CANONICAL_DOMAINS,
-  HUMAN_ENTRANCE_DOORS,
   HUMAN_EPISTEMIC_LABELS,
   CanonicalDomainDetail,
 } from '../data/canonicalArchitectureData';
+import { RRDD_CLASSIFICATION } from '../data/knowledgeLayerData';
 import { SUBSTANCES_DATA } from '../data/substancesData';
 import { CanonicalDomainId, SubstanceInfo } from '../types';
 
@@ -58,6 +58,8 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
         return Flame;
       case 'slam':
         return Syringe;
+      case 'prevencion':
+        return Shield;
       default:
         return Compass;
     }
@@ -76,20 +78,18 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
   const ActiveIcon = getDomainIcon(activeDomain.id);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-stone-100 font-sans">
-      {/* Friendly Header */}
-      <div className="text-center sm:text-left space-y-2 border-b border-stone-800 pb-5">
-        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-100">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#f4efe6] font-sans">
+      <div className="text-center sm:text-left space-y-2 border-b border-[rgba(232,195,122,0.12)] pb-5">
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#f4efe6]">
           Explorar Áreas y Temas
         </h1>
-        <p className="text-sm sm:text-base text-stone-400 max-w-3xl leading-relaxed">
+        <p className="text-sm sm:text-base text-[#f4efe6]/60 max-w-3xl leading-relaxed">
           Información clara, independiente y basada en evidencia sobre cada área. Consulta lo que
           necesites y amplía los detalles a tu ritmo, sin juicios ni prescripciones.
         </p>
       </div>
 
-      {/* 6 Human Category Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
         {CANONICAL_DOMAINS.map((domain) => {
           const Icon = getDomainIcon(domain.id);
           const isSelected = selectedDomainId === domain.id;
@@ -103,14 +103,14 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
               }}
               className={`flex flex-col items-start p-3.5 rounded-2xl border text-left transition-all relative ${
                 isSelected
-                  ? `${domain.colorScheme.border} ${domain.colorScheme.badgeBg} ring-1 ring-amber-500/50 shadow-md`
-                  : 'bg-stone-900/80 border-stone-800 hover:border-stone-700 hover:bg-stone-800/60'
+                  ? `glass-panel ${domain.colorScheme.border} ring-1 ring-[rgba(232,195,122,0.35)]`
+                  : 'glass-panel hover:border-[rgba(232,195,122,0.28)]'
               }`}
             >
               <div className="flex items-center justify-between w-full mb-2">
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                    isSelected ? 'bg-amber-500/20 text-amber-300' : 'bg-stone-800 text-stone-400'
+                    isSelected ? 'text-[#e8c37a] bg-[rgba(232,195,122,0.12)]' : 'bg-white/5 text-[#f4efe6]/50'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -132,6 +132,38 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
             </button>
           );
         })}
+      </div>
+
+      <div className="glass-panel rounded-2xl p-4 sm:p-5 space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-xs font-mono uppercase tracking-[0.16em] text-[#e8c37a]">
+            {RRDD_CLASSIFICATION.title}
+          </h2>
+          <span className="text-[10px] text-[#f4efe6]/45">
+            Clasificación obligatoria. No fusiona Chemsex ni SLAM.
+          </span>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-0 sm:gap-0">
+          <div className="hidden sm:flex flex-col items-center px-2 pt-2">
+            <span className="w-px flex-1 bg-[rgba(232,195,122,0.2)]" />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-2.5 flex-1">
+            {RRDD_CLASSIFICATION.branches.map((branch) => (
+              <div
+                key={branch.id}
+                className="glass-panel-strong rounded-xl px-4 py-3"
+              >
+                <p className="text-sm font-serif text-[#e8c37a] tracking-wide">{branch.label}</p>
+                <p className="text-[11px] text-[#f4efe6]/50 mt-1">
+                  {branch.id === 'rrdd-sexual'
+                    ? 'Clasificación. Relación no significa equivalencia con Prevención ni con un dominio único.'
+                    : 'Clasificación. Chemsex y SLAM conservan identidad propia. Relación no significa equivalencia.'}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="text-[11px] text-[#f4efe6]/45 leading-relaxed">{RRDD_CLASSIFICATION.rule}</p>
       </div>
 
       {/* Active Area Banner */}
@@ -163,7 +195,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
           <button
             id={`talk-will-btn-${activeDomain.id}`}
             onClick={() => onAskWill(activeDomain.sampleInquiries[0], activeDomain.id)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-semibold transition-colors shrink-0 shadow-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl will-nav-item-active text-xs font-semibold transition-colors shrink-0 min-h-11"
           >
             <MessageSquare className="w-4 h-4" />
             <span>Hablar de esto con Will</span>
@@ -251,13 +283,32 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
         </div>
 
         {domainFichas.length === 0 ? (
-          <div className="p-8 rounded-2xl bg-stone-900/40 border border-stone-800 text-center space-y-2">
-            <p className="text-sm text-stone-400">
-              No se encontraron fichas específicas con los términos de búsqueda en esta área.
-            </p>
+          <div className="p-8 rounded-2xl glass-panel text-center space-y-3">
+            {activeDomain.id === 'prevencion' && searchQuery.trim() === '' ? (
+              <>
+                <p className="text-sm text-[#f4efe6]/70">
+                  Este dominio no tiene fichas. No se ha inventado contenido. Pregunta a Will.
+                </p>
+                <p className="text-[11px] text-[#f4efe6]/45 max-w-xl mx-auto leading-relaxed">
+                  Prevención es un dominio autónomo. Relación no significa equivalencia. No se
+                  fusiona con RRDD.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-[#f4efe6]/60">
+                No se encontraron fichas específicas con los términos de búsqueda en esta área.
+              </p>
+            )}
             <button
-              onClick={() => onAskWill(searchQuery || 'Quiero información sobre este tema', activeDomain.id)}
-              className="text-xs text-amber-400 hover:text-amber-300 font-medium inline-flex items-center gap-1"
+              onClick={() =>
+                onAskWill(
+                  activeDomain.id === 'prevencion'
+                    ? activeDomain.sampleInquiries[0]
+                    : searchQuery || 'Quiero información sobre este tema',
+                  activeDomain.id
+                )
+              }
+              className="text-xs text-[#e8c37a] hover:text-[#f4efe6] font-medium inline-flex items-center gap-1"
             >
               Preguntárselo directamente a Will en el chat <ArrowRight className="w-3 h-3" />
             </button>
@@ -411,7 +462,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
                               ficha.domainId
                             )
                           }
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-semibold transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl will-nav-item-active text-xs font-semibold transition-colors"
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                           <span>Preguntar a Will sobre {ficha.name}</span>

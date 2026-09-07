@@ -110,6 +110,20 @@ export const HUMAN_ENTRANCE_DOORS: HumanEntranceDoor[] = [
     quickPrompt: '¿Cuáles son los riesgos vasculares objetivos y los cuidados de asepsia clave en SLAM?',
   },
   {
+    id: 'prevencion',
+    number: 7,
+    doorTitle: 'Prevención',
+    categoryLabel: 'Prevención',
+    humanSubtitle:
+      'Dominio autónomo. Puede relacionarse con salud sexual, sustancias, RRDD, anticoncepción, ITS, embarazo y prácticas sexuales. Relación no significa equivalencia.',
+    badgeColor: 'bg-petroleum/80 text-[#e8c37a] border-[rgba(232,195,122,0.35)]',
+    borderColor: 'border-[rgba(232,195,122,0.28)] hover:border-[rgba(232,195,122,0.55)]',
+    textColor: 'text-[#e8c37a]',
+    iconName: 'Shield',
+    quickPrompt:
+      'Quiero información sobre prevención — por ejemplo, preservativo o anticoncepción de emergencia — sin que se convierta en una orden.',
+  },
+  {
     id: 'libre',
     doorTitle: '¿No sabes dónde encaja?',
     categoryLabel: 'Puerta Abierta',
@@ -396,6 +410,43 @@ export const CANONICAL_DOMAINS: CanonicalDomainDetail[] = [
     sampleInquiries: [
       '¿Cuáles son los riesgos vasculares objetivos y las pautas de asepsia fundamentales en SLAM?',
       '¿Qué señales clínicas diferencian una irritación venosa leve de un absceso o flebitis que requiere atención?',
+    ],
+  },
+  {
+    id: 'prevencion',
+    number: 7,
+    title: 'Prevención',
+    shortTitle: '7. Prevención',
+    doorTitle: 'Prevención',
+    doorSubtitle: 'Dominio autónomo. Relación no significa equivalencia.',
+    tagline: 'Prevención NO queda dentro de Reducción de Riesgos y Daños.',
+    colorScheme: {
+      badgeBg: 'bg-petroleum/80 border-[rgba(232,195,122,0.35)] text-[#e8c37a]',
+      border: 'border-[rgba(232,195,122,0.28)]',
+      text: 'text-[#e8c37a]',
+      accent: 'amber',
+      gradient: 'from-petroleum via-[#0a0a0b] to-[#0a0a0b]',
+    },
+    axiom:
+      'Relación no significa equivalencia. Los dominios organizan conocimiento y contexto. No etiquetan automáticamente a la persona.',
+    differentiationRule:
+      'Prevención NO queda dentro de Reducción de Riesgos y Daños. No activar prevención automáticamente porque aparezca sexo. No convertir: sexo → prevención.',
+    description:
+      'Dominio autónomo. Puede relacionarse con salud sexual, sustancias, RRDD, anticoncepción, ITS, embarazo y prácticas sexuales. Relación no significa equivalencia.',
+    subcategories: [
+      'salud sexual',
+      'sustancias',
+      'RRDD',
+      'anticoncepción',
+      'ITS',
+      'embarazo',
+      'prácticas sexuales',
+    ],
+    willStance:
+      'Los dominios organizan conocimiento y contexto. No etiquetan automáticamente a la persona. La información es una herramienta, no una orden.',
+    sampleInquiries: [
+      'Quiero información sobre prevención — por ejemplo, preservativo — sin que se convierta en una orden.',
+      'Anticoncepción de emergencia: puede aparecer en una conversación preventiva o en una conversación sobre reducción de riesgos, dependiendo del contexto.',
     ],
   },
 ];
@@ -688,5 +739,40 @@ export const CANONICAL_CONTEXTUAL_DIFFERENTIATION_MATRIX = [
     relation: 'Consumo Ocasional',
     doesNotImply: 'NO implica automáticamente consumo problemático ni adicción.',
     rule: 'Will no presupone patologías ni clasifica a la persona como enferma por consumir.',
+  },
+  {
+    relation: 'Sexo',
+    doesNotImply: 'NO implica automáticamente prevención.',
+    rule: 'No activar prevención automáticamente porque aparezca sexo. No convertir: sexo → prevención.',
+  },
+  {
+    relation: 'Placer',
+    doesNotImply: 'NO implica prevención.',
+    rule: 'placer ≠ prevención.',
+  },
+  {
+    relation: 'Consumo',
+    doesNotImply: 'NO implica problema.',
+    rule: 'consumo ≠ problema. Chemsex ≠ problema.',
+  },
+  {
+    relation: 'SLAM y Chemsex',
+    doesNotImply: 'NO son equivalentes.',
+    rule: 'SLAM ≠ Chemsex.',
+  },
+  {
+    relation: 'Riesgo',
+    doesNotImply: 'NO equivale a daño.',
+    rule: 'riesgo ≠ daño.',
+  },
+  {
+    relation: 'RRDD',
+    doesNotImply: 'NO equivale a prevención. NO equivale a prohibición.',
+    rule: 'RRDD ≠ prevención. RRDD ≠ prohibición. Prevención es un dominio autónomo. Relación no significa equivalencia.',
+  },
+  {
+    relation: 'Información',
+    doesNotImply: 'NO equivale a recomendación.',
+    rule: 'información ≠ recomendación. conocimiento ≠ decisión.',
   },
 ];

@@ -6,7 +6,8 @@ export type CanonicalDomainId =
   | 'placer-sexual'
   | 'consumo-psicotropicas'
   | 'chemsex'
-  | 'slam';
+  | 'slam'
+  | 'prevencion';
 
 export type ContextCategory =
   | 'acompanamiento'
@@ -15,7 +16,10 @@ export type ContextCategory =
   | 'consumo-psicotropicas'
   | 'chemsex'
   | 'slam'
+  | 'prevencion'
   | 'general';
+
+export type RrddBranchId = 'rrdd-sexual' | 'rrdd-sustancias';
 
 export type EpistemicStatus = 'VERIFICADO' | 'INFERIDO' | 'DESCONOCIDO';
 
@@ -118,6 +122,7 @@ export interface SubstanceInfo {
   id: string;
   name: string;
   // 2. Pertenece exactamente a una de las 6 Categorías Principales
+  //    El dominio 07 Prevención es autónomo y, en esta entrega, no tiene fichas.
   domainId: CanonicalDomainId;
   category:
     | '1. Acompañamiento No Directivo'

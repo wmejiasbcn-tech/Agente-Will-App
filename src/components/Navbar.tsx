@@ -29,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     {
       id: 'topics',
       label: 'Explorar Temas',
-      badge: '6 ÁREAS',
+      badge: '7 ÁREAS',
       icon: Compass,
     },
     {
@@ -47,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0A0A0B]/95 backdrop-blur-md border-b border-stone-800 text-stone-100">
+    <header className="sticky top-0 z-40 will-nav text-[#f4efe6]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between min-h-16 py-2">
           {/* Identidad: blasón oficial flotando en negro mate, sin contenedor */}
@@ -82,7 +82,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
-              const isHome = item.id === 'chat';
               return (
                 <button
                   key={item.id}
@@ -92,20 +91,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                   aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-2 px-3.5 py-2.5 min-h-11 rounded-xl text-xs font-medium transition-all ${
                     isActive
-                      ? isHome
-                        ? 'bg-amber-500 text-stone-950 shadow-sm border border-amber-400'
-                        : 'bg-stone-800 text-amber-300 shadow-inner border border-stone-700'
-                      : 'text-stone-300 hover:text-stone-100 hover:bg-stone-800/50'
+                      ? 'will-nav-item-active'
+                      : 'text-[#f4efe6]/70 hover:text-[#f4efe6] hover:bg-white/5 border border-transparent'
                   }`}
                 >
                   <Icon
-                    className={`w-4 h-4 ${
-                      isActive
-                        ? isHome
-                          ? 'text-stone-950'
-                          : 'text-amber-400'
-                        : 'text-stone-400'
-                    }`}
+                    className={`w-4 h-4 ${isActive ? 'text-[#e8c37a]' : 'text-[#f4efe6]/50'}`}
                   />
                   <span>{item.label}</span>
                 </button>
@@ -130,25 +121,23 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         <nav
-          className="md:hidden flex items-center gap-1 py-2 overflow-x-auto no-scrollbar border-t border-stone-800/60"
+          className="md:hidden flex items-center gap-1 py-2 overflow-x-auto no-scrollbar border-t border-[rgba(232,195,122,0.1)]"
           aria-label="Principal móvil"
         >
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
-            const isHome = item.id === 'chat';
             return (
               <button
                 key={item.id}
                 type="button"
+                id={`nav-btn-mobile-${item.id}`}
                 onClick={() => setActiveTab(item.id)}
                 aria-current={isActive ? 'page' : undefined}
                 className={`flex items-center gap-1.5 px-3 py-2.5 min-h-11 rounded-xl text-xs font-medium whitespace-nowrap shrink-0 transition-colors ${
                   isActive
-                    ? isHome
-                      ? 'bg-amber-500 text-stone-950 font-semibold'
-                      : 'bg-stone-800 text-amber-300 border border-stone-700 font-semibold'
-                    : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/40'
+                    ? 'will-nav-item-active font-semibold'
+                    : 'text-[#f4efe6]/60 hover:text-[#f4efe6] hover:bg-white/5'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />

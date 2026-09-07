@@ -538,7 +538,7 @@ export const CanonicalArchitectureView: React.FC<CanonicalArchitectureViewProps>
           </div>
 
           <p className="text-xs text-stone-400 leading-relaxed">
-            Estructuras arquitectónicas transversales que gobiernan y auditan los seis dominios principales:
+            Estructuras arquitectónicas transversales que gobiernan y auditan los siete dominios principales:
           </p>
 
           <div className="space-y-3">
