@@ -1,14 +1,10 @@
 @import "tailwindcss";
 
 /*
-  Visual Language System of Will
-  Fuente: The Architecture of Sovereignty
-  Dirección conceptual: Will / WAIPL
-  Dirección creativa: propietario del ecosistema
-
+  Visual Language System of Will.
   Negro, cristal, ámbar como LUZ, blanco cálido, petróleo.
-  Materiales extraídos del documento. No paleta de componentes.
 */
+
 @theme {
   --color-void: #07080a;
   --color-stone-950: #07080a;
