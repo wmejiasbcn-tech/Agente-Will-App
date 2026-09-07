@@ -238,7 +238,7 @@ export const WillChat: React.FC<WillChatProps> = ({
         {isEntrance && (
           <div className="max-w-6xl mx-auto w-full px-5 sm:px-8 lg:px-12 py-5 lg:py-8">
             <div className="grid lg:grid-cols-12 gap-8 items-start">
-              <div className="lg:col-span-5 space-y-6">
+              <div className="lg:col-span-5 space-y-6 will-read">
                 <div className="space-y-4 max-w-xl">
                   {welcomeParagraphs.map((para, i) => (
                     <p

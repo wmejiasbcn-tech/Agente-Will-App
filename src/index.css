@@ -129,11 +129,11 @@
 .will-veil-chat {
   background: linear-gradient(
     90deg,
-    rgba(7, 8, 10, 0.84) 0%,
-    rgba(7, 8, 10, 0.7) 20%,
-    rgba(7, 8, 10, 0.38) 36%,
-    rgba(7, 8, 10, 0.1) 50%,
-    rgba(7, 8, 10, 0) 62%,
+    rgba(7, 8, 10, 0.92) 0%,
+    rgba(7, 8, 10, 0.82) 18%,
+    rgba(7, 8, 10, 0.5) 34%,
+    rgba(7, 8, 10, 0.16) 48%,
+    rgba(7, 8, 10, 0) 60%,
     rgba(7, 8, 10, 0) 100%
   );
 }
@@ -151,10 +151,10 @@
   .will-veil-chat {
     background: linear-gradient(
       180deg,
-      rgba(7, 8, 10, 0.72) 0%,
-      rgba(7, 8, 10, 0.42) 38%,
-      rgba(7, 8, 10, 0.18) 62%,
-      rgba(7, 8, 10, 0.55) 100%
+      rgba(7, 8, 10, 0.88) 0%,
+      rgba(7, 8, 10, 0.62) 32%,
+      rgba(7, 8, 10, 0.28) 58%,
+      rgba(7, 8, 10, 0.7) 100%
     );
   }
   .will-veil-topics,
@@ -188,17 +188,28 @@
 
 /* Texto de la app: marfil cálido. Se lee sobre la foto sin deslumbrar. */
 .will-copy {
-  color: #f4e6c8;
+  color: #f7edd6;
   text-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.98),
-    0 2px 14px rgba(0, 0, 0, 0.82),
-    0 0 22px rgba(0, 0, 0, 0.5);
+    0 1px 1px rgba(0, 0, 0, 1),
+    0 2px 8px rgba(0, 0, 0, 0.95),
+    0 4px 22px rgba(0, 0, 0, 0.75);
 }
 .will-copy-muted {
-  color: #e4d4b4;
+  color: #efe0c4;
   text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.95),
-    0 2px 12px rgba(0, 0, 0, 0.7);
+    0 1px 2px rgba(0, 0, 0, 1),
+    0 2px 14px rgba(0, 0, 0, 0.8);
+}
+
+/* Plano de lectura: la información de Will manda sobre el fondo. */
+.will-read {
+  background: linear-gradient(
+    90deg,
+    rgba(7, 8, 10, 0.45) 0%,
+    rgba(7, 8, 10, 0.22) 72%,
+    rgba(7, 8, 10, 0) 100%
+  );
+  padding: 0.35rem 1rem 0.75rem 0;
 }
 
 /* Marcas extraídas del documento */

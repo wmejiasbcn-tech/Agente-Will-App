@@ -12,8 +12,8 @@ const SCENE: Record<
   }
 > = {
   chat: {
-    photo: '/visual-system/space-page09.jpg?v=txt1',
-    photoMobile: '/visual-system/space-page09-mobile.jpg?v=txt1',
+    photo: '/visual-system/space-page09.jpg?v=txt2',
+    photoMobile: '/visual-system/space-page09-mobile.jpg?v=txt2',
     position: '70% 58%',
     marks: [],
   },
