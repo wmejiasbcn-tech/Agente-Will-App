@@ -121,7 +121,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
               </div>
               <span
                 className={`text-xs font-semibold leading-tight line-clamp-1 ${
-                  isSelected ? domain.colorScheme.text : 'text-stone-200'
+                  isSelected ? 'text-[#e8c37a]' : 'text-[#f4efe6]/85'
                 }`}
               >
                 {domain.doorTitle || domain.shortTitle}
@@ -167,9 +167,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
       </div>
 
       {/* Active Area Banner */}
-      <div
-        className={`rounded-3xl p-6 sm:p-8 border bg-gradient-to-br ${activeDomain.colorScheme.gradient} ${activeDomain.colorScheme.border} shadow-xl space-y-5`}
-      >
+      <div className="glass-panel rounded-3xl p-6 sm:p-8 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800/80 pb-5">
           <div className="flex items-start gap-4">
             <div

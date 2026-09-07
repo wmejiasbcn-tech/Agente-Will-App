@@ -19,7 +19,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-dvh h-dvh will-space text-[#f4efe6] flex flex-col font-sans selection:bg-amber-900/40 selection:text-amber-100">
+    <div className="min-h-dvh h-dvh will-space will-room text-[#f4efe6] flex flex-col font-sans selection:bg-amber-900/40 selection:text-amber-100">
+      <div className="will-cove" />
+      <div className="will-wall will-wall-left" />
+      <div className="will-wall will-wall-right" />
       <a href="#contenido-principal" className="skip-link">
         Saltar al contenido
       </a>
@@ -30,7 +33,7 @@ export default function App() {
         onOpenEmergency={() => setIsEmergencyOpen(true)}
       />
 
-      <main id="contenido-principal" className="flex-1 min-h-0 overflow-y-auto flex flex-col" tabIndex={-1}>
+      <main id="contenido-principal" className="relative z-10 flex-1 min-h-0 overflow-y-auto flex flex-col" tabIndex={-1}>
         {activeTab === 'chat' && (
           <WillChat
             currentDimension={currentDimension}

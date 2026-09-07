@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Send,
-  Sparkles,
   RefreshCw,
   Volume2,
   VolumeX,
@@ -18,16 +17,12 @@ import {
   Heart,
   Stethoscope,
   Shield,
-  ArrowRight,
   SlidersHorizontal,
 } from 'lucide-react';
 import { ChatMessage, ContextCategory, DetectedContextInfo, PresenteCode } from '../types';
 import { PRESENTE_DIMENSIONS } from '../data/presenteData';
 import { detectContext, getAllContextCategories } from '../utils/contextDetector';
-import {
-  HUMAN_ENTRANCE_DOORS,
-} from '../data/canonicalArchitectureData';
-import { OfficialBlason } from './OfficialBlason';
+import { HUMAN_ENTRANCE_DOORS } from '../data/canonicalArchitectureData';
 
 interface WillChatProps {
   onSelectDimension?: (code: PresenteCode) => void;
@@ -42,6 +37,23 @@ const WELCOME_TEXT =
 
 const RESET_TEXT =
   'Espacio reiniciado. Recuerda: tú marcas el rumbo, el ritmo y el contenido de esta conversación.';
+
+const WillOrb: React.FC<{ size?: 'lg' | 'sm' }> = ({ size = 'lg' }) => {
+  if (size === 'sm') {
+    return (
+      <span className="will-orb-sm" aria-hidden="true">
+        <span className="will-orb-core" />
+      </span>
+    );
+  }
+  return (
+    <div className="will-orb" aria-hidden="true">
+      <span className="will-orb-halo" />
+      <span className="will-orb-core" />
+      <span className="will-orb-plinth" />
+    </div>
+  );
+};
 
 export const WillChat: React.FC<WillChatProps> = ({
   currentDimension,
@@ -93,6 +105,7 @@ export const WillChat: React.FC<WillChatProps> = ({
   }, [input, messages]);
 
   const isEntrance = messages.length <= 1;
+  const welcomeParagraphs = (messages[0]?.content || WELCOME_TEXT).split('\n\n');
 
   const handleSend = async (textToSend?: string) => {
     const query = textToSend || input.trim();
@@ -216,265 +229,134 @@ export const WillChat: React.FC<WillChatProps> = ({
     ]);
   };
 
-  const getDoorIcon = (name: string) => {
-    switch (name) {
-      case 'Compass':
-        return Compass;
-      case 'Stethoscope':
-        return Stethoscope;
-      case 'Heart':
-        return Heart;
-      case 'Activity':
-        return Activity;
-      case 'Flame':
-        return Flame;
-      case 'Syringe':
-        return Syringe;
-      case 'Shield':
-        return Shield;
-      default:
-        return Sparkles;
-    }
-  };
-
   const getContextVisuals = (contextType?: ContextCategory) => {
     switch (contextType) {
       case 'slam':
-        return {
-          icon: Syringe,
-          badgeBg: 'bg-red-950/80 border-red-700 text-red-200',
-          title: 'SLAM (Uso Intravenoso)',
-        };
+        return { icon: Syringe, title: 'SLAM (Uso Intravenoso)' };
       case 'chemsex':
-        return {
-          icon: Flame,
-          badgeBg: 'bg-amber-950/80 border-amber-600 text-amber-200',
-          title: 'Chemsex (Sexo y Sustancias)',
-        };
+        return { icon: Flame, title: 'Chemsex (Sexo y Sustancias)' };
       case 'consumo-psicotropicas':
-        return {
-          icon: Activity,
-          badgeBg: 'bg-indigo-950/80 border-indigo-700 text-indigo-200',
-          title: 'Sustancias (Farmacología)',
-        };
+        return { icon: Activity, title: 'Sustancias (Farmacología)' };
       case 'placer-sexual':
-        return {
-          icon: Heart,
-          badgeBg: 'bg-rose-950/80 border-rose-700 text-rose-200',
-          title: 'Placer Sexual & Acuerdos',
-        };
+        return { icon: Heart, title: 'Placer Sexual & Acuerdos' };
       case 'salud-sexual':
-        return {
-          icon: Stethoscope,
-          badgeBg: 'bg-cyan-950/80 border-cyan-700 text-cyan-200',
-          title: 'Salud Sexual & PrEP',
-        };
+        return { icon: Stethoscope, title: 'Salud Sexual & PrEP' };
       case 'prevencion':
-        return {
-          icon: Shield,
-          badgeBg: 'bg-petroleum/80 border-[rgba(232,195,122,0.35)] text-[#e8c37a]',
-          title: 'Prevención',
-        };
+        return { icon: Shield, title: 'Prevención' };
       case 'acompanamiento':
       default:
-        return {
-          icon: Compass,
-          badgeBg: 'bg-stone-800/80 border-stone-700 text-stone-300',
-          title: 'Acompañamiento Libre',
-        };
+        return { icon: Compass, title: 'Acompañamiento Libre' };
     }
   };
 
   return (
-    <div className="relative flex flex-col flex-1 min-h-0 max-w-5xl mx-auto w-full px-3 sm:px-5 py-2">
-      <div className="glass-panel rounded-2xl p-2.5 mb-2 shrink-0 flex items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#e8c37a] shrink-0" />
-          <span className="text-[#f4efe6]/70 text-xs truncate">
-            Acompañamiento no directivo • Sin juicios ni prescripciones
-          </span>
-        </div>
+    <div className="relative flex flex-col flex-1 min-h-0 w-full">
+      {isEntrance && <div className="will-glass-pane hidden lg:block" />}
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            onClick={() => setShowDimensionBar(!showDimensionBar)}
-            className="flex items-center gap-1 text-[11px] font-medium text-[#f4efe6]/60 hover:text-[#f4efe6] px-2 py-1 rounded-lg hover:bg-white/5 transition-colors"
-            title="Ajustar lentes de conversación"
-          >
-            <SlidersHorizontal className="w-3 h-3 text-[#e8c37a]" />
-            <span className="hidden sm:inline">Lentes P.R.E.S.E.N.T.E.</span>
-            <span className="sm:hidden">Lentes</span>
-          </button>
-          <button
-            onClick={handleClearChat}
-            className="p-1.5 rounded-lg text-[#f4efe6]/40 hover:text-rose-300 hover:bg-white/5 transition-colors"
-            title="Reiniciar conversación"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {showDimensionBar && (
-        <div className="mb-2 p-2.5 rounded-xl glass-panel-strong shrink-0 space-y-1.5">
-          <span className="text-[10px] uppercase font-mono text-[#f4efe6]/50 block">
-            Lentes opcionales de acompañamiento (no obligatorios):
-          </span>
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-            <button
-              onClick={() => setCurrentDimension('all')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-colors ${
-                currentDimension === 'all'
-                  ? 'will-nav-item-active'
-                  : 'bg-white/5 text-[#f4efe6]/60 hover:text-[#f4efe6]'
-              }`}
-            >
-              Libre / Sin lente
-            </button>
-            {PRESENTE_DIMENSIONS.map((dim) => {
-              const isActive = currentDimension === dim.name;
-              return (
-                <button
-                  key={dim.code}
-                  onClick={() => setCurrentDimension(dim.name)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
-                    isActive
-                      ? 'will-nav-item-active'
-                      : 'bg-white/5 text-[#f4efe6]/60 hover:text-[#f4efe6]'
-                  }`}
-                >
-                  <span className="font-mono font-bold">{dim.letter}</span>
-                  <span>{dim.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="flex-1 overflow-y-auto space-y-4 px-1 pr-2 py-2">
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
         {isEntrance && (
-          <div className="flex flex-col items-center text-center pt-4 pb-4 px-4">
-            <div className="will-presence mb-6">
-              <OfficialBlason size={64} className="h-16 w-16" />
+          <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-12 py-4 lg:py-6">
+            <div className="lg:hidden flex justify-center py-4">
+              <WillOrb />
             </div>
-            <p className="font-serif text-2xl tracking-wide text-[#f4efe6]">Will</p>
-            <p className="mt-3 max-w-lg text-sm sm:text-[15px] text-[#f4efe6]/80 leading-relaxed whitespace-pre-wrap">
-              {messages[0]?.content || WELCOME_TEXT}
-            </p>
+
+            <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+              <div className="lg:col-span-6 space-y-5">
+                <div className="space-y-4 max-w-xl">
+                  {welcomeParagraphs.map((para, i) => (
+                    <p
+                      key={i}
+                      className={
+                        i === 0
+                          ? 'font-serif text-3xl sm:text-4xl tracking-tight text-[#f4efe6] leading-tight'
+                          : 'text-[15px] sm:text-base text-[#f4efe6]/72 leading-relaxed'
+                      }
+                    >
+                      {para}
+                    </p>
+                  ))}
+                </div>
+
+                <nav aria-label="Puertas de entrada" className="pt-2">
+                  {HUMAN_ENTRANCE_DOORS.map((door) => {
+                    const num = door.number ? String(door.number).padStart(2, '0') : '';
+                    return (
+                      <button
+                        key={door.id}
+                        id={`door-btn-${door.id}`}
+                        type="button"
+                        onClick={() => handleSend(door.quickPrompt)}
+                        className="will-door group w-full text-left py-2.5 px-1 min-h-11"
+                      >
+                        <div className="flex items-baseline gap-4">
+                          <span className="font-mono text-[11px] tracking-widest text-[#e8c37a]/75 w-7 shrink-0">
+                            {num}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block font-serif text-[16px] text-[#f4efe6] group-hover:text-[#e8c37a]">
+                              {door.doorTitle}
+                            </span>
+                            <span className="block text-[12px] text-[#f4efe6]/42 mt-0.5 leading-relaxed">
+                              {door.humanSubtitle}
+                            </span>
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              <div className="hidden lg:col-span-6 lg:flex items-center justify-center min-h-[420px]">
+                <WillOrb />
+              </div>
+            </div>
           </div>
         )}
 
-        {isEntrance && (
-          <div className="space-y-3 pb-4">
-            <div className="space-y-1 px-1">
-              <span className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#e8c37a]/80 block">
-                Puertas de entrada
-              </span>
-              <p className="text-xs text-[#f4efe6]/50">
-                Elige por dónde empezar o escribe directamente abajo lo que quieras:
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {HUMAN_ENTRANCE_DOORS.map((door) => {
-                const Icon = getDoorIcon(door.iconName);
-                const isLibre = door.id === 'libre';
+        {!isEntrance && (
+          <div className="max-w-2xl mx-auto w-full px-5 sm:px-8 py-8 space-y-8">
+            {messages
+              .filter((m) => m.id !== 'welcome-msg' && !m.id.startsWith('welcome-'))
+              .map((msg) => {
+                const isUser = msg.role === 'user';
+                const isInspectOpen = expandedInspectId === msg.id;
+                const contextVisuals = getContextVisuals(msg.detectedContext?.type);
 
                 return (
-                  <button
-                    key={door.id}
-                    id={`door-btn-${door.id}`}
-                    onClick={() => handleSend(door.quickPrompt)}
-                    className={`flex flex-col items-start p-3.5 rounded-2xl glass-panel text-left transition-all group ${
-                      isLibre ? 'sm:col-span-2' : ''
-                    }`}
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} space-y-2`}
                   >
-                    <div className="flex items-center justify-between w-full mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`p-1.5 rounded-lg border ${door.badgeColor}`}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <span className={`text-xs font-bold font-serif ${door.textColor}`}>
-                          {door.doorTitle}
-                        </span>
-                      </div>
-                      {door.number && (
-                        <span className="text-[10px] font-mono text-[#f4efe6]/35">
-                          0{door.number}
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="text-[11px] text-[#f4efe6]/70 line-clamp-2 leading-relaxed">
-                      {door.humanSubtitle}
-                    </p>
-
-                    <div className="mt-2.5 pt-2 border-t border-[rgba(232,195,122,0.1)] w-full flex items-center justify-between text-[10px] text-[#f4efe6]/45 group-hover:text-[#e8c37a] transition-colors">
-                      <span className="truncate">«{door.quickPrompt}»</span>
-                      <ArrowRight className="w-3 h-3 shrink-0 ml-1 opacity-60 group-hover:opacity-100" />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {!isEntrance &&
-          messages.map((msg) => {
-            const isUser = msg.role === 'user';
-            const isInspectOpen = expandedInspectId === msg.id;
-            const contextVisuals = getContextVisuals(msg.detectedContext?.type);
-            const ContextIcon = contextVisuals.icon;
-
-            return (
-              <div
-                key={msg.id}
-                className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} space-y-1.5`}
-              >
-                <div
-                  className={`max-w-[94%] sm:max-w-[82%] rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-wrap ${
-                    isUser ? 'will-msg-user text-[#f4efe6]' : 'will-msg-will text-[#f4efe6]/90'
-                  }`}
-                >
-                  {!isUser && (
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-[rgba(232,195,122,0.1)] text-[11px] text-[#f4efe6]/50">
-                      <div className="flex items-center gap-2">
-                        <div className="will-presence-sm w-5 h-5 shrink-0">
-                          <OfficialBlason size={20} className="h-5 w-5" />
-                        </div>
-                        <span className="font-medium text-[#f4efe6]/80">Will</span>
-                        <span className="font-mono text-[10px] text-[#f4efe6]/35">
-                          • {msg.timestamp}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                    {!isUser && (
+                      <div className="flex items-center gap-2 text-[11px] text-[#f4efe6]/40">
+                        <WillOrb size="sm" />
+                        <span className="font-serif text-[13px] text-[#f4efe6]/70">Will</span>
                         {msg.detectedContext && msg.detectedContext.type !== 'general' && (
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono border ${contextVisuals.badgeBg}`}
-                          >
-                            <ContextIcon className="w-3 h-3 shrink-0" />
-                            <span>{msg.detectedContext.badgeLabel}</span>
+                          <span className="font-mono text-[10px] text-[#e8c37a]/70">
+                            {msg.detectedContext.badgeLabel}
                           </span>
                         )}
                       </div>
+                    )}
+
+                    <div
+                      className={`max-w-[94%] text-sm leading-relaxed whitespace-pre-wrap ${
+                        isUser
+                          ? 'will-msg-user rounded-2xl px-4 py-3 text-[#f4efe6]'
+                          : 'will-msg-will text-[#f4efe6]/88'
+                      }`}
+                    >
+                      {msg.content}
                     </div>
-                  )}
 
-                  <div className="prose prose-invert max-w-none font-sans text-sm leading-relaxed text-[#f4efe6]/90">
-                    {msg.content}
-                  </div>
-
-                  {!isUser && (
-                    <div className="mt-3 pt-2 border-t border-[rgba(232,195,122,0.1)] flex flex-wrap items-center justify-between gap-2 text-xs text-[#f4efe6]/45">
-                      <div className="flex items-center gap-1">
+                    {!isUser && (
+                      <div className="flex flex-wrap items-center gap-1 text-[#f4efe6]/35">
                         <button
                           type="button"
                           onClick={() => handleToggleSpeak(msg.id, msg.content)}
-                          className={`p-1.5 rounded-lg hover:bg-white/5 transition-colors ${
-                            speakingId === msg.id ? 'text-[#e8c37a] bg-white/5' : 'text-[#f4efe6]/45'
+                          className={`p-1.5 rounded-lg hover:bg-white/5 min-h-11 min-w-11 flex items-center justify-center ${
+                            speakingId === msg.id ? 'text-[#e8c37a]' : ''
                           }`}
                           title={speakingId === msg.id ? 'Detener lectura' : 'Escuchar en voz alta'}
                           aria-label={speakingId === msg.id ? 'Detener lectura' : 'Escuchar en voz alta'}
@@ -486,10 +368,10 @@ export const WillChat: React.FC<WillChatProps> = ({
                             <Volume2 className="w-3.5 h-3.5" />
                           )}
                         </button>
-
                         <button
+                          type="button"
                           onClick={() => handleCopy(msg.id, msg.content)}
-                          className="p-1.5 rounded-lg text-[#f4efe6]/45 hover:text-[#f4efe6] hover:bg-white/5 transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-white/5 min-h-11 min-w-11 flex items-center justify-center"
                           title="Copiar texto"
                         >
                           {copiedId === msg.id ? (
@@ -498,12 +380,10 @@ export const WillChat: React.FC<WillChatProps> = ({
                             <Copy className="w-3.5 h-3.5" />
                           )}
                         </button>
-                      </div>
-
-                      <div className="flex items-center gap-2">
                         <button
+                          type="button"
                           onClick={() => setExpandedInspectId(isInspectOpen ? null : msg.id)}
-                          className="flex items-center gap-1 text-[11px] text-[#f4efe6]/50 hover:text-[#e8c37a] transition-colors px-2 py-1 rounded bg-white/5"
+                          className="flex items-center gap-1 text-[11px] px-2 py-1 rounded hover:text-[#e8c37a]"
                         >
                           <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                           <span>Verificación ética</span>
@@ -514,89 +394,133 @@ export const WillChat: React.FC<WillChatProps> = ({
                           )}
                         </button>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
 
-                {!isUser && isInspectOpen && (
-                  <div className="max-w-[94%] sm:max-w-[82%] rounded-2xl p-4 glass-panel-strong text-xs text-[#f4efe6]/80 space-y-2">
-                    <div className="flex items-center gap-1.5 text-emerald-400 font-medium border-b border-[rgba(232,195,122,0.1)] pb-2">
-                      <Shield className="w-3.5 h-3.5" />
-                      <span>Garantía de No Directividad y Rigor</span>
-                    </div>
-                    <ul className="text-[11px] text-[#f4efe6]/60 space-y-1.5 pt-1">
-                      <li className="flex items-start gap-1.5">
-                        <span className="text-emerald-400 font-bold">✓</span>
-                        <span><strong>Sin juicios ni prescripciones:</strong> No se imponen decisiones ni metas clínicas.</span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span className="text-emerald-400 font-bold">✓</span>
-                        <span><strong>Diferenciación clara:</strong> Cada práctica se trata con su propia identidad técnica.</span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span className="text-emerald-400 font-bold">✓</span>
-                        <span><strong>Soberanía de la persona:</strong> La decisión final sobre tu cuerpo permanece 100% en ti.</span>
-                      </li>
-                    </ul>
+                    {!isUser && isInspectOpen && (
+                      <div className="w-full rounded-2xl p-4 glass-panel-strong text-xs text-[#f4efe6]/80 space-y-2">
+                        <div className="flex items-center gap-1.5 text-emerald-400 font-medium pb-2">
+                          <Shield className="w-3.5 h-3.5" />
+                          <span>Garantía de No Directividad y Rigor</span>
+                        </div>
+                        <ul className="text-[11px] text-[#f4efe6]/60 space-y-1.5">
+                          <li>
+                            <strong>Sin juicios ni prescripciones:</strong> No se imponen
+                            decisiones ni metas clínicas.
+                          </li>
+                          <li>
+                            <strong>Diferenciación clara:</strong> Cada práctica se trata con su
+                            propia identidad técnica.
+                          </li>
+                          <li>
+                            <strong>Soberanía de la persona:</strong> La decisión final sobre tu
+                            cuerpo permanece 100% en ti.
+                          </li>
+                        </ul>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
 
-        {isLoading && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl will-msg-will max-w-[75%]">
-            <div className="will-presence-sm w-5 h-5 shrink-0">
-              <OfficialBlason size={20} className="h-5 w-5" />
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-[#f4efe6]/55">
-              <span>Will está preparando la respuesta...</span>
-              <RefreshCw className="w-3 h-3 animate-spin text-[#e8c37a]" />
-            </div>
+            {isLoading && (
+              <div className="flex items-center gap-3 text-xs text-[#f4efe6]/50">
+                <WillOrb size="sm" />
+                <span>Will está preparando la respuesta...</span>
+                <RefreshCw className="w-3 h-3 animate-spin text-[#e8c37a]" />
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
         )}
-
-        <div ref={messagesEndRef} />
       </div>
 
-      {liveContext && liveContext.type !== 'general' && (
-        <div className="mb-1.5 px-3 py-1.5 rounded-xl glass-panel flex items-center justify-between text-xs text-[#f4efe6]/80 shrink-0">
-          <div className="flex items-center gap-1.5 overflow-hidden">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#e8c37a]" />
-            <span className="text-[11px] text-[#f4efe6]/45">Tema identificado:</span>
-            <span className="font-semibold text-[#f4efe6]/90 text-[11px] truncate">
-              {liveContext.label}
-            </span>
-          </div>
-          <span className="text-[10px] font-mono text-emerald-400 shrink-0">
-            Sin juzgar
+      {showDimensionBar && (
+        <div className="relative z-10 mx-4 mb-2 p-2.5 rounded-xl glass-panel-strong shrink-0 space-y-1.5">
+          <span className="text-[10px] uppercase font-mono text-[#f4efe6]/50 block">
+            Lentes opcionales de acompañamiento (no obligatorios):
           </span>
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            <button
+              type="button"
+              onClick={() => setCurrentDimension('all')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap ${
+                currentDimension === 'all' ? 'will-nav-item-active' : 'text-[#f4efe6]/60'
+              }`}
+            >
+              Libre / Sin lente
+            </button>
+            {PRESENTE_DIMENSIONS.map((dim) => {
+              const isActive = currentDimension === dim.name;
+              return (
+                <button
+                  key={dim.code}
+                  type="button"
+                  onClick={() => setCurrentDimension(dim.name)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap flex items-center gap-1 ${
+                    isActive ? 'will-nav-item-active' : 'text-[#f4efe6]/60'
+                  }`}
+                >
+                  <span className="font-mono font-bold">{dim.letter}</span>
+                  <span>{dim.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      <div className="will-composer rounded-2xl p-2 shrink-0">
-        <div className="flex items-end gap-2">
-          <textarea
-            ref={textareaRef}
-            id="chat-user-input"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Escribe lo que quieras contar, preguntar o explorar..."
-            rows={1}
-            className="w-full bg-transparent text-[#f4efe6] placeholder-[#f4efe6]/35 text-sm resize-none focus:outline-none px-3 py-2 max-h-32 min-h-[40px]"
-          />
+      {liveContext && liveContext.type !== 'general' && !isEntrance && (
+        <div className="relative z-10 mx-auto w-full max-w-2xl px-5 mb-1.5 flex items-center gap-2 text-[11px] text-[#f4efe6]/45 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#e8c37a]" />
+          <span>Tema identificado:</span>
+          <span className="text-[#f4efe6]/80 truncate">{liveContext.label}</span>
+          <span className="ml-auto font-mono text-[#e8c37a]/70">Sin juzgar</span>
+        </div>
+      )}
 
-          <button
-            id="chat-send-btn"
-            onClick={() => handleSend()}
-            disabled={!input.trim() || isLoading}
-            className="will-send p-2.5 rounded-full font-bold transition-all shrink-0 min-h-11 min-w-11 flex items-center justify-center disabled:cursor-not-allowed"
-            title="Enviar mensaje"
-            aria-label="Enviar mensaje"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+      <div className="relative z-10 shrink-0 px-4 sm:px-8 pb-4 pt-2">
+        <div className="max-w-2xl mx-auto">
+          <div className="will-composer px-2 py-1 flex items-end gap-1">
+            <textarea
+              ref={textareaRef}
+              id="chat-user-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Escribe lo que quieras contar, preguntar o explorar..."
+              rows={1}
+              className="w-full bg-transparent text-[#f4efe6] placeholder-[#f4efe6]/35 text-sm resize-none focus:outline-none px-4 py-2.5 max-h-32 min-h-[44px]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowDimensionBar(!showDimensionBar)}
+              className="p-2.5 rounded-full text-[#f4efe6]/35 hover:text-[#e8c37a] min-h-11 min-w-11 flex items-center justify-center"
+              title="Ajustar lentes de conversación"
+              aria-label="Lentes P.R.E.S.E.N.T.E."
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleClearChat}
+              className="p-2.5 rounded-full text-[#f4efe6]/35 hover:text-rose-300 min-h-11 min-w-11 flex items-center justify-center"
+              title="Reiniciar conversación"
+              aria-label="Reiniciar conversación"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              id="chat-send-btn"
+              type="button"
+              onClick={() => handleSend()}
+              disabled={!input.trim() || isLoading}
+              className="will-send p-2.5 rounded-full font-bold transition-all shrink-0 min-h-11 min-w-11 flex items-center justify-center disabled:cursor-not-allowed"
+              title="Enviar mensaje"
+              aria-label="Enviar mensaje"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
