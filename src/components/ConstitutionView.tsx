@@ -91,7 +91,7 @@ export const ConstitutionView: React.FC<ConstitutionViewProps> = ({
                 key={i}
                 className="px-3 py-2 rounded-xl bg-stone-950/70 border border-stone-800 text-xs text-stone-400 font-mono flex items-center gap-1.5"
               >
-                <span className="text-rose-400 font-bold">✕</span>
+                <span className="text-[#e8c37a] font-bold">✕</span>
                 <span>{notice}</span>
               </div>
             ))}
@@ -321,7 +321,7 @@ export const ConstitutionView: React.FC<ConstitutionViewProps> = ({
                             ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/80'
                             : item.status === 'INFERIDO'
                             ? 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
-                            : 'bg-rose-950/80 text-rose-300 border border-rose-800/80'
+                            : 'bg-[rgba(10,14,20,0.55)] text-[#e8c37a] border border-[rgba(232,195,122,0.28)]'
                         }`}
                       >
                         {item.status}

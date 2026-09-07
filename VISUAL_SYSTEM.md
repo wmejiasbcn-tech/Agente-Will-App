@@ -1,19 +1,28 @@
 # Visual Language System of Will
 
-Fuente documental: **The Architecture of Sovereignty** (diapositivas individuales).
+El espacio de The Architecture of Sovereignty es el espacio de Will App.
+No es una paleta. No es una inspiración. Es el lugar.
 
-- Dirección conceptual: Will / WAIPL.
-- Dirección creativa: propietario del ecosistema.
+## Test de fidelidad
 
-Los archivos en `public/visual-system/` son recortes técnicos de las diapositivas. Sin letras del original. Sin marca Notebook.
+Para cada instrucción concreta: ¿hice exactamente X?
 
-| Archivo | Origen |
+- Sí → continúa.
+- No → corrige.
+- «Hice algo parecido» → no.
+- «Lo adapté porque consideré que quedaba mejor» → no.
+
+La autonomía es técnica. El qué no se reinterpreta.
+
+## Escenas
+
+| Pantalla | Espacio |
 |---|---|
-| `space-page09.jpg` | Diapositiva 9 — interior (silla, mesa, esfera, cristal). |
-| `space-page09-mobile.jpg` | Mismo origen, encuadre a silla, mesa y esfera. |
-| `interior-page05.jpg` | Diapositiva 8 — recipiente de cristal (consumo consciente). |
-| `interior-page10.jpg` | Diapositiva 11 — esfera y anillo (filtro de no directividad). |
-| `waves-page03.jpg` | Diapositiva 3 — tobogán luminoso (derecho al riesgo). |
-| `sphere-page08.webp` | Diapositiva 8 — recipiente, recorte con alpha. |
-| `ribbon-page04.webp` | Diapositiva 3 — tobogán, recorte con alpha. |
-| `ring-page11.webp` | Diapositiva 11 — esfera y anillo, recorte con alpha. |
+| Hablar con Will | Diapositiva 9 — interior: silla, mesa, esfera, cristal. La escena se despliega completa. El primer plano es transparente. |
+| Explorar Temas | Diapositiva 8 — recipiente de cristal. |
+| Recursos | Diapositiva 11 — esfera y anillo. |
+| Cómo funciona Will | Diapositiva 3 — tobogán luminoso. |
+
+Las imágenes no llevan letras. Si hace falta texto, lo escribe la interfaz.
+
+SOS es identificable sin ambulancia: negro, cristal, luz ámbar.

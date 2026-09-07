@@ -254,7 +254,7 @@ export const WillChat: React.FC<WillChatProps> = ({
                   ))}
                 </div>
 
-                <nav aria-label="Puertas de entrada" className="arch-glass-quiet">
+                <nav aria-label="Puertas de entrada">
                   {HUMAN_ENTRANCE_DOORS.map((door) => {
                     const num = door.number ? String(door.number).padStart(2, '0') : '';
                     return (
@@ -476,7 +476,7 @@ export const WillChat: React.FC<WillChatProps> = ({
             <button
               type="button"
               onClick={handleClearChat}
-              className="p-2.5 text-[#ead6b4]/35 hover:text-rose-300 min-h-11 min-w-11 flex items-center justify-center"
+              className="p-2.5 text-[#ead6b4]/35 hover:text-[#e8c37a] min-h-11 min-w-11 flex items-center justify-center"
               title="Reiniciar conversación"
               aria-label="Reiniciar conversación"
             >

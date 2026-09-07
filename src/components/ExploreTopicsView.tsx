@@ -430,16 +430,16 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
 
                       {/* Señales de alarma si existen */}
                       {ficha.warningSigns && ficha.warningSigns.length > 0 && (
-                        <div className="p-3.5 rounded-xl bg-rose-950/30 border border-rose-900/50 space-y-1.5">
-                          <span className="font-semibold text-rose-300 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                            <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                        <div className="p-3.5 rounded-xl bg-[rgba(10,14,20,0.35)] border border-[rgba(232,195,122,0.22)] space-y-1.5">
+                          <span className="font-semibold text-[#e8c37a] text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-[#e8c37a]" />
                             Señales que requieren atención médica
                           </span>
                           <div className="flex flex-wrap gap-1.5">
                             {ficha.warningSigns.map((w, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-0.5 rounded bg-rose-950/80 border border-rose-800/60 text-rose-200 text-[11px]"
+                                className="px-2 py-0.5 rounded bg-[rgba(10,14,20,0.55)] border border-[rgba(232,195,122,0.24)] text-[#ead6b4] text-[11px]"
                               >
                                 {w}
                               </span>

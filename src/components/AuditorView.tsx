@@ -155,12 +155,12 @@ export const AuditorView: React.FC<AuditorViewProps> = ({
               }}
               className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap border transition-all flex items-center gap-2 ${
                 sample.type === 'fail'
-                  ? 'bg-rose-950/40 border-rose-800/60 text-rose-200 hover:bg-rose-900/60'
+                  ? 'bg-[rgba(10,14,20,0.4)] border-[rgba(232,195,122,0.24)] text-[#ead6b4] hover:bg-[rgba(232,195,122,0.12)]'
                   : 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200 hover:bg-emerald-900/60'
               }`}
             >
               {sample.type === 'fail' ? (
-                <XCircle className="w-3.5 h-3.5 text-rose-400" />
+                <XCircle className="w-3.5 h-3.5 text-[#e8c37a]" />
               ) : (
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               )}
@@ -222,7 +222,7 @@ export const AuditorView: React.FC<AuditorViewProps> = ({
             className={`p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
               auditResult.isCompliant
                 ? 'bg-emerald-950/60 border-emerald-700/80 text-emerald-100'
-                : 'bg-rose-950/60 border-rose-700/80 text-rose-100'
+                : 'bg-[rgba(10,14,20,0.5)] border-[rgba(232,195,122,0.32)] text-[#ead6b4]'
             }`}
           >
             <div className="flex items-center gap-3.5">
@@ -230,7 +230,7 @@ export const AuditorView: React.FC<AuditorViewProps> = ({
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-2xl ${
                   auditResult.isCompliant
                     ? 'bg-emerald-800/80 text-emerald-200'
-                    : 'bg-rose-800/80 text-rose-200'
+                    : 'bg-[rgba(232,195,122,0.14)] text-[#ead6b4]'
                 }`}
               >
                 {auditResult.isCompliant ? (
@@ -256,7 +256,7 @@ export const AuditorView: React.FC<AuditorViewProps> = ({
                           ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
                           : auditResult.verificationStatus === 'INFERIDO'
                           ? 'bg-amber-950 text-amber-300 border border-amber-700'
-                          : 'bg-rose-950 text-rose-300 border border-rose-700'
+                          : 'bg-[rgba(10,14,20,0.55)] text-[#e8c37a] border border-[rgba(232,195,122,0.32)]'
                       }`}
                     >
                       ESTADO: {auditResult.verificationStatus}
@@ -279,7 +279,7 @@ export const AuditorView: React.FC<AuditorViewProps> = ({
               </div>
               <div
                 className={`text-2xl font-black font-mono ${
-                  auditResult.directivityScore > 30 ? 'text-rose-400' : 'text-emerald-400'
+                  auditResult.directivityScore > 30 ? 'text-[#e8c37a]' : 'text-emerald-400'
                 }`}
               >
                 {auditResult.directivityScore}%
@@ -287,7 +287,7 @@ export const AuditorView: React.FC<AuditorViewProps> = ({
               <div className="w-full h-1.5 rounded-full bg-stone-800 overflow-hidden mt-1">
                 <div
                   className={`h-full rounded-full ${
-                    auditResult.directivityScore > 30 ? 'bg-rose-500' : 'bg-emerald-500'
+                    auditResult.directivityScore > 30 ? 'bg-[#e8c37a]' : 'bg-emerald-500'
                   }`}
                   style={{ width: `${auditResult.directivityScore}%` }}
                 />
@@ -312,14 +312,14 @@ export const AuditorView: React.FC<AuditorViewProps> = ({
             <div className="space-y-4">
               {auditResult.hiddenDirectives && auditResult.hiddenDirectives.length > 0 && (
                 <div className="p-4 rounded-2xl bg-stone-950 border border-stone-800 space-y-2">
-                  <span className="text-xs font-mono uppercase tracking-wider text-rose-400 font-semibold flex items-center gap-1.5">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#e8c37a] font-semibold flex items-center gap-1.5">
                     <AlertCircle className="w-3.5 h-3.5" />
                     Directivas Ocultas / Sesgos de Conducción
                   </span>
                   <ul className="space-y-1.5 text-xs text-stone-300">
                     {auditResult.hiddenDirectives.map((d, idx) => (
                       <li key={idx} className="flex items-start gap-2">
-                        <span className="text-rose-400 font-bold">•</span>
+                        <span className="text-[#e8c37a] font-bold">•</span>
                         <span>{d}</span>
                       </li>
                     ))}

@@ -47,23 +47,23 @@ export const PresenteView: React.FC<PresenteViewProps> = ({ onLaunchInDimension 
         {/* The 5 "NO" Axioms */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2 text-xs font-mono">
           <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800/80 text-stone-300">
-            <span className="text-rose-400 font-bold block mb-1">NO ES RUTA</span>
+            <span className="text-[#e8c37a] font-bold block mb-1">NO ES RUTA</span>
             Sin trayectorias fijas
           </div>
           <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800/80 text-stone-300">
-            <span className="text-rose-400 font-bold block mb-1">NO ES SECUENCIA</span>
+            <span className="text-[#e8c37a] font-bold block mb-1">NO ES SECUENCIA</span>
             Salta libremente
           </div>
           <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800/80 text-stone-300">
-            <span className="text-rose-400 font-bold block mb-1">NO ES PROGRESO</span>
+            <span className="text-[#e8c37a] font-bold block mb-1">NO ES PROGRESO</span>
             Sin puntuaciones
           </div>
           <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800/80 text-stone-300">
-            <span className="text-rose-400 font-bold block mb-1">NO ES PROTOCOLO</span>
+            <span className="text-[#e8c37a] font-bold block mb-1">NO ES PROTOCOLO</span>
             Sin pasos obligados
           </div>
           <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800/80 text-stone-300 col-span-2 sm:col-span-1">
-            <span className="text-rose-400 font-bold block mb-1">NO TELEOLÓGICO</span>
+            <span className="text-[#e8c37a] font-bold block mb-1">NO TELEOLÓGICO</span>
             Sin estado final meta
           </div>
         </div>

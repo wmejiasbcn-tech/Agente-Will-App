@@ -12,23 +12,23 @@ const SCENE: Record<
   }
 > = {
   chat: {
-    photo: '/visual-system/space-page09.jpg?v=out',
-    photoMobile: '/visual-system/space-page09-mobile.jpg?v=out',
-    position: '72% 62%',
+    photo: '/visual-system/space-page09.jpg?v=fid',
+    photoMobile: '/visual-system/space-page09-mobile.jpg?v=fid',
+    position: '62% 58%',
     marks: [],
   },
   topics: {
-    photo: '/visual-system/interior-page05.jpg?v=out',
+    photo: '/visual-system/interior-page05.jpg?v=fid',
     position: '78% 48%',
     marks: [],
   },
   resources: {
-    photo: '/visual-system/interior-page10.jpg?v=out',
+    photo: '/visual-system/interior-page10.jpg?v=fid',
     position: '48% 50%',
     marks: [],
   },
   'how-it-works': {
-    photo: '/visual-system/waves-page03.jpg?v=out',
+    photo: '/visual-system/waves-page03.jpg?v=fid',
     position: '80% 45%',
     marks: [],
   },
@@ -60,7 +60,7 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
 
       {cfg.marks.includes('sphere') && (
         <img
-          src="/visual-system/sphere-page08.webp?v=out"
+          src="/visual-system/sphere-page08.webp?v=fid"
           alt=""
           aria-hidden="true"
           className="will-mark will-mark-sphere"
@@ -68,7 +68,7 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
       )}
       {cfg.marks.includes('geometry') && (
         <img
-          src="/visual-system/geometry-page02.webp?v=out"
+          src="/visual-system/geometry-page02.webp?v=fid"
           alt=""
           aria-hidden="true"
           className="will-mark will-mark-geometry"
@@ -76,7 +76,7 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
       )}
       {cfg.marks.includes('prism') && (
         <img
-          src="/visual-system/prism-page07.webp?v=out"
+          src="/visual-system/prism-page07.webp?v=fid"
           alt=""
           aria-hidden="true"
           className="will-mark will-mark-prism"
@@ -84,7 +84,7 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
       )}
       {cfg.marks.includes('ribbon') && (
         <img
-          src="/visual-system/ribbon-page04.webp?v=out"
+          src="/visual-system/ribbon-page04.webp?v=fid"
           alt=""
           aria-hidden="true"
           className="will-mark will-mark-ribbon"
@@ -92,7 +92,7 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
       )}
       {cfg.marks.includes('ring') && (
         <img
-          src="/visual-system/ring-page11.webp?v=out"
+          src="/visual-system/ring-page11.webp?v=fid"
           alt=""
           aria-hidden="true"
           className="will-mark will-mark-ring"

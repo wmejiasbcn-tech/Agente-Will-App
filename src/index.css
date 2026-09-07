@@ -99,9 +99,27 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  animation: will-space-unfold 1.35s ease-out both;
+}
+@keyframes will-space-unfold {
+  from {
+    opacity: 0.28;
+    transform: scale(1.045);
+    filter: brightness(0.55);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .will-photo {
+    animation: none;
+  }
 }
 
-/* Velo ligero: el espacio (silla, mesa, esfera) tiene que verse. */
+/* El espacio se ve. El primer plano no es una lámina opaca. */
 .will-veil {
   position: absolute;
   inset: 0;
@@ -111,9 +129,9 @@
 .will-veil-chat {
   background: linear-gradient(
     90deg,
-    rgba(7, 8, 10, 0.22) 0%,
-    rgba(7, 8, 10, 0.06) 36%,
-    rgba(7, 8, 10, 0) 56%,
+    rgba(7, 8, 10, 0.1) 0%,
+    rgba(7, 8, 10, 0.02) 28%,
+    rgba(7, 8, 10, 0) 48%,
     rgba(7, 8, 10, 0) 100%
   );
 }
@@ -122,24 +140,24 @@
 .will-veil-how-it-works {
   background: linear-gradient(
     90deg,
-    rgba(7, 8, 10, 0.48) 0%,
-    rgba(7, 8, 10, 0.28) 42%,
-    rgba(7, 8, 10, 0.14) 100%
+    rgba(7, 8, 10, 0.22) 0%,
+    rgba(7, 8, 10, 0.08) 46%,
+    rgba(7, 8, 10, 0.04) 100%
   );
 }
 @media (max-width: 767px) {
   .will-veil-chat {
     background: linear-gradient(
       180deg,
-      rgba(7, 8, 10, 0.28) 0%,
-      rgba(7, 8, 10, 0.08) 42%,
-      rgba(7, 8, 10, 0.2) 100%
+      rgba(7, 8, 10, 0.12) 0%,
+      rgba(7, 8, 10, 0.02) 40%,
+      rgba(7, 8, 10, 0.1) 100%
     );
   }
   .will-veil-topics,
   .will-veil-resources,
   .will-veil-how-it-works {
-    background: rgba(7, 8, 10, 0.38);
+    background: rgba(7, 8, 10, 0.16);
   }
 }
 
@@ -256,10 +274,10 @@
     0 12px 40px rgba(0, 0, 0, 0.22);
 }
 .arch-glass-quiet {
-  background: rgba(8, 10, 14, 0.2);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(232, 195, 122, 0.14);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
 }
 
 /* Navegación: película en el techo, no barra de producto */
@@ -302,7 +320,7 @@
 }
 
 .will-composer {
-  background: rgba(10, 14, 20, 0.42);
+  background: rgba(10, 14, 20, 0.28);
   backdrop-filter: blur(28px) saturate(1.15);
   -webkit-backdrop-filter: blur(28px) saturate(1.15);
   border-top: 1px solid rgba(232, 195, 122, 0.32);

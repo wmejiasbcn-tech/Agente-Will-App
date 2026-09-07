@@ -493,9 +493,6 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           </div>
         </div>
       )}
-
-        </div>
-      )}
     </div>
   );
 };

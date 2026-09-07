@@ -162,14 +162,14 @@ export const CanonicalArchitectureView: React.FC<CanonicalArchitectureViewProps>
             </div>
 
             <div className="pt-2 border-t border-stone-800 space-y-2">
-              <span className="text-xs font-mono uppercase tracking-wider text-rose-400 font-bold flex items-center gap-1.5">
+              <span className="text-xs font-mono uppercase tracking-wider text-[#e8c37a] font-bold flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4" />
                 Will NUNCA Conduce Ni Prescribe:
               </span>
               <ul className="space-y-1 text-xs text-stone-400">
                 {CANONICAL_CORE_PRINCIPLE.willNeverDoes.slice(0, 4).map((item, i) => (
                   <li key={i} className="flex items-start gap-1.5">
-                    <span className="text-rose-400 font-bold">✕</span>
+                    <span className="text-[#e8c37a] font-bold">✕</span>
                     <span>{item}</span>
                   </li>
                 ))}
@@ -656,9 +656,9 @@ export const CanonicalArchitectureView: React.FC<CanonicalArchitectureViewProps>
 
           <button
             onClick={onOpenEmergency}
-            className="px-4 py-2 rounded-xl bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-800 text-xs font-bold transition-colors flex items-center gap-2 shrink-0 self-start sm:self-auto"
+            className="px-4 py-2 rounded-xl bg-[rgba(10,14,20,0.55)] hover:bg-[rgba(232,195,122,0.1)] text-[#ead6b4] border border-[rgba(232,195,122,0.28)] text-xs font-bold transition-colors flex items-center gap-2 shrink-0 self-start sm:self-auto"
           >
-            <PhoneCall className="w-3.5 h-3.5 text-rose-400" />
+            <PhoneCall className="w-3.5 h-3.5 text-[#e8c37a]" />
             <span>Ver Teléfonos de Urgencia (SOS)</span>
           </button>
         </div>
@@ -736,7 +736,7 @@ export const CanonicalArchitectureView: React.FC<CanonicalArchitectureViewProps>
                 <span className="text-xs font-mono font-bold text-amber-400">
                   {mat.relation}
                 </span>
-                <span className="text-[10px] font-mono text-rose-400 font-bold">≠</span>
+                <span className="text-[10px] font-mono text-[#e8c37a] font-bold">≠</span>
               </div>
               <p className="text-xs text-stone-200 font-semibold">{mat.doesNotImply}</p>
               <p className="text-[11px] text-stone-400 leading-snug">{mat.rule}</p>
@@ -865,13 +865,13 @@ export const CanonicalArchitectureView: React.FC<CanonicalArchitectureViewProps>
 
             <div className="grid md:grid-cols-2 gap-4 text-xs">
               <div className="p-4 rounded-xl bg-stone-900 border border-stone-800 space-y-2">
-                <span className="font-mono text-rose-400 font-bold block">
+                <span className="font-mono text-[#e8c37a] font-bold block">
                   6. Riesgos Objetivos
                 </span>
                 <ul className="space-y-1 text-stone-300">
                   {selectedFicha.objectiveRisksAndInteractions.map((r, i) => (
                     <li key={i} className="flex items-start gap-1.5">
-                      <span className="text-rose-400 font-bold">•</span>
+                      <span className="text-[#e8c37a] font-bold">•</span>
                       <span>{r}</span>
                     </li>
                   ))}

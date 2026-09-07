@@ -85,8 +85,8 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
       label: 'Autogestión del Placer Sexual',
       shortLabel: '3. Placer Sexual',
       icon: Heart,
-      color: 'border-rose-900/60 text-rose-300 bg-stone-950',
-      activeColor: 'bg-rose-950/80 text-rose-200 border-rose-500 shadow-rose-900/30',
+      color: 'border-[rgba(232,195,122,0.22)] text-[#e8c37a] bg-stone-950',
+      activeColor: 'bg-[rgba(10,14,20,0.55)] text-[#ead6b4] border-[rgba(232,195,122,0.45)] shadow-black/30',
       aphorism: 'EL PLACER NO ES PREVENCIÓN — El placer es una dimensión legítima y autónoma.',
       desc: 'Deseo, placer individual y compartido, consentimiento dinámico, BDSM y acuerdos.',
     },
@@ -338,16 +338,16 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
 
         {/* 3. Tres Tipos de Recursos Sociosanitarios */}
         <div className="p-5 rounded-2xl bg-stone-900 border border-stone-800 space-y-3 shadow-lg">
-          <div className="flex items-center gap-2 text-xs font-mono text-rose-300 uppercase tracking-wider font-semibold">
-            <Building2 className="w-4 h-4 text-rose-400" />
+          <div className="flex items-center gap-2 text-xs font-mono text-[#e8c37a] uppercase tracking-wider font-semibold">
+            <Building2 className="w-4 h-4 text-[#e8c37a]" />
             <span>3 Tipos de Recursos</span>
           </div>
           <p className="text-xs text-stone-300 leading-relaxed">
             Will clasifica y provee recursos adecuados según el nivel de atención requerido:
           </p>
           <div className="space-y-2 text-xs">
-            <div className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-800/50 space-y-1">
-              <div className="flex items-center gap-1.5 text-rose-300 font-mono font-bold text-[11px]">
+            <div className="p-2.5 rounded-xl bg-[rgba(10,14,20,0.35)] border border-[rgba(232,195,122,0.28)]/50 space-y-1">
+              <div className="flex items-center gap-1.5 text-[#e8c37a] font-mono font-bold text-[11px]">
                 <PhoneCall className="w-3.5 h-3.5" />
                 <span>1. URGENCIAS / EMERGENCIAS</span>
               </div>
@@ -530,7 +530,7 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
               {/* Point 6: Objective Risks (Risk vs Harm distinction) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono uppercase tracking-wider text-rose-400 font-semibold flex items-center gap-1.5">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#e8c37a] font-semibold flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5" />
                     6. Riesgos Objetivos (Anticipación de Escenarios)
                   </span>
@@ -544,7 +544,7 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
                       key={i}
                       className="p-3 rounded-xl bg-stone-950/70 border border-stone-800/80 flex items-start gap-2"
                     >
-                      <span className="text-rose-400 font-bold">•</span>
+                      <span className="text-[#e8c37a] font-bold">•</span>
                       <span>{risk}</span>
                     </div>
                   ))}
@@ -553,15 +553,15 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
 
               {/* Point 7: Critical Interactions */}
               {activeSubstance.criticalInteractions && activeSubstance.criticalInteractions.length > 0 && (
-                <div className="p-4 rounded-2xl bg-rose-950/30 border border-rose-900/50 space-y-2">
-                  <span className="text-xs font-mono uppercase tracking-wider text-rose-300 font-semibold flex items-center gap-1.5">
+                <div className="p-4 rounded-2xl bg-[rgba(10,14,20,0.35)] border border-[rgba(232,195,122,0.22)] space-y-2">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#e8c37a] font-semibold flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5" />
                     7. Interacciones Críticas & Contraindicaciones
                   </span>
                   <ul className="space-y-1 text-xs text-stone-200">
                     {activeSubstance.criticalInteractions.map((inter, i) => (
                       <li key={i} className="flex items-start gap-1.5">
-                        <span className="text-rose-400 font-bold">•</span>
+                        <span className="text-[#e8c37a] font-bold">•</span>
                         <span>{inter}</span>
                       </li>
                     ))}
@@ -700,7 +700,7 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
 
               {customResult.objectiveRisksAndInteractions && (
                 <div className="space-y-2">
-                  <span className="text-xs font-mono uppercase text-rose-400 font-semibold">
+                  <span className="text-xs font-mono uppercase text-[#e8c37a] font-semibold">
                     Riesgos Objetivos
                   </span>
                   <div className="grid sm:grid-cols-2 gap-2 text-xs text-stone-300">

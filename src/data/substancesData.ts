@@ -119,7 +119,7 @@ export const CANONICAL_DOMAINS: CanonicalDomainDefinition[] = [
       'La decisión y el control permanecen siempre en la persona'
     ],
     themeColor: 'rose',
-    badgeBg: 'bg-rose-950/60 border-rose-800/60 text-rose-300'
+    badgeBg: 'bg-[rgba(10,14,20,0.5)] border-[rgba(232,195,122,0.24)] text-[#e8c37a]'
   },
   {
     id: 'slam',
