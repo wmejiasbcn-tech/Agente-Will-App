@@ -35,13 +35,51 @@ async function safeGenerateContent(ai: GoogleGenAI, params: any) {
   throw lastError;
 }
 
+async function generateWithXai(
+  systemInstruction: string,
+  messages: Array<{ role: string; content: string }>
+) {
+  const apiKey = process.env.XAI_API_KEY;
+  if (!apiKey) throw new Error("No hay clave de modelo configurada.");
+
+  const chatMessages = [
+    { role: "system", content: systemInstruction },
+    ...messages
+      .filter((m) => m.content && m.content.trim())
+      .map((m) => ({
+        role: m.role === "assistant" ? "assistant" : "user",
+        content: m.content,
+      })),
+  ];
+
+  const r = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "grok-4.6",
+      messages: chatMessages,
+      temperature: 0.7,
+    }),
+  });
+
+  if (!r.ok) {
+    await r.text();
+    throw new Error(`Modelo no disponible (${r.status}).`);
+  }
+
+  const data: any = await r.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
 const WAIPL_SYSTEM_INSTRUCTION = `
 Eres WILL, un agente de acompañamiento, facilitación técnica e información basado estrictamente en el ADN WAIPL (Will Artificial Intelligence Principles of Liberty) y en el Libro de Estilo v6.0 del Lab.
 
 # IDENTIDAD FUNDACIONAL
-- Tu nombre es Will. La aplicación se llaman Will App, pero tu nombre es Will.
-- Creado por William L. Mejías Navarro, Humano fundador, Custodio de principios y dirección global del ecosistema (soberano); Carla (ChatGPT/OpenAI), IA primaria, Coordinadora General Interna del Will-AI Project Lab (WAIPL), Estrategia y visión, Co-fundadora que garantiza la integridad conceptual; Ada (Claude de Anthropic), Ética y diseño; y Zara, Coautora y Nodo Operativo.
-- Si una persona inicia o pregunta quién eres o cómo te llamas, la Pregunta Maestra de apertura es: 
+- Tu nombre es Will. La aplicación se llama Will App, pero tu nombre es Will.
+- Si una persona inicia o pregunta quién eres o cómo te llamas, la Pregunta Maestra de apertura es:
 "¿Cómo te gustaría que hoy sea tu experiencia de consulta?".
 - Tu cometido es ofrecer acompañamiento no directivo en aspectos fundamentales de decisión personal:
   1. Autogestión de la salud sexual y gestión del placer.
@@ -70,8 +108,7 @@ Eres WILL, un agente de acompañamiento, facilitación técnica e información b
    - Pregunta la dimensión que la persona desea explorar antes de desplegar información si el contexto es amplio.
 
 3. IDENTIDAD TÉCNICA PROPIA DE SLAM vs CHEMSEX:
-   - SLAM: Trátalo con rigor técnico. REDUCCIÓN DE DAÑOS ≠ 
-INSTRUCCIÓN OPERACIONAL. PROHIBICIÓN ABSOLUTA DE INSTRUCCIONES PROCEDIMENTALES DE EJECUCIÓN.
+   - SLAM: Trátalo con rigor técnico. REDUCCIÓN DE DAÑOS ≠ INSTRUCCIÓN OPERACIONAL. PROHIBICIÓN ABSOLUTA DE INSTRUCCIONES PROCEDIMENTALES DE EJECUCIÓN.
    - CHEMSEX: Vías oral, nasal, rectal, vaginal, absorción en mucosa genital y transdérmica. Farmacología y sinergias.
 
 4. REGLA DE DOSIFICACIÓN Y PAUTAS NO OPERACIONALES:
@@ -95,38 +132,23 @@ INSTRUCCIÓN OPERACIONAL. PROHIBICIÓN ABSOLUTA DE INSTRUCCIONES PROCEDIMENTALES
 8. SITUACIONES DE EMERGENCIA MÉDICA:
    - Ante sobredosis aguda de GHB/GBL: PLS, llamada al 112 / toxicología.
 
----
-
-# APÉNDICE CANÓNICO: ECOSISTEMA WAIPL & GRAPHIFY (LAB CNS)
-- Graphify: Archivos graph.json + graph.html. No es una API ejecutable.
-- Prohibición de escritura en Graphify: graphify/write = DENY estricto.
-- Blindaje de Dominio B: Dominio B, PIN de seguridad, diario personal del Soberano = DENY absoluto.
-- Estado de Positrón: El nodo Positrón se encuentra offline (health 500 en producción). Nunca declararlo online.
-- Super Plantilla v3.0: Will, 
-Hermes, Aether, Kairos, Dike. Autonomía N3: Reservada exclusivamente a William o Carla.
-  * Principio 12: "Sin spec no hay proyecto".
+Responde siempre en el idioma de la persona. Sé presente, breve cuando la persona pide espacio, y nunca menciones herramientas internas, modelos, agentes del lab ni metadatos de diseño.
 `;
 
-// Health check
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Chat endpoint - CON NORMALIZACIÓN DE HISTORIAL
 app.post("/api/chat", async (req, res) => {
   try {
-    console.log('DEBUG_CHAT:', { method: req.method, contentType: req.headers['content-type'], hasBody: !!req.body, bodyType: typeof req.body, hasMessages: req.body?.messages ? Array.isArray(req.body.messages) : false, messagesLength: req.body?.messages?.length });
     const { messages, contextDimension, detectedContext } = req.body;
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "messages array is required" });
     }
 
-    const ai = getGeminiClient();
-
-    // NORMALIZAR HISTORIAL: Eliminar mensaje inicial de bienvenida
     const normalizedMessages = messages.filter(
       (m: { role: string; content: string; id?: string }) => {
-        if (m.id && (m.id.includes('welcome') || m.id.includes('welcome-msg'))) {
+        if (m.id && (m.id.includes("welcome") || m.id.includes("welcome-msg"))) {
           return false;
         }
         return true;
@@ -142,64 +164,108 @@ app.post("/api/chat", async (req, res) => {
 
     if (detectedContext?.type) {
       const contextMap: Record<string, string> = {
-        "slam": "\n\n[DOMINIO 6: AUTOGESTIÓN EN LA REDUCCIÓN DE RIESGOS Y DAÑOS DEL SLAM]\n- SLAM: uso intravenoso. REDUCCIÓN DE DAÑOS ≠ INSTRUCCIÓN OPERACIONAL.",
-        "chemsex": "\n\n[DOMINIO 5: AUTOGESTIÓN EN LA REDUCCIÓN DE RIESGOS Y DAÑOS DEL CHEMSEX]\n- Chemsex: sexo + sustancias. Farmacología, riesgos, consentimiento.",
+        slam: "\n\n[DOMINIO 6: AUTOGESTIÓN EN LA REDUCCIÓN DE RIESGOS Y DAÑOS DEL SLAM]\n- SLAM: uso intravenoso. REDUCCIÓN DE DAÑOS ≠ INSTRUCCIÓN OPERACIONAL.",
+        chemsex: "\n\n[DOMINIO 5: AUTOGESTIÓN EN LA REDUCCIÓN DE RIESGOS Y DAÑOS DEL CHEMSEX]\n- Chemsex: sexo + sustancias. Farmacología, riesgos, consentimiento.",
         "consumo-psicotropicas": "\n\n[DOMINIO 4: AUTOGESTIÓN EN EL CONSUMO NO PROBLEMÁTICO]\n- Consumo recreativo vs problemático.",
         "placer-sexual": "\n\n[DOMINIO 3: AUTOGESTIÓN DEL PLACER SEXUAL]\n- Derecho al placer sin moralización.",
         "salud-sexual": "\n\n[DOMINIO 2: AUTOGESTIÓN DE LA SALUD SEXUAL]\n- ITS, PrEP, PEP, I=I.",
-        "acompanamiento": "\n\n[DOMINIO 1: ACOMPAÑAMIENTO NO DIRECTIVO]\n- Escucha sin juicio.",
-        "prevencion": "\n\n[DOMINIO 7: PREVENCIÓN]\n- Prevención es un dominio autónomo. NO queda dentro de RRDD.\n- Relación no significa equivalencia.\n- No activar prevención automáticamente porque aparezca sexo. No convertir: sexo → prevención.\n- Puede relacionarse con salud sexual, sustancias, RRDD, anticoncepción, ITS, embarazo, prácticas sexuales.\n- Los dominios organizan conocimiento y contexto. No etiquetan automáticamente a la persona.\n- La información es una herramienta, no una orden."
+        acompanamiento: "\n\n[DOMINIO 1: ACOMPAÑAMIENTO NO DIRECTIVO]\n- Escucha sin juicio.",
+        prevencion:
+          "\n\n[DOMINIO 7: PREVENCIÓN]\n- Prevención es un dominio autónomo. NO queda dentro de RRDD.\n- Relación no significa equivalencia.\n- No activar prevención automáticamente porque aparezca sexo.",
       };
-      systemInstruction += contextMap[detectedContext.type];
+      if (contextMap[detectedContext.type]) {
+        systemInstruction += contextMap[detectedContext.type];
+      }
     }
 
     if (contextDimension && contextDimension !== "all") {
       systemInstruction += `\n[Nota: Dimensión P.R.E.S.E.N.T.E. activa: ${contextDimension}. No fuerces al usuario.]`;
     }
 
-    const response = await safeGenerateContent(ai, {
-      contents,
-      config: { systemInstruction, temperature: 0.7 },
-    });
+    let text = "";
+    if (process.env.GEMINI_API_KEY) {
+      const ai = getGeminiClient();
+      const response = await safeGenerateContent(ai, {
+        contents,
+        config: { systemInstruction, temperature: 0.7 },
+      });
+      text = response.text || "";
+    } else if (process.env.XAI_API_KEY) {
+      text = await generateWithXai(systemInstruction, normalizedMessages);
+    } else {
+      throw new Error("No hay clave de modelo configurada.");
+    }
 
-    return res.json({ text: response.text || "", role: "assistant" });
+    return res.json({ text, role: "assistant" });
   } catch (error: any) {
     console.error("Error in /api/chat:", error);
     return res.status(500).json({ error: error.message || "Error procesando la solicitud con Will." });
   }
 });
 
-// Audit endpoint
 app.post("/api/audit", async (req, res) => {
   try {
     const { textToAudit, context } = req.body;
     if (!textToAudit) return res.status(400).json({ error: "textToAudit is required" });
-    const ai = getGeminiClient();
+
     const auditPrompt = `Actúa como el Auditor Constitucional del ADN WAIPL. Evalúa el texto bajo las pruebas de No Directividad. Devuelve JSON: {"isCompliant":boolean,"directivityScore":number,"verdictTitle":string,"analysis":string,"hiddenDirectives":string[],"constitutionalArticlesAffected":string[],"nonDirectiveReformulation":string,"verificationStatus":"VERIFICADO"|"INFERIDO"|"DESCONOCIDO","sourcesCited":string[]}`;
-    const response = await safeGenerateContent(ai, {
-      contents: auditPrompt + `\n\nTEXTO: """${textToAudit}"""${context ? `\nCONTEXTO: """${context}"""` : ''}`,
-      config: { responseMimeType: "application/json", temperature: 0.2 },
-    });
-    return res.json(JSON.parse(response.text?.trim() || "{}"));
+
+    let raw = "";
+    if (process.env.GEMINI_API_KEY) {
+      const ai = getGeminiClient();
+      const response = await safeGenerateContent(ai, {
+        contents: auditPrompt + `\n\nTEXTO: """${textToAudit}"""${context ? `\nCONTEXTO: """${context}"""` : ""}`,
+        config: { responseMimeType: "application/json", temperature: 0.2 },
+      });
+      raw = response.text?.trim() || "{}";
+    } else if (process.env.XAI_API_KEY) {
+      raw = await generateWithXai(
+        "Devuelve únicamente JSON válido, sin markdown.",
+        [
+          {
+            role: "user",
+            content: auditPrompt + `\n\nTEXTO: """${textToAudit}"""${context ? `\nCONTEXTO: """${context}"""` : ""}`,
+          },
+        ]
+      );
+      raw = raw.replace(/^```json\s*|\s*```$/g, "").trim();
+    } else {
+      throw new Error("No hay clave de modelo configurada.");
+    }
+
+    return res.json(JSON.parse(raw || "{}"));
   } catch (error: any) {
     return res.status(500).json({ error: error.message || "Error al auditar el texto." });
   }
 });
 
-// Explore topic endpoint
 app.post("/api/explore-topic", async (req, res) => {
   try {
     const { topic, angle } = req.body;
-    const ai = getGeminiClient();
-    const prompt = `Genera una ficha NO directiva sobre: "${topic}" ${angle ? `(Enfoque: ${angle})` : ''}. Estructura de 12 puntos: Identidad, Contexto, Vías, Efectos, Farmacología, Riesgos, Interacciones, Reducción de daños, Señales de alarma, Incertidumbres, Recursos, Fuentes. Devuelve JSON estricto.`;
-    const response = await safeGenerateContent(ai, {
-      contents: prompt,
-      config: { responseMimeType: "application/json", temperature: 0.3 },
-    });
-    return res.json(JSON.parse(response.text?.trim() || "{}"));
+    const prompt = `Genera una ficha NO directiva sobre: "${topic}" ${angle ? `(Enfoque: ${angle})` : ""}. Estructura de 12 puntos: Identidad, Contexto, Vías, Efectos, Farmacología, Riesgos, Interacciones, Reducción de daños, Señales de alarma, Incertidumbres, Recursos, Fuentes. Devuelve JSON estricto.`;
+
+    let raw = "";
+    if (process.env.GEMINI_API_KEY) {
+      const ai = getGeminiClient();
+      const response = await safeGenerateContent(ai, {
+        contents: prompt,
+        config: { responseMimeType: "application/json", temperature: 0.3 },
+      });
+      raw = response.text?.trim() || "{}";
+    } else if (process.env.XAI_API_KEY) {
+      raw = await generateWithXai("Devuelve únicamente JSON válido, sin markdown.", [
+        { role: "user", content: prompt },
+      ]);
+      raw = raw.replace(/^```json\s*|\s*```$/g, "").trim();
+    } else {
+      throw new Error("No hay clave de modelo configurada.");
+    }
+
+    return res.json(JSON.parse(raw || "{}"));
   } catch (error: any) {
     return res.status(500).json({ error: error.message || "Error explorando el tema." });
   }
 });
 
-export default (req: any, res: any) => app(req, res);
+export default app;
+export { app };
