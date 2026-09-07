@@ -333,8 +333,6 @@ export const WillChat: React.FC<WillChatProps> = ({
               .filter((m) => m.id !== 'welcome-msg' && !m.id.startsWith('welcome-'))
               .map((msg) => {
                 const isUser = msg.role === 'user';
-                const isInspectOpen = expandedInspectId === msg.id;
-                getContextVisuals(msg.detectedContext?.type);
 
                 return (
                   <div
@@ -344,11 +342,6 @@ export const WillChat: React.FC<WillChatProps> = ({
                     {!isUser && (
                       <div className="flex items-center gap-2 text-[11px] text-[#ead6b4]/45">
                         <span className="font-serif text-[14px] text-[#e8c37a]">Will</span>
-                        {msg.detectedContext && msg.detectedContext.type !== 'general' && (
-                          <span className="font-mono text-[10px] text-[#e8c37a]/70">
-                            {msg.detectedContext.badgeLabel}
-                          </span>
-                        )}
                       </div>
                     )}
 
@@ -387,47 +380,11 @@ export const WillChat: React.FC<WillChatProps> = ({
                           title="Copiar texto"
                         >
                           {copiedId === msg.id ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <Check className="w-3.5 h-3.5 text-[#e8c37a]" />
                           ) : (
                             <Copy className="w-3.5 h-3.5" />
                           )}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setExpandedInspectId(isInspectOpen ? null : msg.id)}
-                          className="flex items-center gap-1 text-[11px] px-2 py-1 hover:text-[#e8c37a]"
-                        >
-                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                          <span>Verificación ética</span>
-                          {isInspectOpen ? (
-                            <ChevronUp className="w-3 h-3" />
-                          ) : (
-                            <ChevronDown className="w-3 h-3" />
-                          )}
-                        </button>
-                      </div>
-                    )}
-
-                    {!isUser && isInspectOpen && (
-                      <div className="w-full p-4 arch-glass text-xs text-[#ead6b4]/80 space-y-2">
-                        <div className="flex items-center gap-1.5 text-emerald-400 font-medium pb-2">
-                          <Shield className="w-3.5 h-3.5" />
-                          <span>Garantía de No Directividad y Rigor</span>
-                        </div>
-                        <ul className="text-[11px] text-[#ead6b4]/60 space-y-1.5">
-                          <li>
-                            <strong>Sin juicios ni prescripciones:</strong> No se imponen
-                            decisiones ni metas clínicas.
-                          </li>
-                          <li>
-                            <strong>Diferenciación clara:</strong> Cada práctica se trata con su
-                            propia identidad técnica.
-                          </li>
-                          <li>
-                            <strong>Soberanía de la persona:</strong> La decisión final sobre tu
-                            cuerpo permanece 100% en ti.
-                          </li>
-                        </ul>
                       </div>
                     )}
                   </div>
@@ -478,15 +435,6 @@ export const WillChat: React.FC<WillChatProps> = ({
               );
             })}
           </div>
-        </div>
-      )}
-
-      {liveContext && liveContext.type !== 'general' && !isEntrance && (
-        <div className="relative z-10 mx-auto w-full max-w-2xl px-5 mb-1.5 flex items-center gap-2 text-[11px] text-[#ead6b4]/45 shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#e8c37a]" />
-          <span>Tema identificado:</span>
-          <span className="text-[#ead6b4]/80 truncate">{liveContext.label}</span>
-          <span className="ml-auto font-mono text-[#e8c37a]/70">Sin juzgar</span>
         </div>
       )}
 

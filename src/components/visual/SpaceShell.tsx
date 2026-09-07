@@ -51,7 +51,7 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
         <img
           src={cfg.photo}
           alt=""
-          className="will-photo"
+          className={scene === 'chat' ? 'will-photo will-photo-chat' : 'will-photo'}
           style={{ objectPosition: cfg.position }}
         />
       </picture>

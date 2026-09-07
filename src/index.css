@@ -101,16 +101,20 @@
   display: block;
   animation: will-space-unfold 1.35s ease-out both;
 }
-@keyframes will-space-unfold {
+.will-photo-chat {
+  animation-name: will-space-unfold-chat;
+  filter: brightness(0.68) saturate(0.78) contrast(0.96);
+}
+@keyframes will-space-unfold-chat {
   from {
-    opacity: 0.28;
-    transform: scale(1.045);
-    filter: brightness(0.55);
+    opacity: 0.22;
+    transform: scale(1.04);
+    filter: brightness(0.35) saturate(0.7);
   }
   to {
     opacity: 1;
     transform: scale(1);
-    filter: brightness(1);
+    filter: brightness(0.68) saturate(0.78) contrast(0.96);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -129,12 +133,12 @@
 .will-veil-chat {
   background: linear-gradient(
     90deg,
-    rgba(7, 8, 10, 0.94) 0%,
-    rgba(7, 8, 10, 0.88) 26%,
-    rgba(7, 8, 10, 0.55) 40%,
-    rgba(7, 8, 10, 0.12) 52%,
-    rgba(7, 8, 10, 0) 62%,
-    rgba(7, 8, 10, 0) 100%
+    rgba(7, 8, 10, 0.93) 0%,
+    rgba(7, 8, 10, 0.86) 28%,
+    rgba(7, 8, 10, 0.58) 44%,
+    rgba(7, 8, 10, 0.28) 58%,
+    rgba(7, 8, 10, 0.12) 72%,
+    rgba(7, 8, 10, 0.08) 100%
   );
 }
 .will-veil-topics,
@@ -171,7 +175,7 @@
   pointer-events: none;
   background: radial-gradient(
     ellipse 48% 42% at 72% 58%,
-    rgba(232, 195, 122, 0.1),
+    rgba(232, 195, 122, 0.05),
     transparent 64%
   );
   animation: will-light-breath 16s ease-in-out infinite;
