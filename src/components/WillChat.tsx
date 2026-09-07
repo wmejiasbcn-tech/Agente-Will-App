@@ -23,6 +23,7 @@ import { ChatMessage, ContextCategory, DetectedContextInfo, PresenteCode } from 
 import { PRESENTE_DIMENSIONS } from '../data/presenteData';
 import { detectContext, getAllContextCategories } from '../utils/contextDetector';
 import { HUMAN_ENTRANCE_DOORS } from '../data/canonicalArchitectureData';
+import { PagerArrows } from './PagerArrows';
 
 interface WillChatProps {
   onSelectDimension?: (code: PresenteCode) => void;
@@ -30,19 +31,18 @@ interface WillChatProps {
   setCurrentDimension: (dim: string) => void;
   initialPrompt?: string;
   onClearInitialPrompt?: () => void;
+  onGoNextScene?: () => void;
 }
 
 const WELCOME_TEXT =
   'Hola. Soy Will.\n\nEste es un espacio confidencial para hablar, preguntar o informarte con rigor y sin que nadie te juzgue ni te diga lo que tienes que hacer.\n\nTú marcas el ritmo y el contenido. Puedes elegir uno de los temas de abajo o simplemente escribir lo que te pasa.';
-
-const RESET_TEXT =
-  'Espacio reiniciado. Recuerda: tú marcas el rumbo, el ritmo y el contenido de esta conversación.';
 
 export const WillChat: React.FC<WillChatProps> = ({
   currentDimension,
   setCurrentDimension,
   initialPrompt,
   onClearInitialPrompt,
+  onGoNextScene,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -60,6 +60,7 @@ export const WillChat: React.FC<WillChatProps> = ({
   const [showDimensionBar, setShowDimensionBar] = useState(false);
   const [expandedInspectId, setExpandedInspectId] = useState<string | null>(null);
   const [selectedContextOverride, setSelectedContextOverride] = useState<ContextCategory | 'auto'>('auto');
+  const [activeDoorId, setActiveDoorId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -89,10 +90,22 @@ export const WillChat: React.FC<WillChatProps> = ({
 
   const isEntrance = messages.length <= 1;
   const welcomeParagraphs = (messages[0]?.content || WELCOME_TEXT).split('\n\n');
+  const doors = HUMAN_ENTRANCE_DOORS.filter((d) => d.quickPrompt);
+  const activeDoor = doors.find((d) => d.id === activeDoorId);
+  const activeDoorIndex = doors.findIndex((d) => d.id === activeDoorId);
 
-  const handleSend = async (textToSend?: string) => {
+  const welcomeMessage = (): ChatMessage => ({
+    id: 'welcome-msg',
+    role: 'assistant',
+    content: WELCOME_TEXT,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  });
+
+  const handleSend = async (textToSend?: string, history?: ChatMessage[]) => {
     const query = textToSend || input.trim();
     if (!query || isLoading) return;
+
+    const base = history ?? messages;
 
     let contextInfo: DetectedContextInfo;
     if (selectedContextOverride !== 'auto') {
@@ -107,7 +120,7 @@ export const WillChat: React.FC<WillChatProps> = ({
     } else {
       contextInfo = detectContext(
         query,
-        messages.map((m) => ({ role: m.role, content: m.content }))
+        base.map((m) => ({ role: m.role, content: m.content }))
       );
     }
 
@@ -120,7 +133,7 @@ export const WillChat: React.FC<WillChatProps> = ({
       detectedContext: contextInfo,
     };
 
-    const newMessages = [...messages, userMessage];
+    const newMessages = [...base, userMessage];
     setMessages(newMessages);
     setInput('');
     setIsLoading(true);
@@ -210,14 +223,32 @@ export const WillChat: React.FC<WillChatProps> = ({
   const handleClearChat = () => {
     window.speechSynthesis?.cancel();
     setSpeakingId(null);
-    setMessages([
-      {
-        id: `welcome-${Date.now()}`,
-        role: 'assistant',
-        content: RESET_TEXT,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      },
-    ]);
+    setActiveDoorId(null);
+    setMessages([welcomeMessage()]);
+  };
+
+  const goToPortada = () => {
+    handleClearChat();
+  };
+
+  const goNextDoor = () => {
+    if (isLoading) return;
+    const next = activeDoorIndex >= 0 ? doors[activeDoorIndex + 1] : doors[0];
+    if (!next) {
+      onGoNextScene?.();
+      return;
+    }
+    const welcome = welcomeMessage();
+    window.speechSynthesis?.cancel();
+    setSpeakingId(null);
+    setActiveDoorId(next.id);
+    setMessages([welcome]);
+    void handleSend(next.quickPrompt, [welcome]);
+  };
+
+  const openDoor = (doorId: string, prompt: string) => {
+    setActiveDoorId(doorId);
+    void handleSend(prompt);
   };
 
   const getContextVisuals = (contextType?: ContextCategory) => {
@@ -270,7 +301,7 @@ export const WillChat: React.FC<WillChatProps> = ({
                         key={door.id}
                         id={`door-btn-${door.id}`}
                         type="button"
-                        onClick={() => handleSend(door.quickPrompt)}
+                        onClick={() => openDoor(door.id, door.quickPrompt)}
                         className="will-door group w-full text-left py-2.5 px-3 min-h-11"
                       >
                         <div className="flex items-baseline gap-4">
@@ -461,6 +492,21 @@ export const WillChat: React.FC<WillChatProps> = ({
 
       <div className="relative z-10 shrink-0 px-4 sm:px-8 pb-4 pt-2">
         <div className="max-w-2xl mx-auto lg:ml-12 lg:mr-auto">
+          <PagerArrows
+            onBack={goToPortada}
+            onNext={
+              isEntrance
+                ? () => onGoNextScene?.()
+                : goNextDoor
+            }
+            backDisabled={isEntrance}
+            nextDisabled={false}
+            hereLabel={
+              isEntrance
+                ? undefined
+                : activeDoor?.doorTitle || 'Conversación'
+            }
+          />
           <div className="will-composer px-2 py-1 flex items-end gap-1">
             <textarea
               ref={textareaRef}

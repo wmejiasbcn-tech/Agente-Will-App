@@ -6,6 +6,9 @@ import { ResourcesView } from './components/ResourcesView';
 import { HowWillWorksView } from './components/HowWillWorksView';
 import { EmergencyModal } from './components/EmergencyModal';
 import { SpaceShell, WillScene } from './components/visual/SpaceShell';
+import { PagerArrows } from './components/PagerArrows';
+
+const SCENES = ['chat', 'topics', 'resources', 'how-it-works'] as const;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('chat');
@@ -26,6 +29,14 @@ export default function App() {
         : activeTab === 'how-it-works'
           ? 'how-it-works'
           : 'chat';
+
+  const sceneIndex = SCENES.indexOf(activeTab as (typeof SCENES)[number]);
+  const goPrevScene = () => {
+    if (sceneIndex > 0) setActiveTab(SCENES[sceneIndex - 1]);
+  };
+  const goNextScene = () => {
+    if (sceneIndex < SCENES.length - 1) setActiveTab(SCENES[sceneIndex + 1]);
+  };
 
   return (
     <SpaceShell scene={scene}>
@@ -50,6 +61,7 @@ export default function App() {
             setCurrentDimension={setCurrentDimension}
             initialPrompt={chatInitialPrompt}
             onClearInitialPrompt={() => setChatInitialPrompt('')}
+            onGoNextScene={goNextScene}
           />
         )}
 
@@ -74,6 +86,19 @@ export default function App() {
           />
         )}
       </main>
+
+      {activeTab !== 'chat' && (
+        <div className="relative z-10 shrink-0 px-5 sm:px-8 pb-4 pt-1">
+          <div className="max-w-6xl mx-auto">
+            <PagerArrows
+              onBack={goPrevScene}
+              onNext={goNextScene}
+              backDisabled={sceneIndex <= 0}
+              nextDisabled={sceneIndex >= SCENES.length - 1}
+            />
+          </div>
+        </div>
+      )}
 
       <EmergencyModal
         isOpen={isEmergencyOpen}
