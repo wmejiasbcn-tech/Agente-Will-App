@@ -18,7 +18,7 @@ const SCENE: Record<
     marks: [],
   },
   topics: {
-    photo: '/visual-system/interior-page05.jpg?v=noletras1',
+    photo: '/visual-system/interior-page05.jpg?v=noletras2',
     position: '78% 48%',
     marks: [],
   },
