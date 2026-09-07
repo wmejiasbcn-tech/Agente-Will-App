@@ -79,7 +79,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#f4efe6] font-sans">
-      <div className="text-center sm:text-left space-y-2 border-b border-[rgba(232,195,122,0.12)] pb-5">
+      <div className="space-y-2 pb-2">
         <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#f4efe6]">
           Explorar Áreas y Temas
         </h1>

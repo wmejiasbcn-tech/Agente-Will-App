@@ -40,7 +40,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
       id: 'URGENCIAS',
       label: '1. Urgencias & Emergencias',
       icon: PhoneCall,
-      color: 'text-rose-400 bg-rose-950/40 border-rose-800',
+      color: 'text-[#e8c37a] arch-glass',
       description: 'Atención médica inmediata ante riesgo vital, sobredosis o pérdida de conciencia (112, 061).',
       count: CANONICAL_RESOURCES.filter((r) => r.type === 'URGENCIAS').length,
     },
@@ -48,7 +48,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
       id: 'SANITARIO_CLASICO',
       label: '2. Atención Sanitaria & ITS',
       icon: Stethoscope,
-      color: 'text-cyan-400 bg-cyan-950/40 border-cyan-800',
+      color: 'text-[#e8c37a] arch-glass',
       description: 'Centros de salud, consultas de ITS, seguimiento clínico, PrEP y dispensación de PEP en 72h.',
       count: CANONICAL_RESOURCES.filter((r) => r.type === 'SANITARIO_CLASICO').length,
     },
@@ -56,7 +56,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
       id: 'REDUCCION_RIESGOS_DANOS',
       label: '3. Espacios Comunitarios',
       icon: HeartHandshake,
-      color: 'text-amber-400 bg-amber-950/40 border-amber-800',
+      color: 'text-[#e8c37a] arch-glass',
       description: 'Análisis de sustancias (Energy Control), material estéril (PIJ), checkpoint y apoyo entre iguales libre de estigma.',
       count: CANONICAL_RESOURCES.filter((r) => r.type === 'REDUCCION_RIESGOS_DANOS').length,
     },
@@ -73,9 +73,8 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
   });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-stone-100 font-sans">
-      {/* Header */}
-      <div className="text-center sm:text-left space-y-2 border-b border-stone-800 pb-5">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#f4efe6] font-sans">
+      <div className="space-y-2 pb-2">
         <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-100">
           Recursos de Apoyo y Servicios
         </h1>

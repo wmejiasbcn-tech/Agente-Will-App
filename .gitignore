@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Raster working copies of The Architecture of Sovereignty (extracted assets live in public/visual-system)
+assets/sovereignty-pages/
+assets/visual-previews/

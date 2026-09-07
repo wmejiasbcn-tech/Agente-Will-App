@@ -5,6 +5,7 @@ import { ExploreTopicsView } from './components/ExploreTopicsView';
 import { ResourcesView } from './components/ResourcesView';
 import { HowWillWorksView } from './components/HowWillWorksView';
 import { EmergencyModal } from './components/EmergencyModal';
+import { SpaceShell, WillScene } from './components/visual/SpaceShell';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('chat');
@@ -12,17 +13,22 @@ export default function App() {
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
   const [isEmergencyOpen, setIsEmergencyOpen] = useState<boolean>(false);
 
-  // Jump from any topic or resource card directly into the chat with a question
   const handleAskWill = (prompt: string, domainId?: string) => {
     setChatInitialPrompt(prompt);
     setActiveTab('chat');
   };
 
+  const scene: WillScene =
+    activeTab === 'topics'
+      ? 'topics'
+      : activeTab === 'resources'
+        ? 'resources'
+        : activeTab === 'how-it-works'
+          ? 'how-it-works'
+          : 'chat';
+
   return (
-    <div className="min-h-dvh h-dvh will-space will-room text-[#f4efe6] flex flex-col font-sans selection:bg-amber-900/40 selection:text-amber-100">
-      <div className="will-cove" />
-      <div className="will-wall will-wall-left" />
-      <div className="will-wall will-wall-right" />
+    <SpaceShell scene={scene}>
       <a href="#contenido-principal" className="skip-link">
         Saltar al contenido
       </a>
@@ -33,7 +39,11 @@ export default function App() {
         onOpenEmergency={() => setIsEmergencyOpen(true)}
       />
 
-      <main id="contenido-principal" className="relative z-10 flex-1 min-h-0 overflow-y-auto flex flex-col" tabIndex={-1}>
+      <main
+        id="contenido-principal"
+        className="relative z-10 flex-1 min-h-0 overflow-y-auto flex flex-col"
+        tabIndex={-1}
+      >
         {activeTab === 'chat' && (
           <WillChat
             currentDimension={currentDimension}
@@ -69,6 +79,6 @@ export default function App() {
         isOpen={isEmergencyOpen}
         onClose={() => setIsEmergencyOpen(false)}
       />
-    </div>
+    </SpaceShell>
   );
 }

@@ -38,23 +38,6 @@ const WELCOME_TEXT =
 const RESET_TEXT =
   'Espacio reiniciado. Recuerda: tú marcas el rumbo, el ritmo y el contenido de esta conversación.';
 
-const WillOrb: React.FC<{ size?: 'lg' | 'sm' }> = ({ size = 'lg' }) => {
-  if (size === 'sm') {
-    return (
-      <span className="will-orb-sm" aria-hidden="true">
-        <span className="will-orb-core" />
-      </span>
-    );
-  }
-  return (
-    <div className="will-orb" aria-hidden="true">
-      <span className="will-orb-halo" />
-      <span className="will-orb-core" />
-      <span className="will-orb-plinth" />
-    </div>
-  );
-};
-
 export const WillChat: React.FC<WillChatProps> = ({
   currentDimension,
   setCurrentDimension,
@@ -251,25 +234,19 @@ export const WillChat: React.FC<WillChatProps> = ({
 
   return (
     <div className="relative flex flex-col flex-1 min-h-0 w-full">
-      {isEntrance && <div className="will-glass-pane hidden lg:block" />}
-
       <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
         {isEntrance && (
-          <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-12 py-4 lg:py-6">
-            <div className="lg:hidden flex justify-center py-4">
-              <WillOrb />
-            </div>
-
-            <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-              <div className="lg:col-span-6 space-y-5">
+          <div className="max-w-6xl mx-auto w-full px-5 sm:px-8 lg:px-12 py-5 lg:py-8">
+            <div className="grid lg:grid-cols-12 gap-8 items-start">
+              <div className="lg:col-span-5 space-y-6">
                 <div className="space-y-4 max-w-xl">
                   {welcomeParagraphs.map((para, i) => (
                     <p
                       key={i}
                       className={
                         i === 0
-                          ? 'font-serif text-3xl sm:text-4xl tracking-tight text-[#f4efe6] leading-tight'
-                          : 'text-[15px] sm:text-base text-[#f4efe6]/72 leading-relaxed'
+                          ? 'font-serif text-3xl sm:text-[2.5rem] tracking-tight text-[#f4efe6] leading-[1.15]'
+                          : 'text-[15px] sm:text-base text-[#f4efe6]/78 leading-relaxed'
                       }
                     >
                       {para}
@@ -277,7 +254,7 @@ export const WillChat: React.FC<WillChatProps> = ({
                   ))}
                 </div>
 
-                <nav aria-label="Puertas de entrada" className="pt-2">
+                <nav aria-label="Puertas de entrada" className="arch-glass-quiet">
                   {HUMAN_ENTRANCE_DOORS.map((door) => {
                     const num = door.number ? String(door.number).padStart(2, '0') : '';
                     return (
@@ -286,17 +263,17 @@ export const WillChat: React.FC<WillChatProps> = ({
                         id={`door-btn-${door.id}`}
                         type="button"
                         onClick={() => handleSend(door.quickPrompt)}
-                        className="will-door group w-full text-left py-2.5 px-1 min-h-11"
+                        className="will-door group w-full text-left py-2.5 px-3 min-h-11"
                       >
                         <div className="flex items-baseline gap-4">
-                          <span className="font-mono text-[11px] tracking-widest text-[#e8c37a]/75 w-7 shrink-0">
+                          <span className="font-mono text-[11px] tracking-[0.18em] text-[#e8c37a] w-7 shrink-0">
                             {num}
                           </span>
                           <span className="min-w-0">
-                            <span className="block font-serif text-[16px] text-[#f4efe6] group-hover:text-[#e8c37a]">
+                            <span className="block font-serif text-[16px] text-[#f4efe6]">
                               {door.doorTitle}
                             </span>
-                            <span className="block text-[12px] text-[#f4efe6]/42 mt-0.5 leading-relaxed">
+                            <span className="block text-[12px] text-[#f4efe6]/45 mt-0.5 leading-relaxed">
                               {door.humanSubtitle}
                             </span>
                           </span>
@@ -306,10 +283,7 @@ export const WillChat: React.FC<WillChatProps> = ({
                   })}
                 </nav>
               </div>
-
-              <div className="hidden lg:col-span-6 lg:flex items-center justify-center min-h-[420px]">
-                <WillOrb />
-              </div>
+              <div className="hidden lg:block lg:col-span-7 min-h-[52vh]" aria-hidden="true" />
             </div>
           </div>
         )}
@@ -321,7 +295,7 @@ export const WillChat: React.FC<WillChatProps> = ({
               .map((msg) => {
                 const isUser = msg.role === 'user';
                 const isInspectOpen = expandedInspectId === msg.id;
-                const contextVisuals = getContextVisuals(msg.detectedContext?.type);
+                getContextVisuals(msg.detectedContext?.type);
 
                 return (
                   <div
@@ -329,9 +303,8 @@ export const WillChat: React.FC<WillChatProps> = ({
                     className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} space-y-2`}
                   >
                     {!isUser && (
-                      <div className="flex items-center gap-2 text-[11px] text-[#f4efe6]/40">
-                        <WillOrb size="sm" />
-                        <span className="font-serif text-[13px] text-[#f4efe6]/70">Will</span>
+                      <div className="flex items-center gap-2 text-[11px] text-[#f4efe6]/45">
+                        <span className="font-serif text-[14px] text-[#e8c37a]">Will</span>
                         {msg.detectedContext && msg.detectedContext.type !== 'general' && (
                           <span className="font-mono text-[10px] text-[#e8c37a]/70">
                             {msg.detectedContext.badgeLabel}
@@ -343,8 +316,8 @@ export const WillChat: React.FC<WillChatProps> = ({
                     <div
                       className={`max-w-[94%] text-sm leading-relaxed whitespace-pre-wrap ${
                         isUser
-                          ? 'will-msg-user rounded-2xl px-4 py-3 text-[#f4efe6]'
-                          : 'will-msg-will text-[#f4efe6]/88'
+                          ? 'will-msg-user rounded-sm px-4 py-3 text-[#f4efe6]'
+                          : 'will-msg-will text-[#f4efe6]/90'
                       }`}
                     >
                       {msg.content}
@@ -355,7 +328,7 @@ export const WillChat: React.FC<WillChatProps> = ({
                         <button
                           type="button"
                           onClick={() => handleToggleSpeak(msg.id, msg.content)}
-                          className={`p-1.5 rounded-lg hover:bg-white/5 min-h-11 min-w-11 flex items-center justify-center ${
+                          className={`p-1.5 min-h-11 min-w-11 flex items-center justify-center ${
                             speakingId === msg.id ? 'text-[#e8c37a]' : ''
                           }`}
                           title={speakingId === msg.id ? 'Detener lectura' : 'Escuchar en voz alta'}
@@ -371,7 +344,7 @@ export const WillChat: React.FC<WillChatProps> = ({
                         <button
                           type="button"
                           onClick={() => handleCopy(msg.id, msg.content)}
-                          className="p-1.5 rounded-lg hover:bg-white/5 min-h-11 min-w-11 flex items-center justify-center"
+                          className="p-1.5 min-h-11 min-w-11 flex items-center justify-center"
                           title="Copiar texto"
                         >
                           {copiedId === msg.id ? (
@@ -383,7 +356,7 @@ export const WillChat: React.FC<WillChatProps> = ({
                         <button
                           type="button"
                           onClick={() => setExpandedInspectId(isInspectOpen ? null : msg.id)}
-                          className="flex items-center gap-1 text-[11px] px-2 py-1 rounded hover:text-[#e8c37a]"
+                          className="flex items-center gap-1 text-[11px] px-2 py-1 hover:text-[#e8c37a]"
                         >
                           <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                           <span>Verificación ética</span>
@@ -397,7 +370,7 @@ export const WillChat: React.FC<WillChatProps> = ({
                     )}
 
                     {!isUser && isInspectOpen && (
-                      <div className="w-full rounded-2xl p-4 glass-panel-strong text-xs text-[#f4efe6]/80 space-y-2">
+                      <div className="w-full p-4 arch-glass text-xs text-[#f4efe6]/80 space-y-2">
                         <div className="flex items-center gap-1.5 text-emerald-400 font-medium pb-2">
                           <Shield className="w-3.5 h-3.5" />
                           <span>Garantía de No Directividad y Rigor</span>
@@ -424,8 +397,8 @@ export const WillChat: React.FC<WillChatProps> = ({
 
             {isLoading && (
               <div className="flex items-center gap-3 text-xs text-[#f4efe6]/50">
-                <WillOrb size="sm" />
-                <span>Will está preparando la respuesta...</span>
+                <span className="font-serif text-[#e8c37a]">Will</span>
+                <span>está preparando la respuesta...</span>
                 <RefreshCw className="w-3 h-3 animate-spin text-[#e8c37a]" />
               </div>
             )}
@@ -435,7 +408,7 @@ export const WillChat: React.FC<WillChatProps> = ({
       </div>
 
       {showDimensionBar && (
-        <div className="relative z-10 mx-4 mb-2 p-2.5 rounded-xl glass-panel-strong shrink-0 space-y-1.5">
+        <div className="relative z-10 mx-4 mb-2 p-2.5 arch-glass shrink-0 space-y-1.5">
           <span className="text-[10px] uppercase font-mono text-[#f4efe6]/50 block">
             Lentes opcionales de acompañamiento (no obligatorios):
           </span>
@@ -443,7 +416,7 @@ export const WillChat: React.FC<WillChatProps> = ({
             <button
               type="button"
               onClick={() => setCurrentDimension('all')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap ${
+              className={`px-2.5 py-1 text-[11px] font-medium whitespace-nowrap ${
                 currentDimension === 'all' ? 'will-nav-item-active' : 'text-[#f4efe6]/60'
               }`}
             >
@@ -456,7 +429,7 @@ export const WillChat: React.FC<WillChatProps> = ({
                   key={dim.code}
                   type="button"
                   onClick={() => setCurrentDimension(dim.name)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap flex items-center gap-1 ${
+                  className={`px-2.5 py-1 text-[11px] font-medium whitespace-nowrap flex items-center gap-1 ${
                     isActive ? 'will-nav-item-active' : 'text-[#f4efe6]/60'
                   }`}
                 >
@@ -479,7 +452,7 @@ export const WillChat: React.FC<WillChatProps> = ({
       )}
 
       <div className="relative z-10 shrink-0 px-4 sm:px-8 pb-4 pt-2">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto lg:ml-12 lg:mr-auto">
           <div className="will-composer px-2 py-1 flex items-end gap-1">
             <textarea
               ref={textareaRef}
@@ -489,12 +462,12 @@ export const WillChat: React.FC<WillChatProps> = ({
               onKeyDown={handleKeyDown}
               placeholder="Escribe lo que quieras contar, preguntar o explorar..."
               rows={1}
-              className="w-full bg-transparent text-[#f4efe6] placeholder-[#f4efe6]/35 text-sm resize-none focus:outline-none px-4 py-2.5 max-h-32 min-h-[44px]"
+              className="w-full bg-transparent text-[#f4efe6] placeholder-[#f4efe6]/40 text-sm resize-none focus:outline-none px-4 py-2.5 max-h-32 min-h-[44px]"
             />
             <button
               type="button"
               onClick={() => setShowDimensionBar(!showDimensionBar)}
-              className="p-2.5 rounded-full text-[#f4efe6]/35 hover:text-[#e8c37a] min-h-11 min-w-11 flex items-center justify-center"
+              className="p-2.5 text-[#f4efe6]/35 hover:text-[#e8c37a] min-h-11 min-w-11 flex items-center justify-center"
               title="Ajustar lentes de conversación"
               aria-label="Lentes P.R.E.S.E.N.T.E."
             >
@@ -503,7 +476,7 @@ export const WillChat: React.FC<WillChatProps> = ({
             <button
               type="button"
               onClick={handleClearChat}
-              className="p-2.5 rounded-full text-[#f4efe6]/35 hover:text-rose-300 min-h-11 min-w-11 flex items-center justify-center"
+              className="p-2.5 text-[#f4efe6]/35 hover:text-rose-300 min-h-11 min-w-11 flex items-center justify-center"
               title="Reiniciar conversación"
               aria-label="Reiniciar conversación"
             >

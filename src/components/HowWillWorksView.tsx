@@ -47,7 +47,7 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
   >('principios');
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-stone-100 font-sans">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#f4efe6] font-sans">
       {/* Header */}
       <div className="text-center sm:text-left space-y-2 border-b border-stone-800 pb-5">
         <div className="flex flex-wrap items-center gap-2">
@@ -493,6 +493,12 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           </div>
         </div>
       )}
+
+      <p className="text-[10px] text-[#f4efe6]/35 leading-relaxed max-w-3xl pt-4">
+        The Architecture of Sovereignty — Dirección conceptual: Will / WAIPL. Dirección creativa:
+        propietario del ecosistema. Herramienta de materialización: Gemini Notebook (antiguamente
+        NotebookLM). No atribuir su creación a Gemini / Ítaca.
+      </p>
     </div>
   );
 };
