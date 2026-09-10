@@ -10,6 +10,8 @@ import {
 import {
   WILL_HEALTH_SITES,
   isCivicOrCulturalName,
+  isMaternityName,
+  isPrivateCare,
   isWillThemeName,
 } from './willHealthSites';
 
@@ -50,6 +52,8 @@ type Site = {
   lat: number;
   lng: number;
   source: { name: string; url: string; checkedAt?: string };
+  privateCare?: boolean;
+  maternity?: boolean;
 };
 
 function validCoord(lat: unknown, lng: unknown) {
@@ -111,15 +115,22 @@ function classify(tags: Record<string, string> | undefined): {
   if (spec === 'drug_addiction' || spec === 'mental_health') {
     return { kind: 'Centro sociosanitario', category: 'community' };
   }
+  if (a === 'ngo' || a === 'association' || a === 'charity' || tags?.office === 'ngo') {
+    return { kind: 'ONG / recurso comunitario', category: 'community' };
+  }
   return { kind: 'Otro recurso', category: 'other' };
 }
 
 function rejectSite(tags: Record<string, string>, name: string) {
-  const a = (tags.amenity || tags.healthcare || '').toLowerCase();
+  const a = (tags.amenity || tags.healthcare || tags.office || '').toLowerCase();
   if (['pharmacy', 'dentist', 'veterinary', 'community_centre', 'arts_centre', 'library', 'theatre', 'townhall'].includes(a)) {
     return true;
   }
   if (isCivicOrCulturalName(name)) return true;
+  if ((a === 'ngo' || a === 'association' || a === 'charity' || tags.office === 'ngo') && !isWillThemeName(name)) {
+    const spec = `${tags.healthcare || ''} ${tags.social_facility || ''} ${tags['healthcare:speciality'] || ''}`.toLowerCase();
+    if (!/infect|hiv|sexual|addict|psychiatr|health/.test(spec)) return true;
+  }
   return false;
 }
 
@@ -224,6 +235,8 @@ function toSite(
       url: `https://www.openstreetmap.org/?mlat=${plat}&mlon=${plng}`,
       checkedAt,
     },
+    privateCare: isPrivateCare(tags, name),
+    maternity: isMaternityName(name),
   };
 }
 
@@ -250,23 +263,47 @@ function parseSites(
     sites.push(site);
   }
   sites.sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km);
-  const primary = sites.filter((s) => s.kind !== 'Farmacia').slice(0, 22);
-  const pharmacies = sites.filter((s) => s.kind === 'Farmacia').slice(0, 2);
-  const mixed = primary.length >= 6 ? primary : [...primary, ...pharmacies].slice(0, 24);
-  return { sites: mixed, checkedAt };
+  return { sites: mixSites(sites.filter((s) => s.kind !== 'Farmacia')), checkedAt };
 }
 
 function rankSite(site: Site) {
-  if (isWillThemeName(site.name) || /salud sexual|sociosanitario|reducción de riesgos/i.test(site.kind)) return 0;
-  if (site.category === 'health') return 1;
-  if (site.category === 'emergency') return 2;
-  if (site.category === 'community') return 3;
+  if (isWillThemeName(site.name) || /ONG|salud sexual|sociosanitario|reducción de riesgos|apoyo comunitario/i.test(site.kind)) {
+    return 0;
+  }
+  if (site.category === 'community') return 1;
+  if (site.maternity || site.privateCare) return 5;
+  if (site.category === 'health') return 2;
+  if (site.category === 'emergency') return 3;
   return 4;
 }
 
+function mixSites(sites: Site[]) {
+  const theme = sites.filter((s) => rankSite(s) <= 1);
+  const health = sites.filter((s) => s.category === 'health' && rankSite(s) > 1);
+  const publicH = sites.filter((s) => s.category === 'emergency' && !s.privateCare && !s.maternity);
+  const rest = sites.filter((s) => !theme.includes(s) && !health.includes(s) && !publicH.includes(s));
+  const out: Site[] = [];
+  const push = (list: Site[], n: number) => {
+    for (const s of list) {
+      if (out.length >= 24) break;
+      if (out.includes(s)) continue;
+      if (n-- <= 0) break;
+      out.push(s);
+    }
+  };
+  push(theme, 12);
+  push(health, 6);
+  push(publicH, 4);
+  push(rest, 2);
+  return out.slice(0, 24);
+}
+
 async function overpassNearby(lat: number, lng: number, preferred: string[]) {
-  const query = `[out:json][timeout:20];
+  const query = `[out:json][timeout:22];
 (
+  nwr["office"="ngo"](around:15000,${lat},${lng});
+  nwr["office"="association"](around:15000,${lat},${lng});
+  nwr["office"="charity"](around:15000,${lat},${lng});
   nwr["amenity"="hospital"](around:12000,${lat},${lng});
   nwr["healthcare"="hospital"](around:12000,${lat},${lng});
   nwr["amenity"="clinic"](around:12000,${lat},${lng});
@@ -274,12 +311,12 @@ async function overpassNearby(lat: number, lng: number, preferred: string[]) {
   nwr["amenity"="doctors"](around:12000,${lat},${lng});
   nwr["amenity"="health_centre"](around:12000,${lat},${lng});
   nwr["healthcare"="centre"](around:12000,${lat},${lng});
-  nwr["social_facility"="drug_addiction"](around:12000,${lat},${lng});
-  nwr["social_facility"="mental_health"](around:12000,${lat},${lng});
-  nwr["healthcare:speciality"~"infect|hiv|sexual|addict|psychiatr|dermatol",i](around:12000,${lat},${lng});
-  nwr["name"~"checkpoint|salud sexual|sexual health|ITS|VIH|HIV|SIDA|PrEP|chemsex|harm reduction|reducción de daños|drogodepend|CJAS|Drassanes|Sandoval",i](around:12000,${lat},${lng});
+  nwr["social_facility"="drug_addiction"](around:15000,${lat},${lng});
+  nwr["social_facility"="mental_health"](around:15000,${lat},${lng});
+  nwr["healthcare:speciality"~"infect|hiv|sexual|addict|psychiatr|dermatol",i](around:15000,${lat},${lng});
+  nwr["name"~"checkpoint|salud sexual|sexual health|ITS|VIH|HIV|SIDA|LGBT|LGTB|PrEP|chemsex|harm reduction|reducción de daños|solidaria|positivo|diversa|CJAS|Drassanes|Sandoval",i](around:15000,${lat},${lng});
 );
-out center 80;`;
+out center 100;`;
   let data: any = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
@@ -308,7 +345,7 @@ async function nominatimHealthcare(
 ): Promise<{ sites: Site[]; checkedAt?: string }> {
   const delta = 0.08;
   const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
-  const queries = ['hospital', 'clinic', 'sexual health', 'ITS', 'HIV', 'salud sexual'];
+  const queries = ['ONG VIH', 'HIV NGO', 'sexual health', 'LGBT health', 'hospital', 'clinic'];
   const seen = new Set<string>();
   const sites: Site[] = [];
   const accept = preferred.length ? preferred.join(',') : 'es,en';
@@ -444,8 +481,9 @@ async function handleLookup(req: Request, res: Response) {
       merged.push(s);
     }
     merged.sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km);
-    const unfilteredCount = merged.length;
-    let sites = sortByCareLanguages(merged, languages, languageMode);
+    const mixed = mixSites(merged);
+    const unfilteredCount = mixed.length;
+    let sites = sortByCareLanguages(mixed, languages, languageMode);
     let absence: 'none' | 'no_map_hits' | 'filter_empty' = 'none';
     if (unfilteredCount === 0) absence = 'no_map_hits';
     else if (sites.length === 0) absence = 'filter_empty';

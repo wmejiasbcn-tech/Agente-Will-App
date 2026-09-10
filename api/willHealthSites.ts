@@ -100,13 +100,69 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     website: 'https://checkpointmadrid.org',
     city: 'Madrid',
   },
+  {
+    name: 'Acción Solidaria',
+    kind: 'ONG / VIH y apoyo comunitario',
+    category: 'community',
+    lat: 10.4965,
+    lng: -66.8515,
+    address: 'Avenida Francisco de Miranda, Chacao, Caracas',
+    website: 'https://accionsolidaria.info',
+    city: 'Caracas',
+  },
+  {
+    name: 'ACCSI — Acción Ciudadana Contra el SIDA',
+    kind: 'ONG / VIH',
+    category: 'community',
+    lat: 10.4982,
+    lng: -66.849,
+    address: 'Altamira, Caracas',
+    city: 'Caracas',
+  },
+  {
+    name: 'StopVIH',
+    kind: 'ONG / VIH y salud sexual',
+    category: 'community',
+    lat: 10.492,
+    lng: -66.879,
+    address: 'Caracas',
+    website: 'https://stopvih.org',
+    city: 'Caracas',
+  },
+  {
+    name: 'Red Venezolana de Gente Positiva',
+    kind: 'ONG / apoyo entre iguales',
+    category: 'community',
+    lat: 10.5,
+    lng: -66.87,
+    address: 'Caracas',
+    city: 'Caracas',
+  },
+  {
+    name: 'Venezuela Diversa',
+    kind: 'ONG / LGBTIQ+ y salud',
+    category: 'community',
+    lat: 10.488,
+    lng: -66.879,
+    address: 'Caracas',
+    city: 'Caracas',
+  },
+  {
+    name: 'Hospital Vargas de Caracas',
+    kind: 'Hospital público',
+    category: 'emergency',
+    lat: 10.5055,
+    lng: -66.9172,
+    address: 'San José, Caracas',
+    city: 'Caracas',
+  },
 ];
 
 const CIVIC =
   /cívic[oa]?|\bcivic\b|casal\b|ateneu|biblioteca|centro cultural|cultural centre|casa de cultura|maison de la culture|teatro|\btheatre\b|\bcine\b|polideportiv|sport centre|arts centre|centro de barrio/i;
 
 const THEME =
-  /checkpoint|cjas|drassanes|sandoval|stop sida|energy control|salud sexual|sexual health|saúde sexual|santé sexuelle|\bits\b|\bvih\b|\bhiv\b|\bsida\b|\baids\b|\bprep\b|chemsex|reducción de dañ|reduccion de dan|harm reduction|pere virgili|infectolog|drogodepend|\bcas\b|jeringuill|needle exchange|salud mental|mental health|addiction/i;
+  /checkpoint|cjas|drassanes|sandoval|stop sida|energy control|salud sexual|sexual health|saúde sexual|santé sexuelle|\bits\b|\bvih\b|\bhiv\b|\bsida\b|\baids\b|\bprep\b|chemsex|reducción de dañ|reduccion de dan|harm reduction|pere virgili|infectolog|drogodepend|\bcas\b|jeringuill|needle exchange|salud mental|mental health|addiction|lgbt|lgtbi|lgtb|diversidad sexual|acción solidaria|accsi|stopvih|gente positiva|venezuela diversa|reflejos de venezuela|aliansa|trabajadoras sexuales|sex worker|derechos sexuales|salud comunitaria|cruz roja|médicos del mundo|doctors of the world|onusida|unaids/i;
 
 export function isCivicOrCulturalName(name: string) {
   return CIVIC.test(name);
@@ -114,4 +170,15 @@ export function isCivicOrCulturalName(name: string) {
 
 export function isWillThemeName(name: string) {
   return THEME.test(name);
+}
+
+export function isMaternityName(name: string) {
+  return /maternidad|maternity|materno.?infantil|gineco.?obstetr|obstetric/i.test(name);
+}
+
+export function isPrivateCare(tags: Record<string, string> | undefined, name: string) {
+  const op = (tags?.['operator:type'] || tags?.operator || '').toLowerCase();
+  if (tags?.fee === 'yes') return true;
+  if (op === 'private' || /\bprivate\b/.test(op)) return true;
+  return /clínica caracas|teknon|quirónsalud|quiron|centro médico de caracas|policínica metropolitana/i.test(name);
 }

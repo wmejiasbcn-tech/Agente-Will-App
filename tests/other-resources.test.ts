@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WORLD_NODES } from '../src/data/worldNodes';
 import { CAPITALS } from '../src/data/capitals';
-import { WILL_HEALTH_SITES, isCivicOrCulturalName } from '../api/willHealthSites';
+import { WILL_HEALTH_SITES, isCivicOrCulturalName, isMaternityName, isPrivateCare, isWillThemeName } from '../api/willHealthSites';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 let failed = 0;
@@ -113,6 +113,19 @@ await test('Barcelona tiene Checkpoint, Stop, CJAS, Drassanes y Pere Virgili, no
   assert.ok(names.some((n) => /Pere Virgili/i.test(n)));
   assert.equal(isCivicOrCulturalName('Centro Cívic Pati Llimona'), true);
   assert.equal(isCivicOrCulturalName('BCN Checkpoint'), false);
+});
+
+await test('Caracas prioriza ONG comunitarias, no maternidades ni clínicas privadas', () => {
+  const caracas = WILL_HEALTH_SITES.filter((s) => s.city === 'Caracas').map((s) => s.name);
+  assert.ok(caracas.some((n) => /Acción Solidaria/i.test(n)));
+  assert.ok(caracas.some((n) => /ACCSI/i.test(n)));
+  assert.ok(caracas.some((n) => /StopVIH/i.test(n)));
+  assert.equal(caracas.some((n) => /Concepción Palacios/i.test(n)), false);
+  assert.equal(isMaternityName('Maternidad Concepción Palacios'), true);
+  assert.equal(isPrivateCare({ fee: 'yes' }, 'Clínica Caracas'), true);
+  assert.equal(isWillThemeName('Acción Solidaria'), true);
+  const geo = readFileSync(join(root, 'api/geo.ts'), 'utf8');
+  assert.match(geo, /office"="ngo"/);
 });
 
 await test('Preguntar a Will no desmonta la conversación', () => {
