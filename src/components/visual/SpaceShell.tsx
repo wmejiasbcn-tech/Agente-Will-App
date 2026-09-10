@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type WillScene = 'chat' | 'topics' | 'resources' | 'how-it-works';
+export type WillScene = 'chat' | 'topics' | 'resources' | 'how-it-works' | 'other-resources';
 
 const SCENE: Record<
   WillScene,
@@ -32,6 +32,12 @@ const SCENE: Record<
     position: '58% 48%',
     marks: [],
   },
+  'other-resources': {
+    photo: '/visual-system/world-map.jpg?v=or1',
+    photoMobile: '/visual-system/world-map-mobile.jpg?v=or1',
+    position: '50% 42%',
+    marks: [],
+  },
 };
 
 interface SpaceShellProps {
@@ -60,7 +66,9 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
                   ? 'will-photo will-photo-resources'
                   : scene === 'how-it-works'
                     ? 'will-photo will-photo-how'
-                    : 'will-photo'
+                    : scene === 'other-resources'
+                      ? 'will-photo will-photo-world'
+                      : 'will-photo'
           }
           style={{ objectPosition: cfg.position }}
         />
@@ -71,7 +79,8 @@ export const SpaceShell: React.FC<SpaceShellProps> = ({ scene, children }) => {
           scene === 'chat' ||
           scene === 'topics' ||
           scene === 'resources' ||
-          scene === 'how-it-works'
+          scene === 'how-it-works' ||
+          scene === 'other-resources'
             ? ' will-light-breath-quiet'
             : ''
         }`}

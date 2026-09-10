@@ -18,6 +18,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'topics', label: 'Explorar Temas' },
     { id: 'resources', label: 'Recursos de Apoyo' },
     { id: 'how-it-works', label: 'Cómo funciona Will' },
+    { id: 'other-resources', label: 'Otros recursos' },
   ];
 
   return (

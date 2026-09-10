@@ -4,11 +4,12 @@ import { WillChat } from './components/WillChat';
 import { ExploreTopicsView } from './components/ExploreTopicsView';
 import { ResourcesView } from './components/ResourcesView';
 import { HowWillWorksView } from './components/HowWillWorksView';
+import { OtherResourcesView } from './components/OtherResourcesView';
 import { EmergencyModal } from './components/EmergencyModal';
 import { SpaceShell, WillScene } from './components/visual/SpaceShell';
 import { PagerArrows } from './components/PagerArrows';
 
-const SCENES = ['chat', 'topics', 'resources', 'how-it-works'] as const;
+const SCENES = ['chat', 'topics', 'resources', 'how-it-works', 'other-resources'] as const;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('chat');
@@ -28,7 +29,9 @@ export default function App() {
         ? 'resources'
         : activeTab === 'how-it-works'
           ? 'how-it-works'
-          : 'chat';
+          : activeTab === 'other-resources'
+            ? 'other-resources'
+            : 'chat';
 
   const sceneIndex = SCENES.indexOf(activeTab as (typeof SCENES)[number]);
   const goPrevScene = () => {
@@ -84,6 +87,10 @@ export default function App() {
             onNavigateToChat={handleAskWill}
             onOpenEmergency={() => setIsEmergencyOpen(true)}
           />
+        )}
+
+        {activeTab === 'other-resources' && (
+          <OtherResourcesView onAskWill={handleAskWill} />
         )}
       </main>
 
