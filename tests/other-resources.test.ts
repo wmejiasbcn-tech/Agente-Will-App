@@ -59,15 +59,28 @@ await test('El mapamundi de referencia está en el producto, sin Notebook', () =
 });
 
 await test('Los puntos del mapa son entradas, no un catálogo cerrado del planeta', () => {
-  assert.ok(WORLD_NODES.length >= 8);
+  assert.ok(WORLD_NODES.length >= 15);
   assert.equal(WORLD_NODES.some((n) => n.query === 'Tokio'), true);
   assert.match(view, /other-resources-search/);
   assert.match(view, /Usar mi ubicación/);
 });
 
+await test('Nueva York, Buenos Aires y Mumbai caen en su tierra, no en otra', () => {
+  const nyc = WORLD_NODES.find((n) => n.id === 'nyc')!;
+  const bue = WORLD_NODES.find((n) => n.id === 'bue')!;
+  const bog = WORLD_NODES.find((n) => n.id === 'bog')!;
+  const bom = WORLD_NODES.find((n) => n.id === 'bom')!;
+  const dxb = WORLD_NODES.find((n) => n.id === 'dxb')!;
+  assert.ok(nyc.x > 24, 'Nueva York tiene que estar al este, no en Colorado');
+  assert.ok(bue.y > 78, 'Buenos Aires tiene que estar en el cono sur, no en Colombia');
+  assert.ok(bue.y > bog.y, 'Buenos Aires más al sur que Bogotá');
+  assert.ok(bom.x > dxb.x + 8, 'Mumbai al este de Dubái, no en Arabia');
+  assert.match(view, /world-stage-frame/);
+});
+
 await test('Accesible sin el mapa: búsqueda, labels y teclado', () => {
   assert.match(view, /htmlFor="other-resources-search"/);
-  assert.match(view, /aria-label="Regiones del mapamundi"/);
+  assert.match(view, /aria-label="Ciudades del mapamundi"/);
   assert.match(view, /Buscar ciudad, región, país/);
 });
 

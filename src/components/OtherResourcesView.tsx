@@ -142,30 +142,33 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
               : undefined
           }
         >
-          <img
-            src="/visual-system/world-map-screen.jpg"
-            alt=""
-            className="world-stage-photo"
-            draggable={false}
-          />
-          <div className="world-nodes" role="list" aria-label="Regiones del mapamundi">
-            {WORLD_NODES.map((node) => {
-              const on = focus?.id === node.id;
-              return (
-                <button
-                  key={node.id}
-                  type="button"
-                  role="listitem"
-                  className={`world-node${on ? ' world-node-on' : ''}`}
-                  style={{ left: `${node.x}%`, top: `${node.y}%` }}
-                  onClick={() => void selectNode(node)}
-                  aria-label={`Buscar recursos en ${node.label}`}
-                  aria-pressed={on}
-                >
-                  <span className="sr-only">{node.label}</span>
-                </button>
-              );
-            })}
+          <div className="world-stage-frame">
+            <img
+              src="/visual-system/world-map-screen.jpg"
+              alt=""
+              className="world-stage-photo"
+              draggable={false}
+            />
+            <div className="world-nodes" role="list" aria-label="Ciudades del mapamundi">
+              {WORLD_NODES.map((node) => {
+                const on = focus?.id === node.id;
+                return (
+                  <button
+                    key={node.id}
+                    type="button"
+                    role="listitem"
+                    className={`world-node${on ? ' world-node-on' : ''}`}
+                    style={{ left: `${node.x}%`, top: `${node.y}%` }}
+                    onClick={() => void selectNode(node)}
+                    aria-label={`Buscar recursos en ${node.label}`}
+                    aria-pressed={on}
+                    title={node.label}
+                  >
+                    <span className="sr-only">{node.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

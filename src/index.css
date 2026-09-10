@@ -573,22 +573,26 @@
 
 .world-stage {
   position: relative;
-  min-height: 14rem;
-  height: min(46vh, 28rem);
   border-color: rgba(232, 195, 122, 0.22);
 }
 .world-stage-inner {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  width: 100%;
   transform-origin: var(--ox, 50%) var(--oy, 50%);
   transform: scale(var(--sc, 1));
   transition: transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.world-stage-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1200 / 556;
+}
 .world-stage-photo {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: 50% 48%;
+  object-fit: fill;
   display: block;
   pointer-events: none;
   user-select: none;
@@ -626,8 +630,8 @@
   box-shadow: 0 0 16px rgba(232, 195, 122, 0.9);
 }
 @media (max-width: 767px) {
-  .world-stage {
-    height: min(38vh, 16rem);
+  .world-stage-frame {
+    aspect-ratio: 1200 / 556;
   }
 }
 @media (prefers-reduced-motion: reduce) {
