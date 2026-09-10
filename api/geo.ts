@@ -54,6 +54,7 @@ type Site = {
   source: { name: string; url: string; checkedAt?: string };
   privateCare?: boolean;
   maternity?: boolean;
+  audience?: string;
 };
 
 function validCoord(lat: unknown, lng: unknown) {
@@ -472,6 +473,7 @@ async function handleLookup(req: Request, res: Response) {
       lat: s.lat,
       lng: s.lng,
       source: { name: 'Directorio Will', url: s.website || 'https://www.openstreetmap.org/' },
+      audience: s.audience,
     }));
     const merged: Site[] = [...curated];
     const seen = new Set(curated.map((s) => s.name.toLowerCase()));

@@ -8,6 +8,7 @@ import { OtherResourcesView } from './components/OtherResourcesView';
 import { EmergencyModal } from './components/EmergencyModal';
 import { SpaceShell, WillScene } from './components/visual/SpaceShell';
 import { PagerArrows } from './components/PagerArrows';
+import { unlockWillAudio } from './voice/willVoice';
 
 const SCENES = ['chat', 'topics', 'resources', 'how-it-works', 'other-resources'] as const;
 
@@ -18,6 +19,7 @@ export default function App() {
   const [isEmergencyOpen, setIsEmergencyOpen] = useState<boolean>(false);
 
   const handleAskWill = (prompt: string, domainId?: string) => {
+    unlockWillAudio();
     setChatInitialPrompt(prompt);
     setActiveTab('chat');
   };

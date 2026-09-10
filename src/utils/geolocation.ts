@@ -37,6 +37,7 @@ export interface NearbySite {
     url: string;
     checkedAt?: string;
   };
+  audience?: string;
 }
 
 export interface GeoPrivacyReceipt {

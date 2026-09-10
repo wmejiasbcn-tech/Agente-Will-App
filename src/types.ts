@@ -121,6 +121,7 @@ export interface SubstanceInfo {
   // 1. Qué es / Identidad
   id: string;
   name: string;
+  alsoKnownAs?: string[];
   // 2. Pertenece exactamente a una de las 6 Categorías Principales
   //    El dominio 07 Prevención es autónomo y, en esta entrega, no tiene fichas.
   domainId: CanonicalDomainId;

@@ -9,6 +9,7 @@ export type CuratedHealthSite = {
   address?: string;
   website?: string;
   city: string;
+  audience?: string;
 };
 
 /** Centros del ámbito de Will. Se suman al mapa abierto cuando el lugar buscado cae cerca. */
@@ -22,6 +23,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     address: 'Carrer de Comte Borrell, 164-166, Barcelona',
     website: 'https://www.bcncheckpoint.com',
     city: 'Barcelona',
+    audience: 'Atención específica a hombres que tienen sexo con hombres y mujeres trans.',
   },
   {
     name: 'Stop',
@@ -32,6 +34,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     address: 'Barcelona',
     website: 'https://stop.org.es',
     city: 'Barcelona',
+    audience: 'Atención específica a hombres gais, bisexuales y otros HSH.',
   },
   {
     name: 'CJAS — Centre Jove d’Atenció a les Sexualitats',
@@ -42,6 +45,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     address: 'Carrer de Vitòria, 7, Barcelona',
     website: 'https://www.cjas.org',
     city: 'Barcelona',
+    audience: 'Atención específica a jóvenes.',
   },
   {
     name: 'Unitat d’ITS Drassanes',
@@ -51,6 +55,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     lng: 2.1754,
     address: 'Avinguda de les Drassanes, 17-21, Barcelona',
     city: 'Barcelona',
+    audience: 'Atención a población general. Salud sexual e ITS.',
   },
   {
     name: 'Parc Sanitari Pere Virgili',
@@ -61,6 +66,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     address: 'Carrer d’Esteve Terradas, 30, Barcelona',
     website: 'https://www.perevirgili.cat',
     city: 'Barcelona',
+    audience: 'Atención a población general. Centro sociosanitario.',
   },
   {
     name: 'Energy Control (ABD)',
@@ -71,6 +77,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     address: 'Barcelona',
     website: 'https://energycontrol.org',
     city: 'Barcelona',
+    audience: 'Atención a población general. Análisis de sustancias y reducción de daños.',
   },
   {
     name: 'Hospital Clínic de Barcelona',
@@ -80,6 +87,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     lng: 2.1519,
     address: 'Carrer de Villarroel, 170, Barcelona',
     city: 'Barcelona',
+    audience: 'Atención a población general.',
   },
   {
     name: 'Centro Sanitario Sandoval',
@@ -89,6 +97,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     lng: -3.7034,
     address: 'Calle de Sandoval, 7, Madrid',
     city: 'Madrid',
+    audience: 'Atención a población general. Unidad de ITS.',
   },
   {
     name: 'Checkpoint Madrid',
@@ -99,6 +108,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     address: 'Madrid',
     website: 'https://checkpointmadrid.org',
     city: 'Madrid',
+    audience: 'Atención específica a hombres que tienen sexo con hombres y mujeres trans.',
   },
   {
     name: 'Acción Solidaria',
@@ -109,6 +119,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     address: 'Avenida Francisco de Miranda, Chacao, Caracas',
     website: 'https://accionsolidaria.info',
     city: 'Caracas',
+    audience: 'Atención a población general. VIH y apoyo comunitario.',
   },
   {
     name: 'ACCSI — Acción Ciudadana Contra el SIDA',
@@ -118,6 +129,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     lng: -66.849,
     address: 'Altamira, Caracas',
     city: 'Caracas',
+    audience: 'Atención a población general. VIH.',
   },
   {
     name: 'StopVIH',
@@ -128,6 +140,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     address: 'Caracas',
     website: 'https://stopvih.org',
     city: 'Caracas',
+    audience: 'Atención a población general. VIH y salud sexual.',
   },
   {
     name: 'Red Venezolana de Gente Positiva',
@@ -137,6 +150,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     lng: -66.87,
     address: 'Caracas',
     city: 'Caracas',
+    audience: 'Atención a población general. Apoyo entre iguales en VIH.',
   },
   {
     name: 'Venezuela Diversa',
@@ -146,6 +160,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     lng: -66.879,
     address: 'Caracas',
     city: 'Caracas',
+    audience: 'Atención específica a personas LGBTIQ+.',
   },
   {
     name: 'Hospital Vargas de Caracas',
@@ -155,6 +170,7 @@ export const WILL_HEALTH_SITES: CuratedHealthSite[] = [
     lng: -66.9172,
     address: 'San José, Caracas',
     city: 'Caracas',
+    audience: 'Atención a población general. Hospital público.',
   },
 ];
 

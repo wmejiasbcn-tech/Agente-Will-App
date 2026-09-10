@@ -25,7 +25,7 @@ import {
   CanonicalDomainDetail,
 } from '../data/canonicalArchitectureData';
 import { RRDD_CLASSIFICATION } from '../data/knowledgeLayerData';
-import { SUBSTANCES_DATA } from '../data/substancesData';
+import { SUBSTANCES_DATA, substanceMatchesQuery } from '../data/substancesData';
 import { CanonicalDomainId, SubstanceInfo } from '../types';
 
 interface ExploreTopicsViewProps {
@@ -66,13 +66,9 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
   };
 
   const domainFichas = SUBSTANCES_DATA.filter((item) => {
-    const matchesDomain = item.domainId === selectedDomainId;
-    const matchesSearch =
-      searchQuery.trim() === '' ||
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.pharmacology.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesDomain && matchesSearch;
+    const q = searchQuery.trim();
+    if (q) return substanceMatchesQuery(item, q);
+    return item.domainId === selectedDomainId;
   });
 
   const ActiveIcon = getDomainIcon(activeDomain.id);
@@ -294,7 +290,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
               </>
             ) : (
               <p className="text-sm text-[#ead6b4]/60">
-                No se encontraron fichas específicas con los términos de búsqueda en esta área.
+                No hay ficha estructurada para «{searchQuery || 'esta búsqueda'}». Eso no significa que no exista información: puede preguntarse a Will. Will informa; no inventa una ficha.
               </p>
             )}
             <button

@@ -236,6 +236,89 @@ export const SUBSTANCES_DATA: SubstanceInfo[] = [
   // CATEGORÍA 5: REDUCCIÓN DE RIESGOS Y DAÑOS DEL CHEMSEX
   // =========================================================================
   {
+    id: 'monkey-dust',
+    name: 'Monkey Dust (nombre de calle)',
+    alsoKnownAs: [
+      'Monkey Dust',
+      'MDPV',
+      'alfa-PVP',
+      'alpha-PVP',
+      'α-PVP',
+      'Flakka',
+      'catinonas sintéticas',
+      'pirovalerona',
+    ],
+    domainId: 'consumo-psicotropicas',
+    category: '4. Consumo No Problemático de Psicotrópicas',
+    summary:
+      'Nombre de calle usado para distintas catinonas sintéticas, no para una sola molécula fija. En informes europeos se ha asociado sobre todo a MDPV y, más tarde, a alfa-PVP y análogos. La composición de una muestra concreta es DESCONOCIDA si no se analiza.',
+    epistemicStatus: 'INFERIDO',
+    adminRoutes: [
+      'DESCONOCIDO para el producto de calle concreto',
+      'En la clase de catinonas: oral, nasal, intravenosa u otras mucosas (INFERIDO)',
+    ],
+    soughtEffects: [
+      'Como clase (catinonas tipo pirovalerona): estimulación del sistema nervioso central (INFERIDO a nivel de clase).',
+      'Efectos de una muestra vendida como Monkey Dust: DESCONOCIDO.',
+      'Duración e intensidad de esa muestra: DESCONOCIDO.',
+    ],
+    pharmacology:
+      'No hay una ficha molecular única. MDPV y alfa-PVP son catinonas sintéticas estimulantes (tipo pirovalerona) descritas en literatura toxicológica. El nombre de calle no garantiza cuál de esas sustancias, ni un análogo, ni una mezcla, hay en el producto. Dosis, pureza y adulterantes: DESCONOCIDO sin análisis.',
+    objectiveRisksAndInteractions: [
+      'Composición incierta: los efectos y la toxicidad de una toma no son previsibles (VERIFICADO como rasgo del mercado ilícito de catinonas).',
+      'A nivel de clase: estimulación cardiovascular y neuropsíquica intensa, agitación, insomnio, paranoia o malestar (INFERIDO a partir de MDPV/alfa-PVP, no de una muestra concreta).',
+      'Riesgo de redosificación al desconocer potencia y vida media (INFERIDO).',
+      'Daño concreto de una toma determinada: DESCONOCIDO.',
+    ],
+    criticalInteractions: [
+      'Mezcla con otros estimulantes: DESCONOCIDO en magnitud; a nivel de clase, mayor carga cardiovascular (INFERIDO).',
+      'Mezcla con depresores: DESCONOCIDO; puede enmascarar efectos (INFERIDO).',
+      'Interacciones con medicación concreta: DESCONOCIDO.',
+    ],
+    harmReductionFacts: [
+      'Sin análisis, no se puede saber qué se está tomando. El nombre de calle no identifica la molécula.',
+      'No hay dosis segura conocida para un producto de composición desconocida. Esta ficha no da recetas de uso.',
+      'Si hay análisis de sustancias disponible (p. ej. Energy Control), reduce incertidumbre; no garantiza ausencia de daño.',
+      'Ante agitación extrema, dolor torácico, convulsiones, hipertermia o pérdida de conciencia: urgencias (112).',
+    ],
+    warningSigns: [
+      'Dolor torácico, palpitaciones intensas, dificultad para respirar.',
+      'Agitación extrema, confusión, paranoia o agresividad de aparición brusca.',
+      'Convulsiones, hipertermia, pérdida de conciencia: urgencias.',
+    ],
+    knownUncertainties: [
+      'Qué molécula o mezcla se vende como Monkey Dust en un momento y lugar dados: DESCONOCIDO.',
+      'Dosis, duración, vías y daños de esa muestra: DESCONOCIDO.',
+      'Equivalencia con MDPV, alfa-PVP u otro análogo: DESCONOCIDO sin análisis.',
+    ],
+    categorizedResources: [
+      {
+        name: 'Urgencias 112',
+        type: 'URGENCIAS',
+        typeLabel: 'Urgencias',
+        description: 'Atención médica ante complicaciones agudas. No sustituye al análisis de la sustancia.',
+        contact: '112',
+      },
+      {
+        name: 'Energy Control / análisis de sustancias',
+        type: 'REDUCCION_RIESGOS_DANOS',
+        typeLabel: 'Reducción de riesgos y daños',
+        description: 'Servicio de análisis y asesoramiento. Reduce incertidumbre; no elimina el daño.',
+        contact: 'energycontrol.org',
+      },
+    ],
+    sources: [
+      'EMCDDA / EUDA — informes sobre catinonas sintéticas (MDPV, alfa-PVP).',
+      'Energy Control — alertas e informes de catinonas en mercado ilícito.',
+      'No se ha convertido en ficha canónica el texto conversacional de Will sobre Monkey Dust.',
+    ],
+    keyConsiderations: [
+      'Ficha de primera capa: informa la incertidumbre. No inventa farmacología de una molécula que el nombre de calle no identifica.',
+      'Will puede ampliar en conversación. Eso no convierte el chat en ficha verificada.',
+    ],
+  },
+
+  {
     id: 'mefedrona',
     name: 'Mefedrona (4-MMC / Miaw)',
     domainId: 'chemsex',
@@ -907,3 +990,19 @@ export const SUBSTANCES_DATA: SubstanceInfo[] = [
     ]
   }
 ];
+
+
+export function substanceMatchesQuery(item: SubstanceInfo, q: string) {
+  const n = q.trim().toLowerCase();
+  if (!n) return true;
+  const hay = [
+    item.name,
+    item.summary,
+    item.pharmacology,
+    item.category,
+    ...(item.alsoKnownAs || []),
+  ]
+    .join(' ')
+    .toLowerCase();
+  return hay.includes(n);
+}

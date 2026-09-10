@@ -72,11 +72,20 @@ function playOnShared(blob: Blob, gen: number): Promise<'ended' | 'error' | 'sto
     };
     audio.onended = () => finish('ended');
     audio.onerror = () => finish('error');
+    audio.muted = false;
+    audio.volume = 1;
     audio.src = url;
     audio.currentTime = 0;
     const go = audio.play();
     if (go && typeof go.then === 'function') {
-      void go.catch(() => finish('error'));
+      void go.catch(() => {
+        audio.muted = false;
+        audio.volume = 1;
+        const again = audio.play();
+        if (again && typeof again.then === 'function') {
+          void again.catch(() => finish('error'));
+        }
+      });
     }
   });
 }

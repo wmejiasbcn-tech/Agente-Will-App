@@ -25,6 +25,9 @@ export const ResourceSiteCard: React.FC<ResourceSiteCardProps> = ({
         <span className="text-[11px] will-copy-muted shrink-0">{site.km} km</span>
       </div>
 
+      {site.audience && (
+        <p className="text-[11px] text-[#ead6b4]">{site.audience}</p>
+      )}
       {site.address && <p className="text-[11px] will-copy-muted">{site.address}</p>}
 
       {site.phone && (

@@ -27,7 +27,7 @@ import {
   Workflow,
   Sparkle,
 } from 'lucide-react';
-import { SUBSTANCES_DATA } from '../data/substancesData';
+import { SUBSTANCES_DATA, substanceMatchesQuery } from '../data/substancesData';
 import { SubstanceInfo } from '../types';
 
 interface HarmReductionViewProps {
@@ -127,14 +127,9 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
 
   // Filtering substances based on domainId and search query
   const filteredSubstances = SUBSTANCES_DATA.filter((item) => {
-    const matchesDomain =
-      selectedDomain === 'all' || item.domainId === selectedDomain;
-    const matchesSearch =
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.summary.toLowerCase().includes(search.toLowerCase()) ||
-      item.pharmacology.toLowerCase().includes(search.toLowerCase()) ||
-      item.category.toLowerCase().includes(search.toLowerCase());
-    return matchesDomain && matchesSearch;
+    const q = search.trim();
+    if (q) return substanceMatchesQuery(item, q);
+    return selectedDomain === 'all' || item.domainId === selectedDomain;
   });
 
   const currentDomainInfo = canonicalDomains.find((d) => d.id === selectedDomain);
@@ -390,16 +385,31 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
 
           {filteredSubstances.length === 0 ? (
             <div className="p-6 rounded-2xl bg-stone-900/60 border border-stone-800 text-center text-xs text-stone-400 space-y-2">
-              <p>No se encontraron fichas para los criterios seleccionados.</p>
-              <button
-                onClick={() => {
-                  setSelectedDomain('all');
-                  setSearch('');
-                }}
-                className="text-amber-400 underline font-mono text-[11px]"
-              >
-                Restablecer filtros
-              </button>
+              <p>No hay ficha estructurada para estos criterios. Puedes preguntar a Will; eso es conversación, no una ficha verificada.</p>
+              {search.trim() ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onAskWillAboutTopic(
+                      `Quiero información de reducción de riesgos sobre ${search.trim()}. Si no hay ficha, dilo. No inventes.`,
+                    )
+                  }
+                  className="text-amber-400 underline font-mono text-[11px]"
+                >
+                  Preguntar a Will
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedDomain('all');
+                    setSearch('');
+                  }}
+                  className="text-amber-400 underline font-mono text-[11px]"
+                >
+                  Restablecer filtros
+                </button>
+              )}
             </div>
           ) : (
             filteredSubstances.map((item) => {
