@@ -83,7 +83,7 @@ export const HUMAN_ENTRANCE_DOORS: HumanEntranceDoor[] = [
     borderColor: 'border-indigo-700/60 hover:border-indigo-500',
     textColor: 'text-indigo-300',
     iconName: 'Activity',
-    quickPrompt: 'Quiero informarme sobre la cinética del MDMA, vidas medias y los riesgos de mezclar con alcohol.',
+    quickPrompt: '¿Qué te gustaría explorar sobre sustancias?',
   },
   {
     id: 'chemsex',
@@ -324,8 +324,8 @@ export const CANONICAL_DOMAINS: CanonicalDomainDetail[] = [
     willStance:
       'Will aporta datos farmacológicos verificados y señala interacciones sin prescribir abstinencia ni asumir patologías.',
     sampleInquiries: [
-      '¿Cómo interactúa la vida media de eliminación del MDMA cuando se mezcla con alcohol?',
-      '¿Cuáles son las interacciones farmacológicas documentadas entre ketamina y estimulantes?',
+      '¿Qué te gustaría explorar sobre sustancias?',
+      '¿Hay alguna sustancia concreta sobre la que quieras información?',
     ],
   },
   {

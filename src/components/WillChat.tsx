@@ -38,6 +38,7 @@ interface WillChatProps {
   initialPrompt?: string;
   onClearInitialPrompt?: () => void;
   onGoNextScene?: () => void;
+  onOpenSubstancesGate?: () => void;
 }
 
 const WELCOME_TEXT =
@@ -68,6 +69,7 @@ export const WillChat: React.FC<WillChatProps> = ({
   initialPrompt,
   onClearInitialPrompt,
   onGoNextScene,
+  onOpenSubstancesGate,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -274,6 +276,10 @@ export const WillChat: React.FC<WillChatProps> = ({
       onGoNextScene?.();
       return;
     }
+    if (next.id === 'consumo-psicotropicas') {
+      onOpenSubstancesGate?.();
+      return;
+    }
     const welcome = welcomeMessage();
     speak.stop();
     setActiveDoorId(next.id);
@@ -282,6 +288,10 @@ export const WillChat: React.FC<WillChatProps> = ({
   };
 
   const openDoor = (doorId: string, prompt: string) => {
+    if (doorId === 'consumo-psicotropicas') {
+      onOpenSubstancesGate?.();
+      return;
+    }
     setActiveDoorId(doorId);
     void handleSend(prompt);
   };

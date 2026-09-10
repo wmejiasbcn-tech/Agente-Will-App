@@ -117,29 +117,20 @@ export function unlockWillAudio() {
   try {
     el.setAttribute('playsinline', 'true');
     el.muted = false;
-    const prev = el.volume || 1;
+    el.loop = true;
     el.volume = 0;
-    if (!el.getAttribute('src')) el.src = SILENT_WAV;
-    const p = el.play();
-    const restore = () => {
-      try {
-        el.pause();
-        el.muted = false;
-        el.volume = prev || 1;
-        el.currentTime = 0;
-      } catch {
-        el.muted = false;
-        el.volume = 1;
-      }
-    };
-    if (p && typeof p.then === 'function') void p.then(restore).catch(restore);
-    else restore();
+    const speaking = Boolean(el.src) && el.src.startsWith('blob:') && !el.paused;
+    if (speaking) return;
+    el.src = SILENT_WAV;
+    el.loop = true;
+    el.volume = 0;
+    void el.play().catch(() => {});
   } catch {
     try {
       el.muted = false;
-      el.volume = 1;
     } catch {
       /* ignore */
     }
   }
 }
+

@@ -51,6 +51,30 @@ test('Los recursos informan población destinataria sin filtrar a la persona', (
   assert.match(sites, /población general/);
 });
 
+test('Entrar en Sustancias no presupone MDMA', () => {
+  const chat = readFileSync(join(root, 'src/components/WillChat.tsx'), 'utf8');
+  const doors = readFileSync(join(root, 'src/data/canonicalArchitectureData.ts'), 'utf8');
+  const explore = readFileSync(join(root, 'src/components/ExploreTopicsView.tsx'), 'utf8');
+  const hr = readFileSync(join(root, 'src/components/HarmReductionView.tsx'), 'utf8');
+  const app = readFileSync(join(root, 'src/App.tsx'), 'utf8');
+  assert.match(chat, /onOpenSubstancesGate/);
+  assert.match(chat, /consumo-psicotropicas/);
+  assert.equal(doors.includes('cinética del MDMA'), false);
+  assert.match(explore, /¿Qué te gustaría explorar sobre sustancias\?/);
+  assert.match(hr, /useState<SubstanceInfo \| null>\(null\)/);
+  assert.match(app, /openSubstancesGate/);
+  const mdma = SUBSTANCES_DATA.find((s) => s.id === 'mdma');
+  assert.ok(mdma);
+  assert.ok(substanceMatchesQuery(mdma!, 'MDMA'));
+  assert.ok(substanceMatchesQuery(mdma!, 'alcohol') || /alcohol/i.test(mdma!.pharmacology + mdma!.criticalInteractions?.join(' ')));
+});
+
+test('El desbloqueo de voz no hace pause sobre el audio armado', () => {
+  const unlock = readFileSync(join(root, 'src/voice/willVoice.ts'), 'utf8');
+  const body = unlock.slice(unlock.indexOf('export function unlockWillAudio'));
+  assert.equal(/el\.pause\(/.test(body.split('export function')[1] || body), false);
+});
+
 if (failed) {
   console.error(`ROJO sustancias/voz: ${failed}`);
   process.exit(1);

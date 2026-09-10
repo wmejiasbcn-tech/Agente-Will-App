@@ -39,9 +39,7 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
 }) => {
   const [selectedDomain, setSelectedDomain] = useState<string>('all');
   const [search, setSearch] = useState('');
-  const [activeSubstance, setActiveSubstance] = useState<SubstanceInfo | null>(
-    SUBSTANCES_DATA[0]
-  );
+  const [activeSubstance, setActiveSubstance] = useState<SubstanceInfo | null>(null);
   const [customTopic, setCustomTopic] = useState('');
   const [isExploringCustom, setIsExploringCustom] = useState(false);
   const [customResult, setCustomResult] = useState<any | null>(null);
@@ -452,6 +450,14 @@ export const HarmReductionView: React.FC<HarmReductionViewProps> = ({
 
         {/* Right Column: 12-Point Detailed Ficha View */}
         <div className="lg:col-span-8">
+          {!activeSubstance && !customResult && (
+            <div className="rounded-3xl bg-stone-900 border border-stone-800 p-6 sm:p-8 space-y-3">
+              <h2 className="font-serif text-2xl text-stone-100">¿Qué te gustaría explorar sobre sustancias?</h2>
+              <p className="text-sm text-stone-400">
+                ¿Hay alguna sustancia concreta sobre la que quieras información? Escribe su nombre. No se selecciona ninguna por defecto.
+              </p>
+            </div>
+          )}
           {activeSubstance && !customResult && (
             <div className="rounded-3xl bg-stone-900 border border-stone-800 p-6 sm:p-8 space-y-6 shadow-xl animate-in fade-in duration-200">
               {/* Point 1 & 2: Header of the substance & Context */}

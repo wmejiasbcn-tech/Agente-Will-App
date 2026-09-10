@@ -72,6 +72,7 @@ function playOnShared(blob: Blob, gen: number): Promise<'ended' | 'error' | 'sto
     };
     audio.onended = () => finish('ended');
     audio.onerror = () => finish('error');
+    audio.loop = false;
     audio.muted = false;
     audio.volume = 1;
     audio.src = url;

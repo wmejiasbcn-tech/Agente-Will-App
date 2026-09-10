@@ -31,15 +31,27 @@ import { CanonicalDomainId, SubstanceInfo } from '../types';
 interface ExploreTopicsViewProps {
   onAskWill: (prompt: string, domainId?: string) => void;
   onOpenEmergency: () => void;
+  initialDomainId?: string;
 }
 
 export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
   onAskWill,
   onOpenEmergency,
+  initialDomainId,
 }) => {
-  const [selectedDomainId, setSelectedDomainId] = useState<CanonicalDomainId>('acompanamiento');
+  const [selectedDomainId, setSelectedDomainId] = useState<CanonicalDomainId>(
+    (initialDomainId as CanonicalDomainId) || 'acompanamiento',
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFichaId, setExpandedFichaId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (initialDomainId) {
+      setSelectedDomainId(initialDomainId as CanonicalDomainId);
+      setSearchQuery('');
+      setExpandedFichaId(null);
+    }
+  }, [initialDomainId]);
 
   const activeDomain =
     CANONICAL_DOMAINS.find((d) => d.id === selectedDomainId) || CANONICAL_DOMAINS[0];
@@ -186,6 +198,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
             </div>
           </div>
 
+          {activeDomain.id !== 'consumo-psicotropicas' && (
           <button
             id={`talk-will-btn-${activeDomain.id}`}
             onClick={() => onAskWill(activeDomain.sampleInquiries[0], activeDomain.id)}
@@ -194,6 +207,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
             <MessageSquare className="w-4 h-4" />
             <span>Hablar de esto con Will</span>
           </button>
+          )}
         </div>
 
         {/* Clear Explanation */}
@@ -230,7 +244,28 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
           </div>
         </div>
 
+        {activeDomain.id === 'consumo-psicotropicas' && (
+          <div className="pt-2 border-t border-stone-800/80 space-y-3">
+            <h3 className="font-serif text-xl will-copy">¿Qué te gustaría explorar sobre sustancias?</h3>
+            <p className="text-sm will-copy-muted">
+              ¿Hay alguna sustancia concreta sobre la que quieras información? Escribe su nombre. No presuponemos ninguna.
+            </p>
+            <div className="relative max-w-xl">
+              <Search className="w-4 h-4 text-stone-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Nombre de la sustancia o lo que quieras explorar..."
+                className="w-full bg-stone-900 border border-stone-800 rounded-xl pl-10 pr-3 py-3 text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-500/80"
+                autoFocus={activeDomain.id === 'consumo-psicotropicas'}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Quick Questions to ask Will */}
+        {activeDomain.id !== 'consumo-psicotropicas' && (
         <div className="pt-2 border-t border-stone-800/80 space-y-2">
           <span className="text-xs font-mono uppercase tracking-wider text-stone-400 block">
             Preguntas habituales que puedes hacerle a Will:
@@ -248,9 +283,11 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
             ))}
           </div>
         </div>
+        )}
       </div>
 
       {/* Information Cards (Fichas Informativas Progresivas) */}
+      {!(activeDomain.id === 'consumo-psicotropicas' && searchQuery.trim() === '') && (
       <div className="space-y-4 pt-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -470,6 +507,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

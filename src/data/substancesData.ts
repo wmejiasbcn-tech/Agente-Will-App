@@ -549,6 +549,77 @@ export const SUBSTANCES_DATA: SubstanceInfo[] = [
     ]
   },
   {
+    id: 'mdma',
+    name: 'MDMA (éxtasis / molly)',
+    alsoKnownAs: ['MDMA', 'éxtasis', 'extasis', 'molly', 'emma', '3,4-metilendioximetanfetamina'],
+    domainId: 'consumo-psicotropicas',
+    category: '4. Consumo No Problemático de Psicotrópicas',
+    summary:
+      'Entactógeno de la familia de las feniletilaminas. Facilita empatía, apertura afectiva y alteración perceptiva. La dosis y la composición de una pastilla o cristal concretos son DESCONOCIDAS sin análisis.',
+    epistemicStatus: 'VERIFICADO',
+    adminRoutes: ['Oral (pastilla o cristal)', 'Otras vías: DESCONOCIDO en frecuencia para cada escena'],
+    soughtEffects: [
+      'Empatía, euforia, sociabilidad y mayor sensibilidad táctil (VERIFICADO a nivel de clase).',
+      'Intensidad y duración de una toma concreta: dependen de dosis, composición y contexto (la dosis real de una pastilla: DESCONOCIDO).',
+    ],
+    pharmacology:
+      'El MDMA (3,4-metilendioximetanfetamina) aumenta la liberación de serotonina, dopamina y noradrenalina. Pico habitual alrededor de 1–2 h; efectos subjetivos a menudo 4–6 h (INFERIDO como rango de clase, no de una pastilla concreta). Metabolismo hepático (CYP2D6).',
+    objectiveRisksAndInteractions: [
+      'Hipertermia, deshidratación o, al contrario, hiponatremia por exceso de agua (VERIFICADO).',
+      'Taquicardia, hipertensión, bruxismo, insomnio posterior (VERIFICADO a nivel de clase).',
+      'Mezcla con alcohol: mayor deshidratación, peor lectura de efectos y más carga cardiovascular (INFERIDO / documentado en reducción de daños).',
+      'Síndrome serotoninérgico si se combina con IMAO u otros serotonérgicos (VERIFICADO como interacción de clase).',
+      'Composición de una pastilla de calle: DESCONOCIDO sin análisis (puede no contener MDMA, o contener otras sustancias).',
+    ],
+    criticalInteractions: [
+      'Alcohol: enmascara sedación y deshidratación; no hay dosis segura de la mezcla (INFERIDO a partir de literatura de reducción de daños).',
+      'IMAO / algunos antidepresivos: riesgo de síndrome serotoninérgico (VERIFICADO como interacción de clase).',
+      'Otros estimulantes: mayor carga cardiovascular (INFERIDO).',
+    ],
+    harmReductionFacts: [
+      'El análisis de sustancias (p. ej. Energy Control) reduce la incertidumbre sobre qué hay en la muestra; no elimina el daño.',
+      'No hay dosis segura conocida para un producto de composición desconocida. Esta ficha no da recetas de uso.',
+      'Atención a temperatura ambiente, descanso y no forzar la ingesta de agua.',
+      'Ante hipertermia, convulsiones, confusión grave o pérdida de conciencia: urgencias (112).',
+    ],
+    warningSigns: [
+      'Temperatura corporal muy alta, piel caliente, no sudar o sudar en exceso con malestar grave.',
+      'Confusión, convulsiones, dolor torácico, dificultad para respirar.',
+      'Cefalea intensa con náuseas y desorientación (posible hiponatremia).',
+    ],
+    knownUncertainties: [
+      'Cantidad real de MDMA en una pastilla o cristal de calle: DESCONOCIDO sin análisis.',
+      'Adulterantes de esa muestra: DESCONOCIDO.',
+      'Respuesta individual (CYP2D6, medicación, calor, esfuerzo): variable.',
+    ],
+    categorizedResources: [
+      {
+        name: 'Urgencias 112',
+        type: 'URGENCIAS',
+        typeLabel: 'Urgencias',
+        description: 'Atención médica ante hipertermia, convulsiones o pérdida de conciencia.',
+        contact: '112',
+      },
+      {
+        name: 'Energy Control / análisis de sustancias',
+        type: 'REDUCCION_RIESGOS_DANOS',
+        typeLabel: 'Reducción de riesgos y daños',
+        description: 'Análisis y asesoramiento. Reduce incertidumbre; no garantiza ausencia de daño.',
+        contact: 'energycontrol.org',
+      },
+    ],
+    sources: [
+      'EMCDDA / EUDA — informes sobre MDMA.',
+      'Energy Control — reducción de riesgos en MDMA y mezclas.',
+      'OMS / literatura toxicológica sobre MDMA y síndrome serotoninérgico.',
+    ],
+    keyConsiderations: [
+      'Will no presupone consumo ni contexto sexual. Informa; la persona decide.',
+      'Mezcla con alcohol: información disponible en ficha y en conversación, sin receta de uso.',
+    ],
+  },
+
+  {
     id: 'ketamina',
     name: 'Ketamina (Keta / Especial K)',
     domainId: 'consumo-psicotropicas',

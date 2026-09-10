@@ -17,11 +17,17 @@ export default function App() {
   const [currentDimension, setCurrentDimension] = useState<string>('all');
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
   const [isEmergencyOpen, setIsEmergencyOpen] = useState<boolean>(false);
+  const [topicsDomain, setTopicsDomain] = useState<string | null>(null);
 
   const handleAskWill = (prompt: string, domainId?: string) => {
     unlockWillAudio();
     setChatInitialPrompt(prompt);
     setActiveTab('chat');
+  };
+
+  const openSubstancesGate = () => {
+    setTopicsDomain('consumo-psicotropicas');
+    setActiveTab('topics');
   };
 
   const scene: WillScene =
@@ -67,6 +73,7 @@ export default function App() {
             initialPrompt={chatInitialPrompt}
             onClearInitialPrompt={() => setChatInitialPrompt('')}
             onGoNextScene={goNextScene}
+            onOpenSubstancesGate={openSubstancesGate}
           />
         </div>
 
@@ -74,6 +81,7 @@ export default function App() {
           <ExploreTopicsView
             onAskWill={handleAskWill}
             onOpenEmergency={() => setIsEmergencyOpen(true)}
+            initialDomainId={topicsDomain || undefined}
           />
         )}
 
