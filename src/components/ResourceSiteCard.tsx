@@ -82,7 +82,9 @@ export const ResourceSiteCard: React.FC<ResourceSiteCardProps> = ({
           type="button"
           onClick={() =>
             onAskWill(
-              `Quiero saber cómo acceder a ${site.name}${site.address ? ` (${site.address})` : ''}.`,
+              `Necesito orientación para acceder a ${site.name}${
+                site.address ? `, en ${site.address}` : ''
+              }. Es un ${site.kind.toLowerCase()}. ¿Cómo funciona el acceso y qué debo tener en cuenta?`,
             )
           }
           className="text-[11px] text-stone-300 hover:text-[#e8c37a]"

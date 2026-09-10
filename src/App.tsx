@@ -58,7 +58,7 @@ export default function App() {
         className="relative z-10 flex-1 min-h-0 overflow-y-auto flex flex-col"
         tabIndex={-1}
       >
-        {activeTab === 'chat' && (
+        <div className={activeTab === 'chat' ? 'flex flex-col flex-1 min-h-0' : 'hidden'}>
           <WillChat
             currentDimension={currentDimension}
             setCurrentDimension={setCurrentDimension}
@@ -66,7 +66,7 @@ export default function App() {
             onClearInitialPrompt={() => setChatInitialPrompt('')}
             onGoNextScene={goNextScene}
           />
-        )}
+        </div>
 
         {activeTab === 'topics' && (
           <ExploreTopicsView

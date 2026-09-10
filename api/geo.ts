@@ -74,15 +74,30 @@ function classify(tags: Record<string, string> | undefined): {
   category: ResourceCategory;
 } {
   const a = tags?.amenity || tags?.healthcare || tags?.office || '';
-  if (a === 'hospital' || tags?.emergency === 'yes') {
+  if (a === 'hospital' || tags?.emergency === 'yes' || tags?.healthcare === 'hospital') {
     return { kind: 'Urgencias / Hospital', category: 'emergency' };
   }
-  if (a === 'clinic' || a === 'doctors' || a === 'doctor' || a === 'centre' || a === 'center') {
-    return { kind: 'Atención sanitaria', category: 'health' };
+  if (
+    a === 'clinic' ||
+    a === 'doctors' ||
+    a === 'doctor' ||
+    a === 'health_centre' ||
+    tags?.healthcare === 'clinic' ||
+    tags?.healthcare === 'centre' ||
+    tags?.healthcare === 'center'
+  ) {
+    return { kind: 'Centro sanitario', category: 'health' };
   }
-  if (a === 'pharmacy') return { kind: 'Farmacia', category: 'health' };
-  if (a === 'social_facility' || a === 'community_centre' || a === 'ngo') {
-    return { kind: 'Recurso comunitario', category: 'community' };
+  if (a === 'pharmacy') return { kind: 'Farmacia', category: 'other' };
+  if (
+    a === 'social_facility' ||
+    a === 'community_centre' ||
+    a === 'ngo' ||
+    tags?.social_facility ||
+    tags?.office === 'ngo' ||
+    tags?.office === 'association'
+  ) {
+    return { kind: 'Centro comunitario / sociosanitario', category: 'community' };
   }
   return { kind: 'Otro recurso', category: 'other' };
 }
@@ -211,22 +226,36 @@ function parseSites(
     seen.add(key);
     sites.push(site);
   }
-  sites.sort((a, b) => a.km - b.km);
-  return { sites: sites.slice(0, 24), checkedAt };
+  sites.sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km);
+  const primary = sites.filter((s) => s.kind !== 'Farmacia').slice(0, 22);
+  const pharmacies = sites.filter((s) => s.kind === 'Farmacia').slice(0, 2);
+  const mixed = primary.length >= 6 ? primary : [...primary, ...pharmacies].slice(0, 24);
+  return { sites: mixed, checkedAt };
+}
+
+function rankSite(site: Site) {
+  if (site.category === 'emergency') return 0;
+  if (site.category === 'community') return 1;
+  if (site.category === 'health') return 2;
+  return 3;
 }
 
 async function overpassNearby(lat: number, lng: number, preferred: string[]) {
-  const query = `[out:json][timeout:12];
+  const query = `[out:json][timeout:18];
 (
-  node["amenity"="hospital"](around:5000,${lat},${lng});
-  way["amenity"="hospital"](around:5000,${lat},${lng});
-  node["amenity"="clinic"](around:5000,${lat},${lng});
-  way["amenity"="clinic"](around:5000,${lat},${lng});
-  node["amenity"="pharmacy"](around:5000,${lat},${lng});
-  node["amenity"="social_facility"](around:5000,${lat},${lng});
-  node["office"="ngo"](around:5000,${lat},${lng});
+  nwr["amenity"="hospital"](around:12000,${lat},${lng});
+  nwr["healthcare"="hospital"](around:12000,${lat},${lng});
+  nwr["amenity"="clinic"](around:12000,${lat},${lng});
+  nwr["healthcare"="clinic"](around:12000,${lat},${lng});
+  nwr["amenity"="doctors"](around:12000,${lat},${lng});
+  nwr["amenity"="health_centre"](around:12000,${lat},${lng});
+  nwr["healthcare"="centre"](around:12000,${lat},${lng});
+  nwr["amenity"="social_facility"](around:12000,${lat},${lng});
+  nwr["amenity"="community_centre"](around:12000,${lat},${lng});
+  nwr["office"="ngo"](around:12000,${lat},${lng});
+  nwr["office"="association"](around:12000,${lat},${lng});
 );
-out center 40;`;
+out center 80;`;
   let data: any = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
@@ -255,7 +284,7 @@ async function nominatimHealthcare(
 ): Promise<{ sites: Site[]; checkedAt?: string }> {
   const delta = 0.08;
   const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
-  const queries = ['hospital', 'clinic', 'pharmacy', 'community health'];
+  const queries = ['hospital', 'clinic', 'community centre', 'health centre', 'NGO'];
   const seen = new Set<string>();
   const sites: Site[] = [];
   const accept = preferred.length ? preferred.join(',') : 'es,en';
@@ -288,8 +317,8 @@ async function nominatimHealthcare(
       continue;
     }
   }
-  sites.sort((a, b) => a.km - b.km);
-  return { sites: sites.slice(0, 24) };
+  sites.sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km);
+  return { sites: sites.filter((s) => s.kind !== 'Farmacia').slice(0, 24) };
 }
 
 function placeLabel(address: any, fallback: string) {

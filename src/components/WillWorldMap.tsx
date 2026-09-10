@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MAP_IMAGE, WORLD_NODES } from '../data/worldNodes';
+import { CAPITALS } from '../data/capitals';
 import {
   imagePctToLeaflet,
   imageToWgs,
@@ -60,10 +61,34 @@ export const WillWorldMap: React.FC<WillWorldMapProps> = ({
         color: '#e8c37a',
         weight: 1,
         fillColor: '#f3e0b0',
-        fillOpacity: 0.9,
+        fillOpacity: 0.95,
       });
       m.bindTooltip(node.label, { direction: 'top', opacity: 0.92 });
-      m.on('click', () => onSelectRef.current(node.query, node.lat, node.lng));
+      m.on('click', (ev) => {
+        L.DomEvent.stopPropagation(ev);
+        onSelectRef.current(node.query, node.lat, node.lng);
+      });
+      m.addTo(map);
+    }
+
+    for (const cap of CAPITALS) {
+      const pct = wgsToImage(cap.lat, cap.lng);
+      if (pct.x < 4 || pct.x > 96 || pct.y < 10 || pct.y > 90) continue;
+      const nearHub = WORLD_NODES.some((n) => Math.hypot(n.x - pct.x, n.y - pct.y) < 1.1);
+      if (nearHub) continue;
+      const ll = imagePctToLeaflet(pct);
+      const m = L.circleMarker(ll, {
+        radius: 3,
+        color: 'rgba(232,195,122,0.7)',
+        weight: 1,
+        fillColor: '#e8c37a',
+        fillOpacity: 0.65,
+      });
+      m.bindTooltip(`${cap.name}, ${cap.country}`, { direction: 'top', opacity: 0.92 });
+      m.on('click', (ev) => {
+        L.DomEvent.stopPropagation(ev);
+        onSelectRef.current(cap.name, cap.lat, cap.lng);
+      });
       m.addTo(map);
     }
 

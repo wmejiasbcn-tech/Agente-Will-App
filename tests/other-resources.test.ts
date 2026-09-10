@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WORLD_NODES } from '../src/data/worldNodes';
+import { CAPITALS } from '../src/data/capitals';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 let failed = 0;
@@ -82,6 +83,29 @@ await test('Accesible sin el mapa: búsqueda, labels y teclado', () => {
   assert.match(view, /htmlFor="other-resources-search"/);
   assert.match(view, /WillWorldMap/);
   assert.match(view, /Buscar ciudad, región, país/);
+});
+
+await test('Hay capitales del planeta y el buscador sigue abierto a cualquier ciudad', () => {
+  assert.ok(CAPITALS.length >= 150);
+  assert.equal(CAPITALS.some((c) => c.name === 'Buenos Aires'), true);
+  assert.equal(CAPITALS.some((c) => c.name === 'Madrid'), true);
+  const map = readFileSync(join(root, 'src/components/WillWorldMap.tsx'), 'utf8');
+  assert.match(map, /CAPITALS/);
+  assert.match(view, /other-resources-search/);
+});
+
+await test('Los resultados no son un listado de farmacias', () => {
+  const geo = readFileSync(join(root, 'api/geo.ts'), 'utf8');
+  assert.equal(geo.includes('amenity"="pharmacy'), false);
+  assert.match(geo, /community_centre/);
+  assert.match(geo, /social_facility/);
+  assert.match(geo, /kind !== 'Farmacia'/);
+});
+
+await test('Preguntar a Will no desmonta la conversación', () => {
+  const app = readFileSync(join(root, 'src/App.tsx'), 'utf8');
+  assert.match(app, /activeTab === 'chat' \? 'flex flex-col flex-1 min-h-0' : 'hidden'/);
+  assert.equal(app.includes("{activeTab === 'chat' && ("), false);
 });
 
 if (failed) {
