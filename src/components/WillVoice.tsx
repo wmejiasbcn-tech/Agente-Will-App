@@ -186,7 +186,7 @@ export const WillFinishTalkButton: React.FC<{
   const [busy, setBusy] = useState(false);
   const seedRef = useRef(currentText);
   seedRef.current = currentText;
-  const live = state === 'listening' || state === 'transcribing' || isWillMicListening();
+  const live = state === 'listening' || state === 'transcribing' || state === 'error' || isWillMicListening();
 
   useEffect(() => {
     return subscribeWillMic((snap) => {
@@ -213,7 +213,7 @@ export const WillFinishTalkButton: React.FC<{
       const r = await fetch('/api/voice/listen', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audio: dataUrl, mime: 'audio/wav' }),
+        body: JSON.stringify({ audio: dataUrl, mime: blob.type || 'audio/webm' }),
       });
       const data = await r.json().catch(() => ({}));
       const spoken = String(data?.text || '').trim();
@@ -234,9 +234,11 @@ export const WillFinishTalkButton: React.FC<{
   return createPortal(
     <div className="will-mic-dock">
       <p className="will-copy text-[15px]">
-        {busy || state === 'transcribing'
-          ? 'Estoy pasando a escrito lo que has dicho…'
-          : `Will te está escuchando · ${clock}`}
+        {state === 'error'
+          ? 'No he podido usar el micrófono. Pulsa el micrófono otra vez.'
+          : busy || state === 'transcribing'
+            ? 'Estoy pasando a escrito lo que has dicho…'
+            : `Will te está escuchando · ${clock}`}
       </p>
       {sec >= 3 && !busy && state !== 'transcribing' ? (
         <button

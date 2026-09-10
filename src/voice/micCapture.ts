@@ -3,7 +3,6 @@ export type MicCaptureStatus = 'idle' | 'listening';
 export type MicCaptureSnap = {
   status: MicCaptureStatus;
   seconds: number;
-  level: number;
 };
 
 type Listener = (snap: MicCaptureSnap) => void;
@@ -11,33 +10,17 @@ type Listener = (snap: MicCaptureSnap) => void;
 const listeners = new Set<Listener>();
 
 let stream: MediaStream | null = null;
-let ctx: AudioContext | null = null;
-let source: MediaStreamAudioSourceNode | null = null;
-let processor: ScriptProcessorNode | null = null;
-let mute: GainNode | null = null;
-let osc: OscillatorNode | null = null;
-let chunks: Float32Array[] = [];
-let sampleRate = 44100;
+let recorder: MediaRecorder | null = null;
+let blobs: Blob[] = [];
 let listening = false;
+let wantStop = false;
 let startedAt = 0;
 let tick: number | null = null;
-let level = 0;
-
-function pinGraph() {
-  (window as unknown as { __willMic?: unknown }).__willMic = {
-    ctx,
-    processor,
-    source,
-    stream,
-    osc,
-  };
-}
 
 function snap(): MicCaptureSnap {
   return {
     status: listening ? 'listening' : 'idle',
     seconds: listening ? Math.max(0, Math.floor((Date.now() - startedAt) / 1000)) : 0,
-    level,
   };
 }
 
@@ -46,58 +29,20 @@ function emit() {
   listeners.forEach((fn) => fn(s));
 }
 
-export function shieldClicks(ms = 1600) {
-  const until = Date.now() + ms;
-  const block = (event: Event) => {
-    if (Date.now() < until) {
-      event.stopPropagation();
-      event.preventDefault();
-      return;
-    }
-    document.removeEventListener('click', block, true);
-    document.removeEventListener('pointerup', block, true);
-  };
-  document.addEventListener('click', block, true);
-  document.addEventListener('pointerup', block, true);
+function pickMime() {
+  if (typeof MediaRecorder === 'undefined') return '';
+  const types = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+    'audio/ogg',
+  ];
+  return types.find((type) => MediaRecorder.isTypeSupported(type)) || '';
 }
 
-function clearGraph() {
-  try {
-    osc?.stop();
-  } catch {
-    /* ignore */
-  }
-  try {
-    processor?.disconnect();
-  } catch {
-    /* ignore */
-  }
-  try {
-    source?.disconnect();
-  } catch {
-    /* ignore */
-  }
-  try {
-    mute?.disconnect();
-  } catch {
-    /* ignore */
-  }
-  processor = null;
-  source = null;
-  mute = null;
-  osc = null;
-  (window as unknown as { __willMic?: unknown }).__willMic = undefined;
-}
-
-async function closeCtx() {
-  if (ctx && ctx.state !== 'closed') {
-    try {
-      await ctx.close();
-    } catch {
-      /* ignore */
-    }
-  }
-  ctx = null;
+function pin() {
+  (window as unknown as { __willMic?: unknown }).__willMic = { stream, recorder };
 }
 
 function stopTracks() {
@@ -105,43 +50,36 @@ function stopTracks() {
   stream = null;
 }
 
-function mergeChunks() {
-  const total = chunks.reduce((n, c) => n + c.length, 0);
-  const out = new Float32Array(total);
-  let o = 0;
-  for (const c of chunks) {
-    out.set(c, o);
-    o += c.length;
-  }
-  return out;
-}
-
-function encodeWav(data: Float32Array, rate: number) {
-  const bytes = data.length * 2;
-  const buf = new ArrayBuffer(44 + bytes);
-  const v = new DataView(buf);
-  const ascii = (off: number, s: string) => {
-    for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i));
+function attachRecorder(media: MediaStream) {
+  const mime = pickMime();
+  const rec = mime ? new MediaRecorder(media, { mimeType: mime }) : new MediaRecorder(media);
+  recorder = rec;
+  rec.ondataavailable = (ev) => {
+    if (ev.data && ev.data.size > 0) blobs.push(ev.data);
   };
-  ascii(0, 'RIFF');
-  v.setUint32(4, 36 + bytes, true);
-  ascii(8, 'WAVE');
-  ascii(12, 'fmt ');
-  v.setUint32(16, 16, true);
-  v.setUint16(20, 1, true);
-  v.setUint16(22, 1, true);
-  v.setUint32(24, rate, true);
-  v.setUint32(28, rate * 2, true);
-  v.setUint16(32, 2, true);
-  v.setUint16(34, 16, true);
-  ascii(36, 'data');
-  v.setUint32(40, bytes, true);
-  let p = 44;
-  for (let i = 0; i < data.length; i++, p += 2) {
-    const s = Math.max(-1, Math.min(1, data[i]));
-    v.setInt16(p, s < 0 ? s * 0x8000 : s * 0x7fff, true);
-  }
-  return new Blob([buf], { type: 'audio/wav' });
+  rec.onerror = () => {
+    if (wantStop || !listening || !stream) return;
+    window.setTimeout(() => {
+      if (wantStop || !listening || !stream) return;
+      try {
+        attachRecorder(stream);
+        recorder?.start();
+      } catch {
+        /* keep stream alive */
+      }
+    }, 80);
+  };
+  rec.onstop = () => {
+    if (wantStop || !listening || !stream) return;
+    try {
+      attachRecorder(stream);
+      recorder?.start();
+    } catch {
+      /* keep stream alive */
+    }
+  };
+  pin();
+  return rec;
 }
 
 export function isWillMicListening() {
@@ -158,66 +96,48 @@ export function subscribeWillMic(fn: Listener) {
 
 export async function startWillMic() {
   if (listening) return;
-  chunks = [];
-  level = 0;
+  wantStop = false;
+  blobs = [];
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error('mic');
+  }
   const media = await navigator.mediaDevices.getUserMedia({ audio: true });
   stream = media;
-  const AC =
-    window.AudioContext ||
-    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-  ctx = new AC();
-  if (ctx.state === 'suspended') await ctx.resume();
-  sampleRate = ctx.sampleRate;
-  source = ctx.createMediaStreamSource(media);
-  processor = ctx.createScriptProcessor(4096, 1, 1);
-  processor.onaudioprocess = (ev) => {
-    if (!listening) return;
-    if (Date.now() - startedAt > 120000) return;
-    const input = ev.inputBuffer.getChannelData(0);
-    const copy = new Float32Array(input);
-    chunks.push(copy);
-    let sum = 0;
-    for (let i = 0; i < copy.length; i++) sum += copy[i] * copy[i];
-    level = Math.min(1, Math.sqrt(sum / copy.length) * 4);
-  };
-  mute = ctx.createGain();
-  mute.gain.value = 0;
-  osc = ctx.createOscillator();
-  osc.frequency.value = 20;
-  const keep = ctx.createGain();
-  keep.gain.value = 0.00001;
-  osc.connect(keep);
-  keep.connect(ctx.destination);
-  osc.start();
-  source.connect(processor);
-  processor.connect(mute);
-  mute.connect(ctx.destination);
-  pinGraph();
+  const rec = attachRecorder(media);
+  rec.start();
   listening = true;
   startedAt = Date.now();
   if (tick) window.clearInterval(tick);
-  tick = window.setInterval(() => {
-    if (ctx && ctx.state === 'suspended') void ctx.resume();
-    emit();
-  }, 250);
+  tick = window.setInterval(emit, 250);
   emit();
-  shieldClicks(1800);
 }
 
 export async function stopWillMic(): Promise<Blob | null> {
-  if (!listening && chunks.length === 0) return null;
+  wantStop = true;
   listening = false;
   if (tick) {
     window.clearInterval(tick);
     tick = null;
   }
-  clearGraph();
-  await closeCtx();
+  const rec = recorder;
+  if (rec && rec.state !== 'inactive') {
+    await new Promise<void>((resolve) => {
+      const done = () => resolve();
+      rec.addEventListener('stop', done, { once: true });
+      try {
+        rec.stop();
+      } catch {
+        resolve();
+      }
+      window.setTimeout(done, 1500);
+    });
+  }
+  recorder = null;
   stopTracks();
-  const data = mergeChunks();
-  chunks = [];
-  level = 0;
+  (window as unknown as { __willMic?: unknown }).__willMic = undefined;
+  const blob = new Blob(blobs, { type: rec?.mimeType || 'audio/webm' });
+  blobs = [];
   emit();
-  if (data.length < sampleRate * 0.35) return null;
-  return encodeWav(data, sampleRate);
+  if (blob.size < 400) return null;
+  return blob;
 }
