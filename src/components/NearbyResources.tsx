@@ -7,6 +7,10 @@ import {
   requestUserCoords,
 } from '../utils/geolocation';
 import { assertNoGeoPersistence } from '../utils/geoPrivacy';
+import {
+  LanguageFilterMode,
+  SPOKEN_LANGUAGES,
+} from '../data/spokenLanguages';
 
 interface NearbyResourcesProps {
   onAskWill: (prompt: string) => void;
@@ -15,16 +19,27 @@ interface NearbyResourcesProps {
 export const NearbyResources: React.FC<NearbyResourcesProps> = ({ onAskWill }) => {
   const [geoStatus, setGeoStatus] = useState<GeoStatus>('idle');
   const [query, setQuery] = useState('');
-  const [english, setEnglish] = useState(false);
+  const [languages, setLanguages] = useState<string[]>([]);
+  const [languageMode, setLanguageMode] = useState<LanguageFilterMode>('prioritize');
   const [place, setPlace] = useState<GeoLookupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [privacyLeaks, setPrivacyLeaks] = useState<string[]>([]);
+
+  const toggleLang = (id: string) => {
+    setLanguages((prev) =>
+      prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id],
+    );
+  };
 
   const runLookup = async (body: { lat?: number; lng?: number; q?: string }) => {
     setGeoStatus('asking');
     setError(null);
     try {
-      const result = await lookupPlace({ ...body, english });
+      const result = await lookupPlace({
+        ...body,
+        languages,
+        languageMode,
+      });
       setPlace(result);
       setGeoStatus('ready');
     } catch (e: any) {
@@ -64,9 +79,8 @@ export const NearbyResources: React.FC<NearbyResourcesProps> = ({ onAskWill }) =
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-serif font-bold will-copy">Cerca de ti, en cualquier lugar</h2>
           <p className="text-xs will-copy-muted mt-0.5 leading-relaxed">
-            Tokio, Ushuaia, Anchorage, Ciudad del Cabo o donde estés. Will no guarda tu ubicación:
-            se usa solo en este momento. El mapa es abierto (OpenStreetMap), no un directorio
-            clínico de Will.
+            El mapa es OpenStreetMap. Will no guarda tu ubicación. Filtra por idioma si necesitas
+            que te atiendan en una lengua concreta.
           </p>
         </div>
       </div>
@@ -88,25 +102,61 @@ export const NearbyResources: React.FC<NearbyResourcesProps> = ({ onAskWill }) =
         </button>
       </form>
 
-      <div className="flex flex-wrap gap-2 items-center">
-        <button
-          type="button"
-          onClick={askLocation}
-          disabled={geoStatus === 'asking'}
-          className="px-3 py-2 text-xs font-medium border border-[rgba(232,195,122,0.45)] text-[#e8c37a] hover:bg-[rgba(232,195,122,0.08)] disabled:opacity-60"
-        >
-          {geoStatus === 'asking' ? 'Buscando…' : 'Usar mi ubicación'}
-        </button>
-        <label className="flex items-center gap-2 text-xs will-copy-muted cursor-pointer">
-          <input
-            type="checkbox"
-            checked={english}
-            onChange={(e) => setEnglish(e.target.checked)}
-            className="accent-[#e8c37a]"
-          />
-          Priorizar sitios con indicios de inglés
-        </label>
+      <div className="space-y-2">
+        <p className="text-[11px] uppercase tracking-wide text-[#e8c37a]">Idiomas</p>
+        <div className="flex flex-wrap gap-1.5">
+          {SPOKEN_LANGUAGES.map((lang) => {
+            const on = languages.includes(lang.id);
+            return (
+              <button
+                key={lang.id}
+                type="button"
+                onClick={() => toggleLang(lang.id)}
+                className={`px-2 py-1 text-[11px] border ${
+                  on
+                    ? 'border-[#e8c37a] text-[#e8c37a] bg-[rgba(232,195,122,0.08)]'
+                    : 'border-stone-800 text-stone-400 hover:text-[#ead6b4]'
+                }`}
+              >
+                {lang.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setLanguageMode('prioritize')}
+            className={`px-2 py-1 text-[11px] border ${
+              languageMode === 'prioritize'
+                ? 'border-[#e8c37a] text-[#e8c37a]'
+                : 'border-stone-800 text-stone-400'
+            }`}
+          >
+            Priorizar
+          </button>
+          <button
+            type="button"
+            onClick={() => setLanguageMode('only')}
+            className={`px-2 py-1 text-[11px] border ${
+              languageMode === 'only'
+                ? 'border-[#e8c37a] text-[#e8c37a]'
+                : 'border-stone-800 text-stone-400'
+            }`}
+          >
+            Solo estos idiomas
+          </button>
+        </div>
       </div>
+
+      <button
+        type="button"
+        onClick={askLocation}
+        disabled={geoStatus === 'asking'}
+        className="px-3 py-2 text-xs font-medium border border-[rgba(232,195,122,0.45)] text-[#e8c37a] hover:bg-[rgba(232,195,122,0.08)] disabled:opacity-60"
+      >
+        {geoStatus === 'asking' ? 'Buscando…' : 'Usar mi ubicación'}
+      </button>
 
       {geoStatus === 'denied' && (
         <p className="text-xs will-copy-muted">
@@ -132,10 +182,23 @@ export const NearbyResources: React.FC<NearbyResourcesProps> = ({ onAskWill }) =
             )}
           </div>
 
+          {place.mapEmbedUrl && (
+            <div className="overflow-hidden border border-[rgba(232,195,122,0.18)] h-52 sm:h-64">
+              <iframe
+                title={`Mapa de ${place.label}`}
+                src={place.mapEmbedUrl}
+                className="w-full h-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          )}
+
           {place.sites.length === 0 ? (
             <p className="text-xs will-copy-muted">
-              No han aparecido centros en el mapa abierto de este punto. El número de emergencias
-              sigue siendo el camino más directo.
+              {languageMode === 'only' && languages.length
+                ? 'No hay centros con esos idiomas en el mapa abierto. Prueba Priorizar o quita el filtro.'
+                : 'No han aparecido centros en el mapa abierto de este punto. El número de emergencias sigue siendo el camino más directo.'}
             </p>
           ) : (
             <ul className="space-y-2">
@@ -145,16 +208,13 @@ export const NearbyResources: React.FC<NearbyResourcesProps> = ({ onAskWill }) =
                   className="flex items-start justify-between gap-3 border-t border-stone-800/80 pt-2"
                 >
                   <div className="min-w-0">
-                    <p className="text-xs will-copy">
-                      {site.name}
-                      {site.englishLikely && (
-                        <span className="ml-2 text-[10px] uppercase tracking-wide text-[#e8c37a]">
-                          indicios de inglés
-                        </span>
-                      )}
-                    </p>
+                    <p className="text-xs will-copy">{site.name}</p>
                     <p className="text-[11px] will-copy-muted">
                       {site.kind} · {site.km} km
+                      {site.languages.length > 0 &&
+                        ` · ${site.languages
+                          .map((id) => SPOKEN_LANGUAGES.find((l) => l.id === id)?.label || id)
+                          .join(', ')}`}
                     </p>
                   </div>
                   <a
@@ -175,7 +235,13 @@ export const NearbyResources: React.FC<NearbyResourcesProps> = ({ onAskWill }) =
             type="button"
             onClick={() =>
               onAskWill(
-                `Estoy en ${place.label}. ¿Qué debo tener en cuenta para acceder a un centro sanitario o a un recurso de apoyo allí, incluido si necesito que me atiendan en inglés?`,
+                `Estoy en ${place.label}. Necesito un centro sanitario o un recurso de apoyo${
+                  languages.length
+                    ? ` donde puedan atenderme en ${languages
+                        .map((id) => SPOKEN_LANGUAGES.find((l) => l.id === id)?.label || id)
+                        .join(', ')}`
+                    : ''
+                }.`,
               )
             }
             className="w-full py-2 text-[11px] font-medium border border-stone-800 text-stone-300 hover:text-[#e8c37a]"

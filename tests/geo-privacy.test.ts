@@ -6,6 +6,7 @@ import {
   looksLikeCoordinates,
   readGeoLeaksFromStorage,
 } from '../src/utils/geoPrivacy';
+import { languagesFromOsmTags, sortByLanguages } from '../src/data/spokenLanguages';
 
 function mockStorage(entries: Record<string, string>) {
   const keys = Object.keys(entries);
@@ -72,6 +73,27 @@ test('privacidad: detecta coordenadas guardadas', () => {
     mockStorage({ user: '{"lat":35.676,"lng":139.650}' }),
   );
   assert.ok(leaks.includes('user'));
+});
+
+test('filtros de idioma: priorizar y solo', () => {
+  const sites = [
+    { name: 'A', languages: ['ja'], km: 1 },
+    { name: 'B', languages: ['en', 'ja'], km: 3 },
+    { name: 'C', languages: ['es'], km: 2 },
+  ];
+  const prior = sortByLanguages(sites, ['en'], 'prioritize');
+  assert.equal(prior[0].name, 'B');
+  const only = sortByLanguages(sites, ['en'], 'only');
+  assert.deepEqual(
+    only.map((s) => s.name),
+    ['B'],
+  );
+  const langs = languagesFromOsmTags({
+    name: 'St Luke',
+    'name:en': 'St. Luke',
+    'name:ja': '聖路加',
+  });
+  assert.ok(langs.includes('en') && langs.includes('ja'));
 });
 
 if (failed) {

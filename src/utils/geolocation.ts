@@ -1,4 +1,5 @@
 import { emergencyForCountry, EmergencyInfo } from '../data/emergencyNumbers';
+import { LanguageFilterMode } from '../data/spokenLanguages';
 
 export type GeoStatus = 'idle' | 'asking' | 'ready' | 'denied' | 'unavailable';
 
@@ -7,7 +8,9 @@ export interface NearbySite {
   kind: string;
   km: number;
   mapsUrl: string;
-  englishLikely: boolean;
+  languages: string[];
+  lat: number;
+  lng: number;
 }
 
 export interface GeoLookupResult {
@@ -16,7 +19,10 @@ export interface GeoLookupResult {
   countryName: string;
   emergency: EmergencyInfo;
   sites: NearbySite[];
-  englishPreferred: boolean;
+  languages: string[];
+  languageMode: LanguageFilterMode;
+  center: { lat: number; lng: number };
+  mapEmbedUrl: string;
 }
 
 export function distanceKm(
@@ -65,7 +71,8 @@ export async function lookupPlace(body: {
   lat?: number;
   lng?: number;
   q?: string;
-  english?: boolean;
+  languages?: string[];
+  languageMode?: LanguageFilterMode;
 }): Promise<GeoLookupResult> {
   const r = await fetch('/api/geo/lookup', {
     method: 'POST',
@@ -81,4 +88,16 @@ export async function lookupPlace(body: {
 
 export function emergencyFallback(code?: string) {
   return emergencyForCountry(code);
+}
+
+export function osmEmbedUrl(center: { lat: number; lng: number }, sites: { lat: number; lng: number }[]) {
+  const pts = [center, ...sites];
+  const lats = pts.map((p) => p.lat);
+  const lngs = pts.map((p) => p.lng);
+  const pad = 0.02;
+  const minLng = Math.min(...lngs) - pad;
+  const minLat = Math.min(...lats) - pad;
+  const maxLng = Math.max(...lngs) + pad;
+  const maxLat = Math.max(...lats) + pad;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${minLng}%2C${minLat}%2C${maxLng}%2C${maxLat}&layer=mapnik&marker=${center.lat}%2C${center.lng}`;
 }
