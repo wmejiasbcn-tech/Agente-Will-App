@@ -115,6 +115,23 @@ export function probeWillCompat(env: CompatEnv = readLiveCompatEnv()): CompatRep
   return buildCompatReport(env);
 }
 
+export function installWillCompatProbe() {
+  if (typeof window === 'undefined') return;
+  const w = window as Window & { __willCompat?: unknown };
+  w.__willCompat = {
+    report: () => probeWillCompat(),
+    canTalk: () => {
+      const r = probeWillCompat();
+      return {
+        capture: r.mic.canCapture,
+        playback: r.audio.element,
+        speechRecognitionRequired: false,
+        chromeRequired: false,
+      };
+    },
+  };
+}
+
 export function micWorksWithoutSpeechRecognition(report: CompatReport): boolean {
   return report.mic.canCapture;
 }

@@ -119,8 +119,7 @@ await test('Motores reales de página: Chromium, Firefox, WebKit si existen. Neo
       console.log(`NO VERIFICADO ${label}: ${String(e.message || e).slice(0, 160)}`);
     }
   }
-  console.log('NO VERIFICADO Neo: este entorno no ejecuta Neo. No se marca verde por Chrome.');
-  console.log('NO VERIFICADO Comet / Safari iOS / Firefox Android: misma regla.');
+  console.log('Neo se prueba en tests/neo-voice.test.ts, no se cubre con Chrome.');
 });
 
 if (failed) {
