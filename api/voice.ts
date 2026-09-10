@@ -6,12 +6,81 @@ const WILL_UPSTREAM = 'https://api.elevenlabs.io/v1/text-to-speech';
 const WILL_STT = 'https://api.elevenlabs.io/v1/speech-to-text';
 
 function elevenLabsKey() {
-  return (
+  const raw =
     process.env.ELEVENLABS_API_KEY ||
     process.env.ELEVEN_LABS_API_KEY ||
     process.env.XI_API_KEY ||
-    ''
-  );
+    '';
+  const key = String(raw)
+    .replace(/^\uFEFF/, '')
+    .trim()
+    .replace(/^Bearer\s+/i, '')
+    .replace(/^['"]+|['"]+$/g, '')
+    .trim();
+  if (!key || key.length < 20) return '';
+  if (/^(MY_|YOUR_|CHANGE|TODO|PLACEHOLDER|xxx)/i.test(key)) return '';
+  return key;
+}
+
+function classifyEleven(status: number, body: string) {
+  let reason = '';
+  try {
+    const parsed = JSON.parse(body);
+    const detail = parsed?.detail;
+    if (typeof detail === 'string') reason = detail;
+    else if (detail && typeof detail === 'object') {
+      reason = String(detail.status || detail.message || '');
+    } else if (parsed?.status) {
+      reason = String(parsed.status);
+    }
+  } catch {
+    reason = body.slice(0, 120);
+  }
+  const blob = `${status} ${reason}`.toLowerCase();
+  if (status === 401 || /invalid_api_key|unauthorized/.test(blob)) return 'auth';
+  if (status === 404 || /voice_not_found/.test(blob)) return 'voice';
+  if (status === 402 || status === 429 || /quota|credits|limit|concurrency/.test(blob)) {
+    return 'quota';
+  }
+  if (status === 422) return 'request';
+  return 'upstream';
+}
+
+function userErrorFor(kind: string) {
+  if (kind === 'auth') return 'La clave de voz no es válida en el servidor.';
+  if (kind === 'quota') return 'La voz no está disponible ahora por límite de uso.';
+  if (kind === 'voice') return 'La voz canónica de Will no está accesible ahora.';
+  return 'ElevenLabs no ha podido generar la voz ahora.';
+}
+
+async function requestWillSpeech(apiKey: string, voiceId: string, text: string) {
+  const url = `${WILL_UPSTREAM}/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`;
+  const headers = {
+    'xi-api-key': apiKey,
+    'Content-Type': 'application/json',
+    Accept: 'audio/mpeg',
+  };
+  const body = JSON.stringify({
+    text,
+    model_id: WILL_MODEL,
+    voice_settings: {
+      stability: 0.5,
+      similarity_boost: 0.8,
+    },
+  });
+  const once = () =>
+    fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+      signal: AbortSignal.timeout(20000),
+    });
+  let r = await once();
+  if (r.status === 429 || r.status >= 500) {
+    await new Promise((ok) => setTimeout(ok, 600));
+    r = await once();
+  }
+  return r;
 }
 
 function prepareWillSpeech(text: string) {
@@ -110,44 +179,41 @@ export function registerVoiceRoutes(app: Express) {
       }
 
       const voiceId = process.env.ELEVENLABS_VOICE_ID?.trim() || WILL_VOICE_ID;
-      const url = `${WILL_UPSTREAM}/${encodeURIComponent(voiceId)}`;
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'xi-api-key': apiKey,
-          'Content-Type': 'application/json',
-          Accept: 'audio/mpeg',
-        },
-        body: JSON.stringify({
-          text,
-          model_id: WILL_MODEL,
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.8,
-          },
-        }),
-      });
+      const r = await requestWillSpeech(apiKey, voiceId, text);
 
       if (!r.ok) {
         const detail = await r.text().catch(() => '');
-        console.error('ElevenLabs TTS error', r.status, detail.slice(0, 300));
+        const kind = classifyEleven(r.status, detail);
+        console.error('ElevenLabs TTS error', r.status, kind, detail.slice(0, 300));
         return res.status(502).json({
-          error: 'ElevenLabs no ha podido generar la voz ahora.',
+          error: userErrorFor(kind),
           voiceId,
+          reason: kind,
+          upstreamStatus: r.status,
         });
       }
 
       const audio = Buffer.from(await r.arrayBuffer());
+      if (audio.length < 200) {
+        return res.status(502).json({
+          error: 'ElevenLabs no ha podido generar la voz ahora.',
+          voiceId,
+          reason: 'empty',
+        });
+      }
+      res.status(200);
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('Content-Length', String(audio.length));
       res.setHeader('X-Will-Voice', voiceId);
       res.setHeader('X-Will-Provider', 'ElevenLabs');
-      return res.send(audio);
+      return res.end(audio);
     } catch (error: any) {
       console.error('Error in /api/voice/speak', error?.message || error);
       return res.status(502).json({
         error: 'La voz de Will no está disponible ahora.',
         voiceId: WILL_VOICE_ID,
+        reason: 'exception',
       });
     }
   });

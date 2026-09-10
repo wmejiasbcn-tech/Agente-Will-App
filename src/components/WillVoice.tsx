@@ -41,15 +41,31 @@ interface WillSpeakApi {
 let playGen = 0;
 
 async function fetchWillSpeech(text: string): Promise<Blob | null> {
-  const r = await fetch('/api/voice/speak', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
-  });
-  if (!r.ok) return null;
-  const blob = await r.blob();
-  if (!blob.size) return null;
-  return blob;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await fetch('/api/voice/speak', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    if (r.ok) {
+      const blob = await r.blob();
+      const type = blob.type || '';
+      const audioLike =
+        blob.size > 200 &&
+        (type.includes('audio') ||
+          type.includes('mpeg') ||
+          type === 'application/octet-stream' ||
+          type === '');
+      if (audioLike) return blob;
+    }
+    if (r.status === 400 || r.status === 401 || r.status === 403 || r.status === 503) {
+      return null;
+    }
+    if (attempt === 0) {
+      await new Promise((ok) => setTimeout(ok, 500));
+    }
+  }
+  return null;
 }
 
 function playOnShared(blob: Blob, gen: number): Promise<'ended' | 'error' | 'stopped'> {
@@ -72,6 +88,11 @@ function playOnShared(blob: Blob, gen: number): Promise<'ended' | 'error' | 'sto
     };
     audio.onended = () => finish('ended');
     audio.onerror = () => finish('error');
+    try {
+      audio.pause();
+    } catch {
+      /* ignore */
+    }
     audio.loop = false;
     audio.muted = false;
     audio.volume = 1;
