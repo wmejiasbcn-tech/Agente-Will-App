@@ -24,7 +24,7 @@ export const VOICE_STATE_LABEL: Record<VoiceUiState, string> = {
   transcribing: 'Estoy pasando a escrito lo que has dicho…',
   processing: 'Will está preparando la voz…',
   speaking: 'Will está hablando',
-  error: 'La voz no está disponible ahora',
+  error: 'No he podido escribir lo que has dicho. Pulsa el micrófono y prueba otra vez.',
 };
 
 export function prepareWillSpeech(text: string) {

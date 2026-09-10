@@ -1,5 +1,4 @@
 import type { Express, Request, Response } from 'express';
-import express from 'express';
 
 const WILL_VOICE_ID = 'DrwFQsjvHFpLcKyvtbE3';
 const WILL_MODEL = 'eleven_multilingual_v2';
@@ -46,24 +45,19 @@ export function registerVoiceRoutes(app: Express) {
     });
   });
 
-  app.post(
-    '/api/voice/listen',
-    express.raw({ type: () => true, limit: '8mb' }),
-    async (req: Request, res: Response) => {
+  app.post('/api/voice/listen', async (req: Request, res: Response) => {
       try {
         const apiKey = elevenLabsKey();
         if (!apiKey) {
           return res.status(503).json({ error: 'Falta la clave de ElevenLabs en el servidor.' });
         }
-        const buf = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body || []);
-        if (!buf.length) {
+        const rawAudio = typeof req.body?.audio === 'string' ? req.body.audio : '';
+        const b64 = rawAudio.replace(/^data:[^;]+;base64,/, '');
+        const buf = b64 ? Buffer.from(b64, 'base64') : Buffer.alloc(0);
+        if (buf.length < 200) {
           return res.status(400).json({ error: 'No ha llegado audio.' });
         }
-        const mime =
-          (typeof req.headers['x-will-mime'] === 'string' && req.headers['x-will-mime']) ||
-          (typeof req.headers['content-type'] === 'string' && req.headers['content-type'] !== 'application/octet-stream'
-            ? req.headers['content-type']
-            : 'audio/webm');
+        const mime = typeof req.body?.mime === 'string' && req.body.mime ? req.body.mime : 'audio/webm';
         const form = new FormData();
         form.append('model_id', 'scribe_v2');
         form.append('language_code', 'es');
@@ -99,8 +93,7 @@ export function registerVoiceRoutes(app: Express) {
         console.error('Error in /api/voice/listen', error?.message || error);
         return res.status(502).json({ error: 'No he podido pasar a escrito lo que has dicho ahora.' });
       }
-    },
-  );
+  });
 
   app.post('/api/voice/speak', async (req: Request, res: Response) => {
     try {

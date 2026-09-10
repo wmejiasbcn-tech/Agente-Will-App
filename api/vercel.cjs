@@ -33,7 +33,7 @@ __export(app_exports, {
   default: () => app_default
 });
 module.exports = __toCommonJS(app_exports);
-var import_express2 = __toESM(require("express"), 1);
+var import_express = __toESM(require("express"), 1);
 var import_genai = require("@google/genai");
 var import_dotenv = __toESM(require("dotenv"), 1);
 
@@ -463,7 +463,6 @@ function registerGeoRoutes(app2) {
 }
 
 // api/voice.ts
-var import_express = __toESM(require("express"), 1);
 var WILL_VOICE_ID = "DrwFQsjvHFpLcKyvtbE3";
 var WILL_MODEL = "eleven_multilingual_v2";
 var WILL_UPSTREAM = "https://api.elevenlabs.io/v1/text-to-speech";
@@ -494,56 +493,54 @@ function registerVoiceRoutes(app2) {
       listen: true
     });
   });
-  app2.post(
-    "/api/voice/listen",
-    import_express.default.raw({ type: () => true, limit: "8mb" }),
-    async (req, res) => {
-      try {
-        const apiKey = elevenLabsKey();
-        if (!apiKey) {
-          return res.status(503).json({ error: "Falta la clave de ElevenLabs en el servidor." });
-        }
-        const buf = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body || []);
-        if (!buf.length) {
-          return res.status(400).json({ error: "No ha llegado audio." });
-        }
-        const mime = typeof req.headers["x-will-mime"] === "string" && req.headers["x-will-mime"] || (typeof req.headers["content-type"] === "string" && req.headers["content-type"] !== "application/octet-stream" ? req.headers["content-type"] : "audio/webm");
-        const form = new FormData();
-        form.append("model_id", "scribe_v2");
-        form.append("language_code", "es");
-        form.append("tag_audio_events", "false");
-        form.append("file", new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
-        let r = await fetch(WILL_STT, {
+  app2.post("/api/voice/listen", async (req, res) => {
+    try {
+      const apiKey = elevenLabsKey();
+      if (!apiKey) {
+        return res.status(503).json({ error: "Falta la clave de ElevenLabs en el servidor." });
+      }
+      const rawAudio = typeof req.body?.audio === "string" ? req.body.audio : "";
+      const b64 = rawAudio.replace(/^data:[^;]+;base64,/, "");
+      const buf = b64 ? Buffer.from(b64, "base64") : Buffer.alloc(0);
+      if (buf.length < 200) {
+        return res.status(400).json({ error: "No ha llegado audio." });
+      }
+      const mime = typeof req.body?.mime === "string" && req.body.mime ? req.body.mime : "audio/webm";
+      const form = new FormData();
+      form.append("model_id", "scribe_v2");
+      form.append("language_code", "es");
+      form.append("tag_audio_events", "false");
+      form.append("file", new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
+      let r = await fetch(WILL_STT, {
+        method: "POST",
+        headers: { "xi-api-key": apiKey },
+        body: form
+      });
+      if (!r.ok) {
+        const retry = new FormData();
+        retry.append("model_id", "scribe_v1");
+        retry.append("language_code", "es");
+        retry.append("tag_audio_events", "false");
+        retry.append("file", new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
+        r = await fetch(WILL_STT, {
           method: "POST",
           headers: { "xi-api-key": apiKey },
-          body: form
+          body: retry
         });
-        if (!r.ok) {
-          const retry = new FormData();
-          retry.append("model_id", "scribe_v1");
-          retry.append("language_code", "es");
-          retry.append("tag_audio_events", "false");
-          retry.append("file", new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
-          r = await fetch(WILL_STT, {
-            method: "POST",
-            headers: { "xi-api-key": apiKey },
-            body: retry
-          });
-        }
-        if (!r.ok) {
-          const detail = await r.text().catch(() => "");
-          console.error("ElevenLabs STT error", r.status, detail.slice(0, 300));
-          return res.status(502).json({ error: "No he podido pasar a escrito lo que has dicho ahora." });
-        }
-        const data = await r.json();
-        const text = String(data?.text || "").replace(/\s+/g, " ").trim();
-        return res.json({ text, storesAudio: false });
-      } catch (error) {
-        console.error("Error in /api/voice/listen", error?.message || error);
+      }
+      if (!r.ok) {
+        const detail = await r.text().catch(() => "");
+        console.error("ElevenLabs STT error", r.status, detail.slice(0, 300));
         return res.status(502).json({ error: "No he podido pasar a escrito lo que has dicho ahora." });
       }
+      const data = await r.json();
+      const text = String(data?.text || "").replace(/\s+/g, " ").trim();
+      return res.json({ text, storesAudio: false });
+    } catch (error) {
+      console.error("Error in /api/voice/listen", error?.message || error);
+      return res.status(502).json({ error: "No he podido pasar a escrito lo que has dicho ahora." });
     }
-  );
+  });
   app2.post("/api/voice/speak", async (req, res) => {
     try {
       const raw = typeof req.body?.text === "string" ? req.body.text : "";
@@ -600,8 +597,8 @@ function registerVoiceRoutes(app2) {
 
 // api/app.ts
 import_dotenv.default.config();
-var app = (0, import_express2.default)();
-app.use(import_express2.default.json({ limit: "10mb" }));
+var app = (0, import_express.default)();
+app.use(import_express.default.json({ limit: "12mb" }));
 registerGeoRoutes(app);
 registerVoiceRoutes(app);
 function getGeminiClient() {

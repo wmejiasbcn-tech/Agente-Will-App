@@ -106,6 +106,15 @@ export function useWillSpeak(): WillSpeakApi {
 }
 
 
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('audio'));
+    reader.readAsDataURL(blob);
+  });
+}
+
 function pickRecorderMime() {
   if (typeof MediaRecorder === 'undefined') return '';
   const types = [
@@ -137,24 +146,30 @@ export const WillMicButton: React.FC<MicProps> = ({
   const chunks = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const seedRef = useRef('');
+  const recordingRef = useRef(false);
+  const lockUntil = useRef(0);
+  const startingRef = useRef(false);
 
   const release = () => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     recRef.current = null;
     chunks.current = [];
+    recordingRef.current = false;
+    startingRef.current = false;
   };
 
   const transcribe = async (blob: Blob, seed: string) => {
     setState('transcribing');
     try {
+      const dataUrl = await blobToDataUrl(blob);
       const r = await fetch('/api/voice/listen', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/octet-stream',
-          'X-Will-Mime': blob.type || 'audio/webm',
-        },
-        body: blob,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audio: dataUrl,
+          mime: blob.type || 'audio/webm',
+        }),
       });
       const data = await r.json().catch(() => ({}));
       const spoken = String(data?.text || '').trim();
@@ -162,8 +177,7 @@ export const WillMicButton: React.FC<MicProps> = ({
         setState('error');
         return;
       }
-      const next = seed ? `${seed} ${spoken}` : spoken;
-      onTranscript(next, true);
+      onTranscript(seed ? `${seed} ${spoken}` : spoken, true);
       setState('idle');
     } catch {
       setState('error');
@@ -171,27 +185,39 @@ export const WillMicButton: React.FC<MicProps> = ({
   };
 
   const stopListen = () => {
+    if (Date.now() < lockUntil.current) return;
     const rec = recRef.current;
+    recordingRef.current = false;
     if (!rec || rec.state === 'inactive') {
       release();
-      if (state === 'listening') setState('idle');
+      setState('idle');
       return;
     }
-    rec.stop();
+    try {
+      if (typeof rec.requestData === 'function' && rec.state === 'recording') rec.requestData();
+      rec.stop();
+    } catch {
+      release();
+      setState('idle');
+    }
   };
 
   const startListen = async () => {
+    if (startingRef.current || recordingRef.current) return;
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setState('error');
       return;
     }
+    startingRef.current = true;
     seedRef.current = currentText;
     chunks.current = [];
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
+      });
       streamRef.current = stream;
       const mime = pickRecorderMime();
-      const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      const rec = mime ? new MediaRecorder(stream) : new MediaRecorder(stream);
       recRef.current = rec;
       rec.ondataavailable = (ev) => {
         if (ev.data && ev.data.size > 0) chunks.current.push(ev.data);
@@ -201,36 +227,41 @@ export const WillMicButton: React.FC<MicProps> = ({
         setState('error');
       };
       rec.onstop = () => {
-        const blob = new Blob(chunks.current, { type: rec.mimeType || 'audio/webm' });
+        const blob = new Blob(chunks.current, { type: rec.mimeType || mime || 'audio/webm' });
         const seed = seedRef.current.trim();
         release();
-        if (blob.size < 800) {
-          setState('idle');
+        if (blob.size < 400) {
+          setState('error');
           return;
         }
         void transcribe(blob, seed);
       };
-      rec.start(250);
+      rec.start();
+      recordingRef.current = true;
+      lockUntil.current = Date.now() + 900;
       setState('listening');
     } catch {
       release();
       setState('error');
+    } finally {
+      startingRef.current = false;
     }
   };
 
   useEffect(
     () => () => {
+      recordingRef.current = false;
       try {
         if (recRef.current && recRef.current.state !== 'inactive') recRef.current.stop();
       } catch {
         /* unmount */
       }
-      release();
+      streamRef.current?.getTracks().forEach((track) => track.stop());
     },
     [],
   );
 
-  const active = state === 'listening';
+  const active = state === 'listening' || recordingRef.current;
   const busy = state === 'transcribing';
 
   return (
@@ -238,7 +269,11 @@ export const WillMicButton: React.FC<MicProps> = ({
       type="button"
       id="will-mic-btn"
       disabled={disabled || busy}
-      onClick={() => (active ? stopListen() : startListen())}
+      onClick={() => {
+        if (busy || startingRef.current) return;
+        if (recordingRef.current || state === 'listening') stopListen();
+        else void startListen();
+      }}
       className={`p-2.5 min-h-11 min-w-11 shrink-0 flex items-center justify-center ${
         active || busy ? 'text-[#e8c37a] will-mic-live' : 'text-[#ead6b4]/35 hover:text-[#e8c37a]'
       }`}
@@ -255,11 +290,31 @@ export const VoiceStateLine: React.FC<{
   state: VoiceUiState;
   error?: string | null;
 }> = ({ state, error }) => {
+  const [sec, setSec] = React.useState(0);
+  React.useEffect(() => {
+    if (state !== 'listening') {
+      setSec(0);
+      return;
+    }
+    const id = window.setInterval(() => setSec((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [state]);
   if (state === 'idle' && !error) return null;
+  const clock = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+  const text =
+    error ||
+    (state === 'listening'
+      ? `Te estoy escuchando · ${clock} · pulsa el micrófono cuando termines.`
+      : VOICE_STATE_LABEL[state]);
   return (
-    <p className="text-[12px] will-copy px-1 pb-2" role="status" aria-live="polite">
-      {error || VOICE_STATE_LABEL[state]}
-      {state === 'listening' ? ' Sigue abierto hasta que pulses de nuevo el micrófono.' : ''}
+    <p
+      className={`px-1 pb-2 role-status ${
+        state === 'listening' ? 'text-[14px] will-copy' : 'text-[12px] will-copy'
+      }`}
+      role="status"
+      aria-live="polite"
+    >
+      {text}
     </p>
   );
 };
