@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WORLD_NODES } from '../src/data/worldNodes';
 import { CAPITALS } from '../src/data/capitals';
+import { WILL_HEALTH_SITES, isCivicOrCulturalName } from '../api/willHealthSites';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 let failed = 0;
@@ -94,12 +95,24 @@ await test('Hay capitales del planeta y el buscador sigue abierto a cualquier ci
   assert.match(view, /other-resources-search/);
 });
 
-await test('Los resultados no son un listado de farmacias', () => {
+await test('Los resultados no son un listado de farmacias ni de centros cívicos', () => {
   const geo = readFileSync(join(root, 'api/geo.ts'), 'utf8');
+  assert.equal(/nwr\["amenity"="community_centre"\]/.test(geo), false);
   assert.equal(geo.includes('amenity"="pharmacy'), false);
-  assert.match(geo, /community_centre/);
-  assert.match(geo, /social_facility/);
-  assert.match(geo, /kind !== 'Farmacia'/);
+  assert.match(geo, /salud sexual/);
+  assert.match(geo, /drug_addiction/);
+  assert.match(geo, /WILL_HEALTH_SITES/);
+});
+
+await test('Barcelona tiene Checkpoint, Stop, CJAS, Drassanes y Pere Virgili, no centros cívicos', () => {
+  const names = WILL_HEALTH_SITES.filter((s) => s.city === 'Barcelona').map((s) => s.name);
+  assert.ok(names.some((n) => /Checkpoint/i.test(n)));
+  assert.ok(names.some((n) => /Stop/i.test(n)));
+  assert.ok(names.some((n) => /CJAS/i.test(n)));
+  assert.ok(names.some((n) => /Drassanes/i.test(n)));
+  assert.ok(names.some((n) => /Pere Virgili/i.test(n)));
+  assert.equal(isCivicOrCulturalName('Centro Cívic Pati Llimona'), true);
+  assert.equal(isCivicOrCulturalName('BCN Checkpoint'), false);
 });
 
 await test('Preguntar a Will no desmonta la conversación', () => {

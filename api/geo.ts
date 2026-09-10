@@ -7,6 +7,11 @@ import {
   ResourceCategory,
   sortByCareLanguages,
 } from './spokenLanguages';
+import {
+  WILL_HEALTH_SITES,
+  isCivicOrCulturalName,
+  isWillThemeName,
+} from './willHealthSites';
 
 function osmEmbedUrl(
   center: { lat: number; lng: number },
@@ -73,7 +78,19 @@ function classify(tags: Record<string, string> | undefined): {
   kind: string;
   category: ResourceCategory;
 } {
-  const a = tags?.amenity || tags?.healthcare || tags?.office || '';
+  const a = (tags?.amenity || tags?.healthcare || tags?.office || '').toLowerCase();
+  const spec = (tags?.['healthcare:speciality'] || tags?.social_facility || '').toLowerCase();
+  const name = tags?.name || '';
+  if (a === 'community_centre' || a === 'arts_centre' || a === 'library' || a === 'theatre') {
+    return { kind: 'Fuera de ámbito', category: 'other' };
+  }
+  if (isWillThemeName(name) || /infect|hiv|sexual|addict|psychiatr/.test(spec)) {
+    if (a === 'hospital') return { kind: 'Urgencias / Hospital', category: 'emergency' };
+    if (/drug|addict|chemsex|dañ|harm/.test(spec + name.toLowerCase())) {
+      return { kind: 'Reducción de riesgos y daños', category: 'community' };
+    }
+    return { kind: 'Salud sexual / sociosanitario', category: 'health' };
+  }
   if (a === 'hospital' || tags?.emergency === 'yes' || tags?.healthcare === 'hospital') {
     return { kind: 'Urgencias / Hospital', category: 'emergency' };
   }
@@ -88,18 +105,22 @@ function classify(tags: Record<string, string> | undefined): {
   ) {
     return { kind: 'Centro sanitario', category: 'health' };
   }
-  if (a === 'pharmacy') return { kind: 'Farmacia', category: 'other' };
-  if (
-    a === 'social_facility' ||
-    a === 'community_centre' ||
-    a === 'ngo' ||
-    tags?.social_facility ||
-    tags?.office === 'ngo' ||
-    tags?.office === 'association'
-  ) {
-    return { kind: 'Centro comunitario / sociosanitario', category: 'community' };
+  if (a === 'pharmacy' || a === 'dentist' || a === 'veterinary') {
+    return { kind: 'Farmacia', category: 'other' };
+  }
+  if (spec === 'drug_addiction' || spec === 'mental_health') {
+    return { kind: 'Centro sociosanitario', category: 'community' };
   }
   return { kind: 'Otro recurso', category: 'other' };
+}
+
+function rejectSite(tags: Record<string, string>, name: string) {
+  const a = (tags.amenity || tags.healthcare || '').toLowerCase();
+  if (['pharmacy', 'dentist', 'veterinary', 'community_centre', 'arts_centre', 'library', 'theatre', 'townhall'].includes(a)) {
+    return true;
+  }
+  if (isCivicOrCulturalName(name)) return true;
+  return false;
 }
 
 function phoneFrom(tags: Record<string, string>) {
@@ -178,8 +199,10 @@ function toSite(
 ): Site | null {
   const name = nameInLanguages(tags, preferred);
   if (!name) return null;
+  if (rejectSite(tags, name)) return null;
   const layers = extractLanguageLayers(tags);
   const { kind, category } = classify(tags);
+  if (kind === 'Fuera de ámbito' || kind === 'Farmacia') return null;
   const phone = phoneFrom(tags);
   const address = addressFrom(tags);
   const website = tags.website || tags['contact:website'] || undefined;
@@ -234,14 +257,15 @@ function parseSites(
 }
 
 function rankSite(site: Site) {
-  if (site.category === 'emergency') return 0;
-  if (site.category === 'community') return 1;
-  if (site.category === 'health') return 2;
-  return 3;
+  if (isWillThemeName(site.name) || /salud sexual|sociosanitario|reducción de riesgos/i.test(site.kind)) return 0;
+  if (site.category === 'health') return 1;
+  if (site.category === 'emergency') return 2;
+  if (site.category === 'community') return 3;
+  return 4;
 }
 
 async function overpassNearby(lat: number, lng: number, preferred: string[]) {
-  const query = `[out:json][timeout:18];
+  const query = `[out:json][timeout:20];
 (
   nwr["amenity"="hospital"](around:12000,${lat},${lng});
   nwr["healthcare"="hospital"](around:12000,${lat},${lng});
@@ -250,10 +274,10 @@ async function overpassNearby(lat: number, lng: number, preferred: string[]) {
   nwr["amenity"="doctors"](around:12000,${lat},${lng});
   nwr["amenity"="health_centre"](around:12000,${lat},${lng});
   nwr["healthcare"="centre"](around:12000,${lat},${lng});
-  nwr["amenity"="social_facility"](around:12000,${lat},${lng});
-  nwr["amenity"="community_centre"](around:12000,${lat},${lng});
-  nwr["office"="ngo"](around:12000,${lat},${lng});
-  nwr["office"="association"](around:12000,${lat},${lng});
+  nwr["social_facility"="drug_addiction"](around:12000,${lat},${lng});
+  nwr["social_facility"="mental_health"](around:12000,${lat},${lng});
+  nwr["healthcare:speciality"~"infect|hiv|sexual|addict|psychiatr|dermatol",i](around:12000,${lat},${lng});
+  nwr["name"~"checkpoint|salud sexual|sexual health|ITS|VIH|HIV|SIDA|PrEP|chemsex|harm reduction|reducción de daños|drogodepend|CJAS|Drassanes|Sandoval",i](around:12000,${lat},${lng});
 );
 out center 80;`;
   let data: any = null;
@@ -284,7 +308,7 @@ async function nominatimHealthcare(
 ): Promise<{ sites: Site[]; checkedAt?: string }> {
   const delta = 0.08;
   const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
-  const queries = ['hospital', 'clinic', 'community centre', 'health centre', 'NGO'];
+  const queries = ['hospital', 'clinic', 'sexual health', 'ITS', 'HIV', 'salud sexual'];
   const seen = new Set<string>();
   const sites: Site[] = [];
   const accept = preferred.length ? preferred.join(',') : 'es,en';
@@ -395,8 +419,33 @@ async function handleLookup(req: Request, res: Response) {
       fetched = { sites: [] };
     }
 
-    const unfilteredCount = fetched.sites.length;
-    let sites = sortByCareLanguages(fetched.sites, languages, languageMode);
+    const curated = WILL_HEALTH_SITES.filter((s) => {
+      const km = distanceKm(coords!, { lat: s.lat, lng: s.lng });
+      return km <= 25;
+    }).map((s) => ({
+      name: s.name,
+      kind: s.kind,
+      category: s.category,
+      km: Math.round(distanceKm(coords!, { lat: s.lat, lng: s.lng }) * 10) / 10,
+      address: s.address,
+      website: s.website,
+      mapsUrl: `https://www.openstreetmap.org/?mlat=${s.lat}&mlon=${s.lng}#map=16/${s.lat}/${s.lng}`,
+      careLanguages: [] as string[],
+      nameLanguages: [] as string[],
+      lat: s.lat,
+      lng: s.lng,
+      source: { name: 'Directorio Will', url: s.website || 'https://www.openstreetmap.org/' },
+    }));
+    const merged: Site[] = [...curated];
+    const seen = new Set(curated.map((s) => s.name.toLowerCase()));
+    for (const s of fetched.sites) {
+      if (seen.has(s.name.toLowerCase())) continue;
+      seen.add(s.name.toLowerCase());
+      merged.push(s);
+    }
+    merged.sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km);
+    const unfilteredCount = merged.length;
+    let sites = sortByCareLanguages(merged, languages, languageMode);
     let absence: 'none' | 'no_map_hits' | 'filter_empty' = 'none';
     if (unfilteredCount === 0) absence = 'no_map_hits';
     else if (sites.length === 0) absence = 'filter_empty';
