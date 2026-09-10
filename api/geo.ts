@@ -1,12 +1,12 @@
 import type { Express, Request, Response } from 'express';
-import { emergencyForCountry } from '../src/data/emergencyNumbers';
+import { emergencyForCountry } from './emergencyNumbers';
 import {
   extractLanguageLayers,
   LanguageFilterMode,
   nameInLanguages,
   ResourceCategory,
   sortByCareLanguages,
-} from '../src/data/spokenLanguages';
+} from './spokenLanguages';
 
 function osmEmbedUrl(
   center: { lat: number; lng: number },
