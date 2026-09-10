@@ -1,21 +1,22 @@
+import { emergencyForCountry, EmergencyInfo } from '../data/emergencyNumbers';
+
 export type GeoStatus = 'idle' | 'asking' | 'ready' | 'denied' | 'unavailable';
 
-export type KnownCityId = 'barcelona' | 'madrid';
-
-export interface KnownCity {
-  id: KnownCityId;
-  label: string;
-  lat: number;
-  lng: number;
+export interface NearbySite {
+  name: string;
+  kind: string;
+  km: number;
+  mapsUrl: string;
+  englishLikely: boolean;
 }
 
-export const KNOWN_CITIES: KnownCity[] = [
-  { id: 'barcelona', label: 'Barcelona', lat: 41.3874, lng: 2.1686 },
-  { id: 'madrid', label: 'Madrid', lat: 40.4168, lng: -3.7038 },
-];
-
-function toRad(d: number) {
-  return (d * Math.PI) / 180;
+export interface GeoLookupResult {
+  label: string;
+  countryCode: string;
+  countryName: string;
+  emergency: EmergencyInfo;
+  sites: NearbySite[];
+  englishPreferred: boolean;
 }
 
 export function distanceKm(
@@ -23,26 +24,13 @@ export function distanceKm(
   b: { lat: number; lng: number },
 ) {
   const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(b.lat - a.lat);
   const dLng = toRad(b.lng - a.lng);
   const s =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
-}
-
-export function nearestCity(lat: number, lng: number): KnownCity | null {
-  let best: KnownCity | null = null;
-  let bestKm = Infinity;
-  for (const city of KNOWN_CITIES) {
-    const km = distanceKm({ lat, lng }, city);
-    if (km < bestKm) {
-      bestKm = km;
-      best = city;
-    }
-  }
-  if (!best || bestKm > 80) return null;
-  return best;
 }
 
 export function requestUserCoords(): Promise<
@@ -68,7 +56,29 @@ export function requestUserCoords(): Promise<
           resolve({ ok: false, status: 'unavailable' });
         }
       },
-      { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 },
+      { enableHighAccuracy: false, timeout: 12000, maximumAge: 0 },
     );
   });
+}
+
+export async function lookupPlace(body: {
+  lat?: number;
+  lng?: number;
+  q?: string;
+  english?: boolean;
+}): Promise<GeoLookupResult> {
+  const r = await fetch('/api/geo/lookup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.error || 'No se ha podido leer el lugar.');
+  }
+  return r.json();
+}
+
+export function emergencyFallback(code?: string) {
+  return emergencyForCountry(code);
 }

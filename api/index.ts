@@ -1,11 +1,14 @@
 import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import { registerGeoRoutes } from "./geo";
 
 dotenv.config();
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
+
+registerGeoRoutes(app);
 
 function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
