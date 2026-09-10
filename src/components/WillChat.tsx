@@ -464,7 +464,7 @@ export const WillChat: React.FC<WillChatProps> = ({
           />
           <VoiceStateLine
             state={speak.speakingId ? 'speaking' : voiceState}
-            usingFallback={speak.usingFallback}
+            error={speak.error}
           />
           <div className="will-composer px-2 py-1.5 flex items-end gap-1">
             <textarea

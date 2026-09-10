@@ -10,7 +10,7 @@ import {
 interface WillSpeakApi {
   speakingId: string | null;
   paused: boolean;
-  usingFallback: boolean;
+  error: string | null;
   play: (id: string, text: string) => Promise<void>;
   pause: () => void;
   resume: () => void;
@@ -24,12 +24,15 @@ export function useWillSpeak(): WillSpeakApi {
   const urls = useRef<Map<string, string>>(new Map());
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
-  const [usingFallback, setUsingFallback] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const stopAudio = () => {
     audioRef.current?.pause();
-    if (audioRef.current) audioRef.current.currentTime = 0;
-    window.speechSynthesis?.cancel();
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.src = '';
+    }
+    audioRef.current = null;
     setSpeakingId(null);
     setPaused(false);
   };
@@ -38,46 +41,29 @@ export function useWillSpeak(): WillSpeakApi {
     stopAudio();
     urls.current.forEach((u) => URL.revokeObjectURL(u));
     urls.current.clear();
+    setError(null);
   };
 
   useEffect(() => () => clear(), []);
 
-  const fallbackSpeak = (id: string, text: string) => {
-    if (!('speechSynthesis' in window)) return;
-    setUsingFallback(true);
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = WILL_VOICE.locale;
-    u.rate = 0.92;
-    u.pitch = 0.92;
-    const voices = window.speechSynthesis.getVoices();
-    const esMale =
-      voices.find((v) => /es-ES/i.test(v.lang) && /male|hombre|jorge|pablo/i.test(v.name)) ||
-      voices.find((v) => /es-ES/i.test(v.lang));
-    if (esMale) u.voice = esMale;
-    u.onend = () => setSpeakingId(null);
-    u.onerror = () => setSpeakingId(null);
-    setSpeakingId(id);
-    window.speechSynthesis.speak(u);
-  };
-
   const play = async (id: string, text: string) => {
     stopAudio();
+    setError(null);
     try {
-      let url = urls.current.get(id);
-      if (!url) {
-        const r = await fetch('/api/voice/speak', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text }),
-        });
-        if (!r.ok) {
-          fallbackSpeak(id, text);
-          return;
-        }
-        const blob = await r.blob();
-        url = URL.createObjectURL(blob);
-        urls.current.set(id, url);
+      const r = await fetch('/api/voice/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      if (!r.ok) {
+        setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
+        return;
       }
+      const prev = urls.current.get(id);
+      if (prev) URL.revokeObjectURL(prev);
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      urls.current.set(id, url);
       const audio = new Audio(url);
       audioRef.current = audio;
       audio.onended = () => {
@@ -85,30 +71,28 @@ export function useWillSpeak(): WillSpeakApi {
         setPaused(false);
       };
       audio.onerror = () => {
-        fallbackSpeak(id, text);
+        setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
+        setSpeakingId(null);
       };
-      setUsingFallback(false);
       setSpeakingId(id);
       setPaused(false);
       await audio.play();
     } catch {
-      fallbackSpeak(id, text);
+      setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
     }
   };
 
   return {
     speakingId,
     paused,
-    usingFallback,
+    error,
     play,
     pause: () => {
       audioRef.current?.pause();
-      window.speechSynthesis?.pause();
       setPaused(true);
     },
     resume: () => {
-      audioRef.current?.play();
-      window.speechSynthesis?.resume();
+      void audioRef.current?.play();
       setPaused(false);
     },
     stop: stopAudio,
@@ -190,24 +174,20 @@ export const WillMicButton: React.FC<MicProps> = ({
       aria-label={active ? 'Dejar de escuchar' : 'Hablar con Will'}
       title={active ? 'Dejar de escuchar' : 'Hablar con Will'}
     >
-      {active ? <Mic className="w-4 h-4" /> : <Mic className="w-4 h-4 opacity-80" />}
+      <Mic className={`w-4 h-4 ${active ? '' : 'opacity-80'}`} />
     </button>
   );
 };
 
 export const VoiceStateLine: React.FC<{
   state: VoiceUiState;
-  usingFallback: boolean;
-}> = ({ state, usingFallback }) => {
-  if (state === 'idle' && !usingFallback) return null;
+  error?: string | null;
+}> = ({ state, error }) => {
+  if (state === 'idle' && !error) return null;
   return (
     <p className="text-[11px] will-copy-muted px-1" role="status" aria-live="polite">
-      {VOICE_STATE_LABEL[state]}
-      {usingFallback ? ' · voz de respaldo del navegador' : ''}
+      {error || VOICE_STATE_LABEL[state]}
       {state === 'listening' ? ' · el micrófono está abierto ahora' : ''}
-      {state === 'idle' && usingFallback
-        ? ' · la voz de Will (Atlas) no se ha podido usar en este momento'
-        : ''}
     </p>
   );
 };

@@ -1,15 +1,12 @@
 export const WILL_VOICE = {
-  provider: 'xAI TTS',
+  provider: 'ElevenLabs',
   endpoint: '/api/voice/speak',
-  upstream: 'https://api.x.ai/v1/tts',
-  voiceId: 'atlas',
+  upstream: 'https://api.elevenlabs.io/v1/text-to-speech',
+  voiceId: 'DrwFQsjvHFpLcKyvtbE3',
+  modelId: 'eleven_multilingual_v2',
   language: 'es',
   locale: 'es-ES',
-  speed: 0.92,
-  compared: ['sal', 'atlas', 'orion'] as const,
-  selectedBecause:
-    'Masculina adulta, profunda y contenida. No teatral. Español natural. Contraste escuchado frente a Sal y Orion.',
-  elevenLabs: 'no_key' as const,
+  outputFormat: 'mp3_44100_128',
 };
 
 export type VoiceUiState =
@@ -28,13 +25,12 @@ export const VOICE_STATE_LABEL: Record<VoiceUiState, string> = {
 };
 
 export function prepareWillSpeech(text: string) {
-  const clean = text
+  return text
     .replace(/\*\*/g, '')
     .replace(/[_`#]/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
     .slice(0, 4000);
-  return clean.replace(/\n\n/g, ' [pause] ');
 }
 
 export function speechRecognitionCtor():

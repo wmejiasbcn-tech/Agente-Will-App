@@ -1,18 +1,25 @@
 import type { Express, Request, Response } from 'express';
 import { prepareWillSpeech, WILL_VOICE } from '../src/voice/willVoice';
 
+function elevenLabsKey() {
+  return (
+    process.env.ELEVENLABS_API_KEY ||
+    process.env.ELEVEN_LABS_API_KEY ||
+    process.env.XI_API_KEY ||
+    ''
+  );
+}
+
 export function registerVoiceRoutes(app: Express) {
   app.get('/api/voice/config', (_req, res) => {
     res.json({
       provider: WILL_VOICE.provider,
       voiceId: WILL_VOICE.voiceId,
+      modelId: WILL_VOICE.modelId,
       language: WILL_VOICE.language,
       locale: WILL_VOICE.locale,
-      speed: WILL_VOICE.speed,
-      elevenLabs: WILL_VOICE.elevenLabs,
-      selectedBecause: WILL_VOICE.selectedBecause,
-      compared: WILL_VOICE.compared,
       storesAudio: false,
+      hasServerKey: Boolean(elevenLabsKey()),
     });
   });
 
@@ -22,33 +29,39 @@ export function registerVoiceRoutes(app: Express) {
       const text = prepareWillSpeech(raw);
       if (!text) return res.status(400).json({ error: 'No hay texto para leer.' });
 
-      const apiKey = process.env.XAI_API_KEY;
+      const apiKey = elevenLabsKey();
       if (!apiKey) {
         return res.status(503).json({
-          error: 'El proveedor de voz no está autorizado ahora.',
-          fallback: 'browser',
+          error: 'Falta la clave de ElevenLabs en el servidor.',
+          voiceId: WILL_VOICE.voiceId,
         });
       }
 
-      const r = await fetch('https://api.x.ai/v1/tts', {
+      const url = `${WILL_VOICE.upstream}/${WILL_VOICE.voiceId}?output_format=${WILL_VOICE.outputFormat}`;
+      const r = await fetch(url, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          'xi-api-key': apiKey,
           'Content-Type': 'application/json',
+          Accept: 'audio/mpeg',
         },
         body: JSON.stringify({
           text,
-          voice: WILL_VOICE.voiceId,
-          language: WILL_VOICE.language,
-          speed: WILL_VOICE.speed,
+          model_id: WILL_VOICE.modelId,
+          voice_settings: {
+            stability: 0.52,
+            similarity_boost: 0.78,
+            style: 0.12,
+            use_speaker_boost: true,
+          },
         }),
-        signal: AbortSignal.timeout(25000),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!r.ok) {
         return res.status(502).json({
-          error: 'La voz de Will no ha podido generarse ahora.',
-          fallback: 'browser',
+          error: 'ElevenLabs no ha podido generar la voz ahora.',
+          voiceId: WILL_VOICE.voiceId,
         });
       }
 
@@ -56,11 +69,12 @@ export function registerVoiceRoutes(app: Express) {
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Cache-Control', 'no-store');
       res.setHeader('X-Will-Voice', WILL_VOICE.voiceId);
+      res.setHeader('X-Will-Provider', 'ElevenLabs');
       return res.send(buf);
     } catch {
       return res.status(502).json({
         error: 'La voz de Will no está disponible ahora.',
-        fallback: 'browser',
+        voiceId: WILL_VOICE.voiceId,
       });
     }
   });
