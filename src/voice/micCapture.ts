@@ -1,4 +1,9 @@
 import { pickRecorderMime } from '../utils/browserCompat';
+import {
+  installMicDiagProbe,
+  recordMicDiag,
+  resetMicDiag,
+} from './micDiagnostics';
 
 export type MicCaptureStatus = 'idle' | 'listening';
 
@@ -45,24 +50,43 @@ function stopTracks() {
   stream = null;
 }
 
+function startRecorder(rec: MediaRecorder) {
+  try {
+    rec.start(1000);
+  } catch {
+    rec.start();
+  }
+}
+
 function attachRecorder(media: MediaStream) {
   const mime = pickMime();
   const rec = mime ? new MediaRecorder(media, { mimeType: mime }) : new MediaRecorder(media);
   recorder = rec;
   rec.ondataavailable = (ev) => {
-    if (ev.data && ev.data.size > 0) blobs.push(ev.data);
+    if (ev.data && ev.data.size > 0) {
+      blobs.push(ev.data);
+      recordMicDiag({
+        type: 'data',
+        bytes: ev.data.size,
+        recorderState: rec.state,
+        wantStop,
+      });
+    }
   };
   rec.onerror = () => {
+    recordMicDiag({
+      type: 'unexpected_error',
+      recorderState: rec.state,
+      wantStop,
+      detail: 'MediaRecorder.onerror',
+    });
     if (wantStop || !listening || !stream) return;
     window.setTimeout(() => {
       if (wantStop || !listening || !stream) return;
       try {
         attachRecorder(stream);
-        try {
-          recorder?.start(1000);
-        } catch {
-          recorder?.start();
-        }
+        if (recorder) startRecorder(recorder);
+        recordMicDiag({ type: 'restart', detail: 'after onerror' });
       } catch {
         /* keep stream alive */
       }
@@ -70,13 +94,16 @@ function attachRecorder(media: MediaStream) {
   };
   rec.onstop = () => {
     if (wantStop || !listening || !stream) return;
+    recordMicDiag({
+      type: 'unexpected_stop',
+      recorderState: rec.state,
+      wantStop,
+      detail: 'MediaRecorder.onstop',
+    });
     try {
       attachRecorder(stream);
-      try {
-        recorder?.start(1000);
-      } catch {
-        recorder?.start();
-      }
+      if (recorder) startRecorder(recorder);
+      recordMicDiag({ type: 'restart', detail: 'after onstop' });
     } catch {
       /* keep stream alive */
     }
@@ -99,21 +126,32 @@ export function subscribeWillMic(fn: Listener) {
 
 export async function startWillMic() {
   if (listening) return;
+  installMicDiagProbe();
+  resetMicDiag();
   wantStop = false;
   blobs = [];
   if (!navigator.mediaDevices?.getUserMedia) {
+    recordMicDiag({ type: 'error', detail: 'no getUserMedia' });
     throw new Error('mic');
   }
   const media = await navigator.mediaDevices.getUserMedia({ audio: true });
   stream = media;
+  media.getAudioTracks().forEach((track) => {
+    track.addEventListener('ended', () => {
+      if (wantStop) return;
+      recordMicDiag({ type: 'track_ended', detail: track.readyState });
+    });
+  });
   const rec = attachRecorder(media);
-  try {
-    rec.start(1000);
-  } catch {
-    rec.start();
-  }
+  startRecorder(rec);
   listening = true;
   startedAt = Date.now();
+  recordMicDiag({
+    type: 'start',
+    recorderState: rec.state,
+    detail: rec.mimeType || 'default',
+  });
+  recordMicDiag({ type: 'lock', detail: '900ms' });
   if (tick) window.clearInterval(tick);
   tick = window.setInterval(emit, 250);
   emit();
@@ -122,6 +160,7 @@ export async function startWillMic() {
 export async function stopWillMic(): Promise<Blob | null> {
   wantStop = true;
   listening = false;
+  recordMicDiag({ type: 'user_stop', wantStop: true });
   if (tick) {
     window.clearInterval(tick);
     tick = null;
@@ -144,6 +183,7 @@ export async function stopWillMic(): Promise<Blob | null> {
   (window as unknown as { __willMic?: unknown }).__willMic = undefined;
   const blob = new Blob(blobs, { type: rec?.mimeType || 'audio/webm' });
   blobs = [];
+  recordMicDiag({ type: 'idle', bytes: blob.size, wantStop: true });
   emit();
   if (blob.size < 400) return null;
   return blob;

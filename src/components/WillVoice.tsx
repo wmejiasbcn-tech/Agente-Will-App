@@ -10,6 +10,7 @@ import {
   unlockWillAudio,
   writeVoiceMuted,
 } from '../voice/willVoice';
+import { recordMicDiag } from '../voice/micDiagnostics';
 import {
   isWillMicListening,
   startWillMic,
@@ -236,9 +237,11 @@ export const WillMicButton: React.FC<MicProps> = ({
 
   const finish = async () => {
     setState('transcribing');
+    recordMicDiag({ type: 'stt_start' });
     try {
       const blob = await stopWillMic();
       if (!blob) {
+        recordMicDiag({ type: 'stt_fail', bytes: 0, detail: 'empty blob' });
         setState('error');
         return;
       }
@@ -251,13 +254,16 @@ export const WillMicButton: React.FC<MicProps> = ({
       const data = await r.json().catch(() => ({}));
       const spoken = String(data?.text || '').trim();
       if (!r.ok || !spoken) {
+        recordMicDiag({ type: 'stt_fail', bytes: blob.size, detail: String(r.status) });
         setState('error');
         return;
       }
+      recordMicDiag({ type: 'stt_ok', bytes: blob.size, detail: String(spoken.length) });
       const seed = seedRef.current.trim();
       onTranscript(seed ? `${seed} ${spoken}` : spoken, true);
       setState('idle');
     } catch {
+      recordMicDiag({ type: 'stt_fail', detail: 'exception' });
       setState('error');
     }
   };
@@ -265,7 +271,10 @@ export const WillMicButton: React.FC<MicProps> = ({
   const onClick = async () => {
     if (disabled || startingRef.current || state === 'transcribing') return;
     if (isWillMicListening() || state === 'listening') {
-      if (Date.now() < lockUntil.current) return;
+      if (Date.now() < lockUntil.current) {
+        recordMicDiag({ type: 'ghost_blocked', detail: 'lock' });
+        return;
+      }
       await finish();
       return;
     }
@@ -329,9 +338,11 @@ export const WillFinishTalkButton: React.FC<{
     if (busy || sec < 1) return;
     setBusy(true);
     setState('transcribing');
+    recordMicDiag({ type: 'stt_start', detail: 'hud' });
     try {
       const blob = await stopWillMic();
       if (!blob) {
+        recordMicDiag({ type: 'stt_fail', bytes: 0, detail: 'empty blob hud' });
         setState('error');
         return;
       }
@@ -344,13 +355,16 @@ export const WillFinishTalkButton: React.FC<{
       const data = await r.json().catch(() => ({}));
       const spoken = String(data?.text || '').trim();
       if (!r.ok || !spoken) {
+        recordMicDiag({ type: 'stt_fail', bytes: blob.size, detail: 'hud ' + String(r.status) });
         setState('error');
         return;
       }
+      recordMicDiag({ type: 'stt_ok', bytes: blob.size, detail: String(spoken.length) });
       const seed = seedRef.current.trim();
       onTranscript(seed ? `${seed} ${spoken}` : spoken, true);
       setState('idle');
     } catch {
+      recordMicDiag({ type: 'stt_fail', detail: 'hud exception' });
       setState('error');
     } finally {
       setBusy(false);
