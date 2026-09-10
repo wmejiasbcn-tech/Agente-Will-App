@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { MapPin, PhoneCall, Search } from 'lucide-react';
-import { WORLD_NODES, WorldNode } from '../data/worldNodes';
 import {
   GeoOrigin,
   GeoStatus,
@@ -8,6 +7,7 @@ import {
   lookupPlace,
   requestUserCoords,
 } from '../utils/geolocation';
+import { WillWorldMap } from './WillWorldMap';
 import { assertNoGeoPersistence } from '../utils/geoPrivacy';
 import {
   LanguageFilterMode,
@@ -30,16 +30,6 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
   const [lastOrigin, setLastOrigin] = useState<GeoOrigin | null>(null);
   const [languages, setLanguages] = useState<string[]>([]);
   const [languageMode, setLanguageMode] = useState<LanguageFilterMode>('prioritize');
-  const [focus, setFocus] = useState<WorldNode | null>(null);
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduceMotion(mq.matches);
-    const onChange = () => setReduceMotion(mq.matches);
-    mq.addEventListener?.('change', onChange);
-    return () => mq.removeEventListener?.('change', onChange);
-  }, []);
 
   const toggleLang = (id: string) => {
     setLanguages((prev) =>
@@ -80,12 +70,10 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
   const searchPlace = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-    setFocus(null);
     await runLookup({ q: query.trim() }, 'search');
   };
 
   const askLocation = async () => {
-    setFocus(null);
     setGeoStatus('asking');
     setError(null);
     const result = await requestUserCoords();
@@ -99,16 +87,9 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
     await runLookup({ lat: result.lat, lng: result.lng }, 'gps');
   };
 
-  const selectNode = async (node: WorldNode) => {
-    setFocus(node);
-    setQuery(node.query);
-    await runLookup({ q: node.query }, 'search');
-  };
-
   const clearLookup = () => {
     setPlace(null);
     setLastOrigin(null);
-    setFocus(null);
     setGeoStatus('idle');
     setError(null);
     assertNoGeoPersistence();
@@ -129,49 +110,20 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
         </h1>
       </header>
 
-      <div className="world-stage arch-glass overflow-hidden">
-        <div
-          className="world-stage-inner"
-          style={
-            focus && !reduceMotion
-              ? ({
-                  ['--ox' as string]: `${focus.x}%`,
-                  ['--oy' as string]: `${focus.y}%`,
-                  ['--sc' as string]: '2.05',
-                } as React.CSSProperties)
-              : undefined
-          }
-        >
-          <div className="world-stage-frame">
-            <img
-              src="/visual-system/world-map-screen.jpg"
-              alt=""
-              className="world-stage-photo"
-              draggable={false}
-            />
-            <div className="world-nodes" role="list" aria-label="Ciudades del mapamundi">
-              {WORLD_NODES.map((node) => {
-                const on = focus?.id === node.id;
-                return (
-                  <button
-                    key={node.id}
-                    type="button"
-                    role="listitem"
-                    className={`world-node${on ? ' world-node-on' : ''}`}
-                    style={{ left: `${node.x}%`, top: `${node.y}%` }}
-                    onClick={() => void selectNode(node)}
-                    aria-label={`Buscar recursos en ${node.label}`}
-                    aria-pressed={on}
-                    title={node.label}
-                  >
-                    <span className="sr-only">{node.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
+      <WillWorldMap
+        marker={
+          place
+            ? { lat: place.center.lat, lng: place.center.lng, label: place.label }
+            : null
+        }
+        onSelectNode={(q, lat, lng) => {
+          setQuery(q);
+          void runLookup({ q, lat, lng }, 'search');
+        }}
+        onClickMap={(lat, lng) => {
+          void runLookup({ lat, lng }, 'search');
+        }}
+      />
 
       <div className="arch-glass p-4 sm:p-5 space-y-3">
         <form onSubmit={searchPlace} className="flex flex-col sm:flex-row gap-2">
@@ -206,7 +158,7 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
             <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
             {geoStatus === 'asking' ? 'Buscando…' : 'Usar mi ubicación'}
           </button>
-          {(place || lastOrigin || focus) && (
+          {(place || lastOrigin) && (
             <button
               type="button"
               onClick={clearLookup}

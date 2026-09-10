@@ -114,6 +114,33 @@ async function nominatimSearch(q: string, acceptLang: string) {
   };
 }
 
+const PHOTON = 'https://photon.komoot.io';
+
+async function photonSearch(q: string) {
+  const url = `${PHOTON}/api/?limit=1&q=${encodeURIComponent(q)}`;
+  const r = await fetch(url, { headers: { 'User-Agent': UA } });
+  if (!r.ok) return null;
+  const data = (await r.json()) as any;
+  const hit = data?.features?.[0];
+  if (!hit?.geometry?.coordinates) return null;
+  const [lng, lat] = hit.geometry.coordinates;
+  const props = hit.properties || {};
+  return {
+    lat: Number(lat),
+    lng: Number(lng),
+    label: [props.name, props.city, props.country].filter(Boolean).join(', ') || q,
+    address: {
+      country: props.country,
+      country_code: props.countrycode,
+      city: props.city || props.name,
+    },
+  };
+}
+
+async function geocodeSearch(q: string, acceptLang: string) {
+  return (await nominatimSearch(q, acceptLang)) || photonSearch(q);
+}
+
 async function nominatimReverse(lat: number, lng: number, acceptLang: string) {
   const url = `${NOMINATIM}/reverse?format=jsonv2&zoom=12&addressdetails=1&lat=${lat}&lon=${lng}`;
   const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': acceptLang } });
@@ -296,7 +323,7 @@ async function handleLookup(req: Request, res: Response) {
 
     if (q && origin === 'search') {
       sent.push({ service: 'nominatim.openstreetmap.org', fields: ['q'] });
-      const found = await nominatimSearch(q, acceptLang);
+      const found = await geocodeSearch(q, acceptLang);
       if (!found) {
         return res.status(404).json({
           error: 'No se ha encontrado ese lugar en el mapa abierto.',
@@ -315,7 +342,7 @@ async function handleLookup(req: Request, res: Response) {
       address = rev?.address || {};
       fallbackLabel = rev?.label || '';
     } else if (q) {
-      const found = await nominatimSearch(q, acceptLang);
+      const found = await geocodeSearch(q, acceptLang);
       if (!found) {
         return res.status(404).json({
           error: 'No se ha encontrado ese lugar en el mapa abierto.',
@@ -375,6 +402,58 @@ async function handleLookup(req: Request, res: Response) {
   }
 }
 
+async function handleGeocode(req: Request, res: Response) {
+  try {
+    const q = typeof req.body?.q === 'string' ? req.body.q.trim().slice(0, 80) : '';
+    const origin = req.body?.origin === 'gps' ? 'gps' : 'search';
+    const coords = validCoord(req.body?.lat, req.body?.lng);
+    const sent: Array<{ service: string; fields: string[] }> = [];
+    let found: { lat: number; lng: number; label: string; address: any } | null = null;
+
+    if (q) {
+      sent.push({ service: 'nominatim.openstreetmap.org', fields: ['q'] });
+      found = await geocodeSearch(q, 'es,en');
+      if (!found) sent.push({ service: 'photon.komoot.io', fields: ['q'] });
+    } else if (coords && origin === 'gps') {
+      sent.push({ service: 'nominatim.openstreetmap.org', fields: ['lat', 'lng'] });
+      const rev = await nominatimReverse(coords.lat, coords.lng, 'es,en');
+      found = {
+        lat: coords.lat,
+        lng: coords.lng,
+        label: rev?.label || `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`,
+        address: rev?.address || {},
+      };
+    } else {
+      return res.status(400).json({ error: 'Indica un lugar o una ubicación.' });
+    }
+
+    if (!found) {
+      return res.status(404).json({
+        error: 'No hemos encontrado resultados para esta búsqueda.',
+        absence: 'place_not_found',
+        privacy: { stored: false, origin, sent, keptAfterResponse: false },
+      });
+    }
+
+    return res.json({
+      lat: found.lat,
+      lng: found.lng,
+      label: placeLabel(found.address, found.label),
+      countryCode: (found.address?.country_code || '').toUpperCase(),
+      countryName: found.address?.country || '',
+      origin,
+      privacy: { stored: false, origin, sent, keptAfterResponse: false },
+    });
+  } catch {
+    return res.status(502).json({
+      error: 'No se ha podido consultar el lugar ahora.',
+      absence: 'map_error',
+      privacy: { stored: false, origin: 'search', sent: [], keptAfterResponse: false },
+    });
+  }
+}
+
 export function registerGeoRoutes(app: Express) {
   app.post('/api/geo/lookup', handleLookup);
+  app.post('/api/geo/geocode', handleGeocode);
 }

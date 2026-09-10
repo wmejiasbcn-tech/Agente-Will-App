@@ -55,7 +55,7 @@ await test('El mapamundi de referencia está en el producto, sin Notebook', () =
   const bytes = readFileSync(join(root, 'public/visual-system/world-map.jpg'));
   assert.equal(bytes.includes(Buffer.from('Gemini')), false);
   assert.equal(bytes.includes(Buffer.from('Notebook')), false);
-  assert.match(view, /world-map-screen\.jpg/);
+  assert.match(view, /WillWorldMap/);
 });
 
 await test('Los puntos del mapa son entradas, no un catálogo cerrado del planeta', () => {
@@ -75,12 +75,12 @@ await test('Nueva York, Buenos Aires y Mumbai caen en su tierra, no en otra', ()
   assert.ok(bue.y > 78, 'Buenos Aires tiene que estar en el cono sur, no en Colombia');
   assert.ok(bue.y > bog.y, 'Buenos Aires más al sur que Bogotá');
   assert.ok(bom.x > dxb.x + 8, 'Mumbai al este de Dubái, no en Arabia');
-  assert.match(view, /world-stage-frame/);
+  assert.match(view, /WillWorldMap/);
 });
 
 await test('Accesible sin el mapa: búsqueda, labels y teclado', () => {
   assert.match(view, /htmlFor="other-resources-search"/);
-  assert.match(view, /aria-label="Ciudades del mapamundi"/);
+  assert.match(view, /WillWorldMap/);
   assert.match(view, /Buscar ciudad, región, país/);
 });
 

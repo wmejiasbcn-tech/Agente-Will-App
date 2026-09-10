@@ -132,6 +132,32 @@ export async function lookupPlace(body: {
   return r.json();
 }
 
+export async function geocodePlace(body: {
+  q?: string;
+  lat?: number;
+  lng?: number;
+  origin: GeoOrigin;
+}): Promise<{ lat: number; lng: number; label: string; countryCode: string; origin: GeoOrigin }> {
+  const r = await fetch('/api/geo/geocode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (r.status === 404) {
+    const err = await r.json().catch(() => ({}));
+    throw Object.assign(new Error(err.error || 'No hemos encontrado resultados para esta búsqueda.'), {
+      absence: 'place_not_found' as const,
+    });
+  }
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw Object.assign(new Error(err.error || 'No se ha podido leer el lugar.'), {
+      absence: 'map_error' as const,
+    });
+  }
+  return r.json();
+}
+
 export function emergencyFallback(code?: string) {
   return emergencyForCountry(code);
 }
