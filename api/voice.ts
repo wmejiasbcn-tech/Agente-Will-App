@@ -37,7 +37,10 @@ export function registerVoiceRoutes(app: Express) {
         });
       }
 
-      const url = `${WILL_VOICE.upstream}/${WILL_VOICE.voiceId}?output_format=${WILL_VOICE.outputFormat}`;
+      const voiceId =
+        process.env.ELEVENLABS_VOICE_ID?.trim() || WILL_VOICE.voiceId;
+
+      const url = `${WILL_VOICE.upstream}/${voiceId}?output_format=${WILL_VOICE.outputFormat}`;
       const r = await fetch(url, {
         method: 'POST',
         headers: {
@@ -68,7 +71,7 @@ export function registerVoiceRoutes(app: Express) {
       const buf = Buffer.from(await r.arrayBuffer());
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Cache-Control', 'no-store');
-      res.setHeader('X-Will-Voice', WILL_VOICE.voiceId);
+      res.setHeader('X-Will-Voice', voiceId);
       res.setHeader('X-Will-Provider', 'ElevenLabs');
       return res.send(buf);
     } catch {
