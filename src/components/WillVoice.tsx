@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, Mic, Pause, Play, Square, Volume2 } from 'lucide-react';
 import { VOICE_STATE_LABEL, VoiceUiState } from '../voice/willVoice';
+import {
+  isWillMicListening,
+  startWillMic,
+  stopWillMic,
+  subscribeWillMic,
+} from '../voice/micCapture';
 
 interface WillSpeakApi {
   speakingId: string | null;
@@ -106,6 +112,7 @@ export function useWillSpeak(): WillSpeakApi {
 }
 
 
+
 function blobToDataUrl(blob: Blob) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -113,18 +120,6 @@ function blobToDataUrl(blob: Blob) {
     reader.onerror = () => reject(new Error('audio'));
     reader.readAsDataURL(blob);
   });
-}
-
-function pickRecorderMime() {
-  if (typeof MediaRecorder === 'undefined') return '';
-  const types = [
-    'audio/webm;codecs=opus',
-    'audio/webm',
-    'audio/mp4',
-    'audio/ogg;codecs=opus',
-    'audio/ogg',
-  ];
-  return types.find((type) => MediaRecorder.isTypeSupported(type)) || '';
 }
 
 interface MicProps {
@@ -142,34 +137,22 @@ export const WillMicButton: React.FC<MicProps> = ({
   state,
   setState,
 }) => {
-  const recRef = useRef<MediaRecorder | null>(null);
-  const chunks = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
-  const seedRef = useRef('');
-  const recordingRef = useRef(false);
-  const lockUntil = useRef(0);
+  const seedRef = useRef(currentText);
   const startingRef = useRef(false);
+  seedRef.current = currentText;
 
-  const release = () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    recRef.current = null;
-    chunks.current = [];
-    recordingRef.current = false;
-    startingRef.current = false;
-  };
+  useEffect(() => subscribeWillMic((snap) => {
+    if (snap.status === 'listening') setState('listening');
+  }), [setState]);
 
-  const transcribe = async (blob: Blob, seed: string) => {
+  const transcribe = async (blob: Blob) => {
     setState('transcribing');
     try {
       const dataUrl = await blobToDataUrl(blob);
       const r = await fetch('/api/voice/listen', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          audio: dataUrl,
-          mime: blob.type || 'audio/webm',
-        }),
+        body: JSON.stringify({ audio: dataUrl, mime: 'audio/wav' }),
       });
       const data = await r.json().catch(() => ({}));
       const spoken = String(data?.text || '').trim();
@@ -177,6 +160,7 @@ export const WillMicButton: React.FC<MicProps> = ({
         setState('error');
         return;
       }
+      const seed = seedRef.current.trim();
       onTranscript(seed ? `${seed} ${spoken}` : spoken, true);
       setState('idle');
     } catch {
@@ -184,84 +168,29 @@ export const WillMicButton: React.FC<MicProps> = ({
     }
   };
 
-  const stopListen = () => {
-    if (Date.now() < lockUntil.current) return;
-    const rec = recRef.current;
-    recordingRef.current = false;
-    if (!rec || rec.state === 'inactive') {
-      release();
-      setState('idle');
-      return;
-    }
-    try {
-      if (typeof rec.requestData === 'function' && rec.state === 'recording') rec.requestData();
-      rec.stop();
-    } catch {
-      release();
-      setState('idle');
-    }
-  };
-
-  const startListen = async () => {
-    if (startingRef.current || recordingRef.current) return;
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-      setState('error');
+  const onClick = async () => {
+    if (disabled || state === 'transcribing' || startingRef.current) return;
+    if (isWillMicListening() || state === 'listening') {
+      const blob = await stopWillMic();
+      if (!blob) {
+        setState('error');
+        return;
+      }
+      await transcribe(blob);
       return;
     }
     startingRef.current = true;
-    seedRef.current = currentText;
-    chunks.current = [];
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
-      });
-      streamRef.current = stream;
-      const mime = pickRecorderMime();
-      const rec = mime ? new MediaRecorder(stream) : new MediaRecorder(stream);
-      recRef.current = rec;
-      rec.ondataavailable = (ev) => {
-        if (ev.data && ev.data.size > 0) chunks.current.push(ev.data);
-      };
-      rec.onerror = () => {
-        release();
-        setState('error');
-      };
-      rec.onstop = () => {
-        const blob = new Blob(chunks.current, { type: rec.mimeType || mime || 'audio/webm' });
-        const seed = seedRef.current.trim();
-        release();
-        if (blob.size < 400) {
-          setState('error');
-          return;
-        }
-        void transcribe(blob, seed);
-      };
-      rec.start();
-      recordingRef.current = true;
-      lockUntil.current = Date.now() + 900;
+      await startWillMic();
       setState('listening');
     } catch {
-      release();
       setState('error');
     } finally {
       startingRef.current = false;
     }
   };
 
-  useEffect(
-    () => () => {
-      recordingRef.current = false;
-      try {
-        if (recRef.current && recRef.current.state !== 'inactive') recRef.current.stop();
-      } catch {
-        /* unmount */
-      }
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-    },
-    [],
-  );
-
-  const active = state === 'listening' || recordingRef.current;
+  const active = state === 'listening' || isWillMicListening();
   const busy = state === 'transcribing';
 
   return (
@@ -269,11 +198,7 @@ export const WillMicButton: React.FC<MicProps> = ({
       type="button"
       id="will-mic-btn"
       disabled={disabled || busy}
-      onClick={() => {
-        if (busy || startingRef.current) return;
-        if (recordingRef.current || state === 'listening') stopListen();
-        else void startListen();
-      }}
+      onClick={() => void onClick()}
       className={`p-2.5 min-h-11 min-w-11 shrink-0 flex items-center justify-center ${
         active || busy ? 'text-[#e8c37a] will-mic-live' : 'text-[#ead6b4]/35 hover:text-[#e8c37a]'
       }`}
@@ -290,27 +215,22 @@ export const VoiceStateLine: React.FC<{
   state: VoiceUiState;
   error?: string | null;
 }> = ({ state, error }) => {
-  const [sec, setSec] = React.useState(0);
-  React.useEffect(() => {
-    if (state !== 'listening') {
-      setSec(0);
-      return;
-    }
-    const id = window.setInterval(() => setSec((n) => n + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [state]);
+  const [sec, setSec] = useState(0);
+  useEffect(() => {
+    return subscribeWillMic((snap) => {
+      if (snap.status === 'listening') setSec(snap.seconds);
+      else setSec(0);
+    });
+  }, []);
+  const listening = state === 'listening';
   if (state === 'idle' && !error) return null;
   const clock = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-  const text =
-    error ||
-    (state === 'listening'
-      ? `Te estoy escuchando · ${clock} · pulsa el micrófono cuando termines.`
-      : VOICE_STATE_LABEL[state]);
+  const text = listening
+    ? `Te estoy escuchando · ${clock} · pulsa el micrófono cuando termines.`
+    : error || VOICE_STATE_LABEL[state];
   return (
     <p
-      className={`px-1 pb-2 role-status ${
-        state === 'listening' ? 'text-[14px] will-copy' : 'text-[12px] will-copy'
-      }`}
+      className={`px-1 pb-2 ${listening ? 'text-[15px] will-copy' : 'text-[12px] will-copy'}`}
       role="status"
       aria-live="polite"
     >

@@ -476,7 +476,11 @@ export const WillChat: React.FC<WillChatProps> = ({
                   ? 'speaking'
                   : voiceState
             }
-            error={speak.error}
+            error={
+              voiceState === 'listening' || voiceState === 'transcribing'
+                ? null
+                : speak.error
+            }
           />
           <div className="will-composer px-2 py-1.5 flex items-end gap-1">
             <textarea
