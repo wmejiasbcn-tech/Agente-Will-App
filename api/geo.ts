@@ -7,7 +7,21 @@ import {
   ResourceCategory,
   sortByCareLanguages,
 } from '../src/data/spokenLanguages';
-import { osmEmbedUrl } from '../src/utils/geolocation';
+
+function osmEmbedUrl(
+  center: { lat: number; lng: number },
+  sites: { lat: number; lng: number }[],
+) {
+  const pts = [center, ...sites];
+  const lats = pts.map((p) => p.lat);
+  const lngs = pts.map((p) => p.lng);
+  const pad = 0.02;
+  const minLng = Math.min(...lngs) - pad;
+  const minLat = Math.min(...lats) - pad;
+  const maxLng = Math.max(...lngs) + pad;
+  const maxLat = Math.max(...lats) + pad;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${minLng}%2C${minLat}%2C${maxLng}%2C${maxLat}&layer=mapnik&marker=${center.lat}%2C${center.lng}`;
+}
 
 const UA = 'WillApp/1.0 (accompaniment; https://will.app)';
 const NOMINATIM = 'https://nominatim.openstreetmap.org';
