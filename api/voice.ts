@@ -62,10 +62,8 @@ export function registerVoiceRoutes(app: Express) {
           text,
           model_id: WILL_MODEL,
           voice_settings: {
-            stability: 0.52,
-            similarity_boost: 0.78,
-            style: 0.12,
-            use_speaker_boost: true,
+            stability: 0.5,
+            similarity_boost: 0.8,
           },
         }),
       });
@@ -76,6 +74,7 @@ export function registerVoiceRoutes(app: Express) {
         return res.status(502).json({
           error: 'ElevenLabs no ha podido generar la voz ahora.',
           voiceId,
+          elevenStatus: r.status,
         });
       }
 

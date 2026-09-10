@@ -509,10 +509,8 @@ function registerVoiceRoutes(app2) {
           text,
           model_id: WILL_MODEL,
           voice_settings: {
-            stability: 0.52,
-            similarity_boost: 0.78,
-            style: 0.12,
-            use_speaker_boost: true
+            stability: 0.5,
+            similarity_boost: 0.8
           }
         })
       });
@@ -521,7 +519,8 @@ function registerVoiceRoutes(app2) {
         console.error("ElevenLabs TTS error", r.status, detail.slice(0, 300));
         return res.status(502).json({
           error: "ElevenLabs no ha podido generar la voz ahora.",
-          voiceId
+          voiceId,
+          elevenStatus: r.status
         });
       }
       const buf = Buffer.from(await r.arrayBuffer());
