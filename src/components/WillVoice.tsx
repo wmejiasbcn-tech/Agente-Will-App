@@ -72,6 +72,7 @@ export function useWillSpeak(): WillSpeakApi {
       const url = URL.createObjectURL(blob);
       urls.current.set(id, url);
       const audio = new Audio(url);
+      audio.setAttribute('playsinline', 'true');
       audioRef.current = audio;
       audio.onended = () => {
         setSpeakingId(null);

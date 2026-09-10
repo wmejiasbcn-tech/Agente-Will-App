@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test:geo": "tsx tests/geo-privacy.test.ts && tsx tests/geo-resources-v2.test.ts && tsx tests/will-qa.test.ts"
+    "test:geo": "tsx tests/geo-privacy.test.ts && tsx tests/geo-resources-v2.test.ts && tsx tests/will-qa.test.ts",
+    "test:compat": "tsx tests/browser-compat.test.ts && tsx tests/browser-perf.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

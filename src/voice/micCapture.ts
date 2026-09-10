@@ -1,3 +1,5 @@
+import { pickRecorderMime } from '../utils/browserCompat';
+
 export type MicCaptureStatus = 'idle' | 'listening';
 
 export type MicCaptureSnap = {
@@ -31,14 +33,7 @@ function emit() {
 
 function pickMime() {
   if (typeof MediaRecorder === 'undefined') return '';
-  const types = [
-    'audio/webm;codecs=opus',
-    'audio/webm',
-    'audio/mp4',
-    'audio/ogg;codecs=opus',
-    'audio/ogg',
-  ];
-  return types.find((type) => MediaRecorder.isTypeSupported(type)) || '';
+  return pickRecorderMime((type) => MediaRecorder.isTypeSupported(type));
 }
 
 function pin() {
