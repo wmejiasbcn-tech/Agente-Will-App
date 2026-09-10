@@ -1,7 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Loader2, Mic, Pause, Play, Square, Volume2 } from 'lucide-react';
-import { VOICE_STATE_LABEL, VoiceUiState } from '../voice/willVoice';
+import { Loader2, Mic, Pause, Play, Square, Volume2, VolumeX } from 'lucide-react';
+import {
+  VOICE_STATE_LABEL,
+  VoiceUiState,
+  getSharedWillAudio,
+  readVoiceMuted,
+  splitWillSpeech,
+  unlockWillAudio,
+  writeVoiceMuted,
+} from '../voice/willVoice';
 import {
   isWillMicListening,
   startWillMic,
@@ -13,83 +21,146 @@ interface WillSpeakApi {
   speakingId: string | null;
   loadingId: string | null;
   paused: boolean;
+  muted: boolean;
   error: string | null;
+  reveal: Record<string, string>;
+  visibleText: (id: string, full: string) => string;
   play: (id: string, text: string) => Promise<void>;
   pause: () => void;
   resume: () => void;
   stop: () => void;
   replay: (id: string, text: string) => Promise<void>;
+  mute: () => void;
+  unmute: () => void;
+  unlock: () => void;
   clear: () => void;
 }
 
+let playGen = 0;
+
+async function fetchWillSpeech(text: string): Promise<Blob | null> {
+  const r = await fetch('/api/voice/speak', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!r.ok) return null;
+  const blob = await r.blob();
+  if (!blob.size) return null;
+  return blob;
+}
+
+function playOnShared(blob: Blob, gen: number): Promise<'ended' | 'error' | 'stopped'> {
+  const audio = getSharedWillAudio();
+  if (!audio) return Promise.resolve('error');
+  const url = URL.createObjectURL(blob);
+  return new Promise((resolve) => {
+    let settled = false;
+    const tick = window.setInterval(() => {
+      if (playGen !== gen) finish('stopped');
+    }, 80);
+    const finish = (why: 'ended' | 'error' | 'stopped') => {
+      if (settled) return;
+      settled = true;
+      window.clearInterval(tick);
+      audio.onended = null;
+      audio.onerror = null;
+      URL.revokeObjectURL(url);
+      resolve(why);
+    };
+    audio.onended = () => finish('ended');
+    audio.onerror = () => finish('error');
+    audio.src = url;
+    audio.currentTime = 0;
+    const go = audio.play();
+    if (go && typeof go.then === 'function') {
+      void go.catch(() => finish('error'));
+    }
+  });
+}
+
 export function useWillSpeak(): WillSpeakApi {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const urls = useRef<Map<string, string>>(new Map());
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
+  const [muted, setMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reveal, setReveal] = useState<Record<string, string>>({});
+  const pausedRef = useRef(false);
+
+  useEffect(() => {
+    setMuted(readVoiceMuted());
+  }, []);
 
   const stopAudio = () => {
-    audioRef.current?.pause();
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.src = '';
+    playGen += 1;
+    const audio = getSharedWillAudio();
+    if (audio) {
+      audio.pause();
+      audio.onended = null;
+      audio.onerror = null;
     }
-    audioRef.current = null;
     setSpeakingId(null);
     setLoadingId(null);
     setPaused(false);
+    pausedRef.current = false;
   };
 
   const clear = () => {
     stopAudio();
-    urls.current.forEach((u) => URL.revokeObjectURL(u));
-    urls.current.clear();
+    setReveal({});
     setError(null);
   };
 
-  useEffect(() => () => clear(), []);
+  useEffect(() => () => stopAudio(), []);
 
   const play = async (id: string, text: string) => {
-    stopAudio();
+    const gen = ++playGen;
     setError(null);
+    if (muted) {
+      setReveal((prev) => ({ ...prev, [id]: text }));
+      setLoadingId(null);
+      setSpeakingId(null);
+      return;
+    }
+    const parts = splitWillSpeech(text);
     setLoadingId(id);
+    setSpeakingId(id);
+    setPaused(false);
+    pausedRef.current = false;
+    let shown = '';
     try {
-      const r = await fetch('/api/voice/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
-      if (!r.ok) {
+      for (let i = 0; i < parts.length; i++) {
+        if (gen !== playGen) return;
+        const blob = await fetchWillSpeech(parts[i]);
+        if (gen !== playGen) return;
+        if (!blob) {
+          setReveal((prev) => ({ ...prev, [id]: text }));
+          setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
+          continue;
+        }
+        shown = shown ? `${shown} ${parts[i]}` : parts[i];
+        setReveal((prev) => ({ ...prev, [id]: shown }));
         setLoadingId(null);
-        setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
-        return;
+        setSpeakingId(id);
+        const why = await playOnShared(blob, gen);
+        if (gen !== playGen) return;
+        if (why === 'error') {
+          setReveal((prev) => ({ ...prev, [id]: text }));
+          setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
+        }
       }
-      const prev = urls.current.get(id);
-      if (prev) URL.revokeObjectURL(prev);
-      const blob = await r.blob();
-      const url = URL.createObjectURL(blob);
-      urls.current.set(id, url);
-      const audio = new Audio(url);
-      audio.setAttribute('playsinline', 'true');
-      audioRef.current = audio;
-      audio.onended = () => {
+      setReveal((prev) => ({ ...prev, [id]: text }));
+    } catch {
+      setReveal((prev) => ({ ...prev, [id]: text }));
+      setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
+    } finally {
+      if (gen === playGen) {
+        setLoadingId(null);
         setSpeakingId(null);
         setPaused(false);
-      };
-      audio.onerror = () => {
-        setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
-        setSpeakingId(null);
-        setLoadingId(null);
-      };
-      setLoadingId(null);
-      setSpeakingId(id);
-      setPaused(false);
-      await audio.play();
-    } catch {
-      setLoadingId(null);
-      setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
+        pausedRef.current = false;
+      }
     }
   };
 
@@ -97,24 +168,42 @@ export function useWillSpeak(): WillSpeakApi {
     speakingId,
     loadingId,
     paused,
+    muted,
     error,
+    reveal,
+    visibleText: (id, full) => {
+      if (muted) return full;
+      if (reveal[id] !== undefined) return reveal[id];
+      if (loadingId === id) return '';
+      return full;
+    },
     play,
     pause: () => {
-      audioRef.current?.pause();
+      getSharedWillAudio()?.pause();
+      pausedRef.current = true;
       setPaused(true);
     },
     resume: () => {
-      void audioRef.current?.play();
+      pausedRef.current = false;
       setPaused(false);
+      void getSharedWillAudio()?.play();
     },
     stop: stopAudio,
     replay: (id, text) => play(id, text),
+    mute: () => {
+      writeVoiceMuted(true);
+      setMuted(true);
+      stopAudio();
+    },
+    unmute: () => {
+      writeVoiceMuted(false);
+      setMuted(false);
+      unlockWillAudio();
+    },
+    unlock: unlockWillAudio,
     clear,
   };
 }
-
-
-
 
 function blobToDataUrl(blob: Blob) {
   return new Promise<string>((resolve, reject) => {
@@ -134,21 +223,57 @@ interface MicProps {
 }
 
 export const WillMicButton: React.FC<MicProps> = ({
+  onTranscript,
   currentText = '',
   disabled,
   state,
   setState,
 }) => {
   const startingRef = useRef(false);
+  const lockUntil = useRef(0);
   const seedRef = useRef(currentText);
   seedRef.current = currentText;
 
+  const finish = async () => {
+    setState('transcribing');
+    try {
+      const blob = await stopWillMic();
+      if (!blob) {
+        setState('error');
+        return;
+      }
+      const dataUrl = await blobToDataUrl(blob);
+      const r = await fetch('/api/voice/listen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audio: dataUrl, mime: blob.type || 'audio/webm' }),
+      });
+      const data = await r.json().catch(() => ({}));
+      const spoken = String(data?.text || '').trim();
+      if (!r.ok || !spoken) {
+        setState('error');
+        return;
+      }
+      const seed = seedRef.current.trim();
+      onTranscript(seed ? `${seed} ${spoken}` : spoken, true);
+      setState('idle');
+    } catch {
+      setState('error');
+    }
+  };
+
   const onClick = async () => {
-    if (disabled || startingRef.current) return;
-    if (isWillMicListening() || state === 'listening' || state === 'transcribing') return;
+    if (disabled || startingRef.current || state === 'transcribing') return;
+    if (isWillMicListening() || state === 'listening') {
+      if (Date.now() < lockUntil.current) return;
+      await finish();
+      return;
+    }
     startingRef.current = true;
     try {
+      unlockWillAudio();
       await startWillMic();
+      lockUntil.current = Date.now() + 900;
       setState('listening');
     } catch {
       setState('error');
@@ -163,14 +288,14 @@ export const WillMicButton: React.FC<MicProps> = ({
     <button
       type="button"
       id="will-mic-btn"
-      disabled={disabled || active || state === 'transcribing'}
+      disabled={disabled || state === 'transcribing'}
       onClick={() => void onClick()}
       className={`p-2.5 min-h-11 min-w-11 shrink-0 flex items-center justify-center ${
         active ? 'text-[#e8c37a] will-mic-live' : 'text-[#ead6b4]/35 hover:text-[#e8c37a]'
       }`}
       aria-pressed={active}
-      aria-label="Hablar con Will"
-      title="Hablar con Will"
+      aria-label={active ? 'He terminado de hablar' : 'Hablar con Will'}
+      title={active ? 'He terminado de hablar' : 'Hablar con Will'}
     >
       <Mic className={`w-4 h-4 ${active ? '' : 'opacity-80'}`} />
     </button>
@@ -201,7 +326,7 @@ export const WillFinishTalkButton: React.FC<{
   const clock = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 
   const onFinish = async () => {
-    if (busy || sec < 3) return;
+    if (busy || sec < 1) return;
     setBusy(true);
     setState('transcribing');
     try {
@@ -239,9 +364,9 @@ export const WillFinishTalkButton: React.FC<{
           ? 'No he podido usar el micrófono. Pulsa el micrófono otra vez.'
           : busy || state === 'transcribing'
             ? 'Estoy pasando a escrito lo que has dicho…'
-            : `Will te está escuchando · ${clock}`}
+            : `Te estoy escuchando · ${clock}`}
       </p>
-      {sec >= 3 && !busy && state !== 'transcribing' ? (
+      {sec >= 1 && !busy && state !== 'transcribing' && state !== 'error' ? (
         <button
           type="button"
           id="will-mic-finish"
@@ -250,7 +375,9 @@ export const WillFinishTalkButton: React.FC<{
         >
           He terminado de hablar
         </button>
-      ) : null}
+      ) : (
+        <p className="text-[12px] will-copy-muted mt-1">Pulsa el micrófono otra vez cuando termines. No te corto yo.</p>
+      )}
     </div>,
     document.body,
   );
@@ -269,6 +396,22 @@ export const VoiceStateLine: React.FC<{
   );
 };
 
+export const WillMuteButton: React.FC<{ speak: WillSpeakApi }> = ({ speak }) => (
+  <button
+    type="button"
+    id="will-mute-btn"
+    onClick={() => (speak.muted ? speak.unmute() : speak.mute())}
+    className={`p-2.5 min-h-11 min-w-11 shrink-0 flex items-center justify-center ${
+      speak.muted ? 'text-[#ead6b4]/35 hover:text-[#e8c37a]' : 'text-[#e8c37a]'
+    }`}
+    aria-pressed={!speak.muted}
+    aria-label={speak.muted ? 'Activar voz' : 'Silenciar'}
+    title={speak.muted ? 'Activar voz' : 'Silenciar'}
+  >
+    {speak.muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+  </button>
+);
+
 export const MessageVoiceControls: React.FC<{
   id: string;
   text: string;
@@ -281,21 +424,10 @@ export const MessageVoiceControls: React.FC<{
       {loading && (
         <span
           className="p-1.5 min-h-11 min-w-11 flex items-center justify-center text-[#e8c37a]"
-          aria-label="Will está preparando la voz"
+          aria-label="Te he escuchado. Estoy con ello."
         >
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
         </span>
-      )}
-      {!mine && !loading && (
-        <button
-          type="button"
-          onClick={() => speak.play(id, text)}
-          className="p-1.5 min-h-11 min-w-11 flex items-center justify-center text-[#ead6b4]/35 hover:text-[#e8c37a]"
-          aria-label="Escuchar a Will"
-          title="Escuchar a Will"
-        >
-          <Volume2 className="w-3.5 h-3.5" />
-        </button>
       )}
       {mine && !speak.paused && (
         <button
@@ -325,6 +457,20 @@ export const MessageVoiceControls: React.FC<{
           aria-label="Detener"
         >
           <Square className="w-3 h-3" />
+        </button>
+      )}
+      {speak.muted && !mine && !loading && (
+        <button
+          type="button"
+          onClick={() => {
+            speak.unmute();
+            void speak.play(id, text);
+          }}
+          className="p-1.5 min-h-11 min-w-11 flex items-center justify-center text-[#ead6b4]/35 hover:text-[#e8c37a]"
+          aria-label="Activar voz"
+          title="Activar voz"
+        >
+          <Volume2 className="w-3.5 h-3.5" />
         </button>
       )}
     </div>

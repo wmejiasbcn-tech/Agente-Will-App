@@ -58,7 +58,11 @@ function attachRecorder(media: MediaStream) {
       if (wantStop || !listening || !stream) return;
       try {
         attachRecorder(stream);
-        recorder?.start();
+        try {
+          recorder?.start(1000);
+        } catch {
+          recorder?.start();
+        }
       } catch {
         /* keep stream alive */
       }
@@ -68,7 +72,11 @@ function attachRecorder(media: MediaStream) {
     if (wantStop || !listening || !stream) return;
     try {
       attachRecorder(stream);
-      recorder?.start();
+      try {
+        recorder?.start(1000);
+      } catch {
+        recorder?.start();
+      }
     } catch {
       /* keep stream alive */
     }
@@ -99,7 +107,11 @@ export async function startWillMic() {
   const media = await navigator.mediaDevices.getUserMedia({ audio: true });
   stream = media;
   const rec = attachRecorder(media);
-  rec.start();
+  try {
+    rec.start(1000);
+  } catch {
+    rec.start();
+  }
   listening = true;
   startedAt = Date.now();
   if (tick) window.clearInterval(tick);

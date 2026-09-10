@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { splitWillSpeech } from '../src/voice/willVoice';
 import {
   buildCompatReport,
   inferEngine,
@@ -125,8 +126,16 @@ await test('El micrófono no usa SpeechRecognition ni un filtro de Chrome', () =
 
 await test('Reproducir voz no depende de window.speechSynthesis', () => {
   const voice = readFileSync(join(root, 'src/components/WillVoice.tsx'), 'utf8');
+  const shared = readFileSync(join(root, 'src/voice/willVoice.ts'), 'utf8');
   assert.equal(voice.includes('speechSynthesis'), false);
-  assert.match(voice, /playsinline/i);
+  assert.equal(shared.includes('speechSynthesis'), false);
+  assert.match(shared, /playsinline/i);
+});
+
+await test('La voz se parte en frases, no en un bloque único', () => {
+  const parts = splitWillSpeech('Hola. Te escucho. ¿Cómo quieres que sea hoy la consulta?');
+  assert.ok(parts.length >= 2);
+  assert.equal(parts.join(' ').includes('Hola'), true);
 });
 
 if (failed) {

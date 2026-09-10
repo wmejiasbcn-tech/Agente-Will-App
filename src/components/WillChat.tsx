@@ -26,6 +26,7 @@ import {
   VoiceStateLine,
   WillFinishTalkButton,
   WillMicButton,
+  WillMuteButton,
   useWillSpeak,
 } from './WillVoice';
 import { VoiceUiState } from '../voice/willVoice';
@@ -82,6 +83,9 @@ export const WillChat: React.FC<WillChatProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [voiceState, setVoiceState] = useState<VoiceUiState>('idle');
   const speak = useWillSpeak();
+  const autoPlayed = useRef<Set<string>>(new Set(['welcome-msg']));
+  const speakRef = useRef(speak);
+  speakRef.current = speak;
   const [showDimensionBar, setShowDimensionBar] = useState(false);
   const [expandedInspectId, setExpandedInspectId] = useState<string | null>(null);
   const [selectedContextOverride, setSelectedContextOverride] = useState<ContextCategory | 'auto'>('auto');
@@ -96,7 +100,17 @@ export const WillChat: React.FC<WillChatProps> = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoading, speak.reveal, speak.loadingId]);
+
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'assistant') return;
+    if (last.id === 'welcome-msg' || last.id.startsWith('welcome-')) return;
+    if (autoPlayed.current.has(last.id)) return;
+    autoPlayed.current.add(last.id);
+    speakRef.current.unlock();
+    void speakRef.current.play(last.id, last.content);
+  }, [messages]);
 
   useEffect(() => {
     if (initialPrompt && initialPrompt.trim()) {
@@ -162,6 +176,7 @@ export const WillChat: React.FC<WillChatProps> = ({
     setMessages(newMessages);
     setInput('');
     setIsLoading(true);
+    speak.unlock();
 
     try {
       const response = await fetch('/api/chat', {
@@ -370,7 +385,11 @@ export const WillChat: React.FC<WillChatProps> = ({
                         isUser ? 'will-msg-user rounded-sm px-4 py-3' : 'will-msg-will'
                       }`}
                     >
-                      <WillSpoken text={msg.content} />
+                      {speak.loadingId === msg.id && !speak.visibleText(msg.id, msg.content) ? (
+                        <p className="will-copy">Te he escuchado. Estoy con ello.</p>
+                      ) : (
+                        <WillSpoken text={isUser ? msg.content : speak.visibleText(msg.id, msg.content)} />
+                      )}
                     </div>
 
                     {!isUser && (
@@ -402,7 +421,7 @@ export const WillChat: React.FC<WillChatProps> = ({
               <div className="flex items-start gap-3" role="status" aria-live="polite">
                 <span className="font-serif text-[14px] text-[#e8c37a] pt-0.5">Will</span>
                 <div className="space-y-1">
-                  <p className="text-[15px] will-copy">Te he oído. Estoy con ello.</p>
+                  <p className="text-[15px] will-copy">Te he escuchado. Estoy con ello.</p>
                   <p className="text-[12px] will-copy-muted flex items-center gap-2">
                     <span className="will-think-dots" aria-hidden="true">
                       <i /><i /><i />
@@ -500,6 +519,7 @@ export const WillChat: React.FC<WillChatProps> = ({
               rows={2}
               className="will-composer-input flex-1 min-w-0 bg-transparent will-copy placeholder:text-[#ead6b4]/55 text-[15px] sm:text-sm leading-relaxed focus:outline-none px-3 py-2.5"
             />
+            <WillMuteButton speak={speak} />
             <WillMicButton
               onTranscript={(text) => setInput(text)}
               currentText={input}
