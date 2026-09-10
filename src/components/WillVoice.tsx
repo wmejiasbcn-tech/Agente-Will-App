@@ -1,11 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, Mic, Pause, Play, Square, Volume2 } from 'lucide-react';
-import {
-  speechRecognitionCtor,
-  VOICE_STATE_LABEL,
-  VoiceUiState,
-  WILL_VOICE,
-} from '../voice/willVoice';
+import { VOICE_STATE_LABEL, VoiceUiState } from '../voice/willVoice';
 
 interface WillSpeakApi {
   speakingId: string | null;
@@ -110,6 +105,19 @@ export function useWillSpeak(): WillSpeakApi {
   };
 }
 
+
+function pickRecorderMime() {
+  if (typeof MediaRecorder === 'undefined') return '';
+  const types = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+    'audio/ogg',
+  ];
+  return types.find((type) => MediaRecorder.isTypeSupported(type)) || '';
+}
+
 interface MicProps {
   onTranscript: (text: string, final: boolean) => void;
   currentText?: string;
@@ -125,112 +133,120 @@ export const WillMicButton: React.FC<MicProps> = ({
   state,
   setState,
 }) => {
-  const recRef = useRef<SpeechRecognition | null>(null);
-  const keepOn = useRef(false);
+  const recRef = useRef<MediaRecorder | null>(null);
+  const chunks = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
   const seedRef = useRef('');
 
-  const stopListen = () => {
-    keepOn.current = false;
-    try {
-      recRef.current?.stop();
-    } catch {
-      /* already stopped */
-    }
+  const release = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
     recRef.current = null;
-    setState('idle');
+    chunks.current = [];
   };
 
-  const attach = (rec: SpeechRecognition) => {
-    rec.lang = WILL_VOICE.locale;
-    rec.interimResults = true;
-    rec.continuous = true;
-    rec.onstart = () => setState('listening');
-    rec.onerror = (e) => {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        keepOn.current = false;
+  const transcribe = async (blob: Blob, seed: string) => {
+    setState('transcribing');
+    try {
+      const r = await fetch('/api/voice/listen', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'X-Will-Mime': blob.type || 'audio/webm',
+        },
+        body: blob,
+      });
+      const data = await r.json().catch(() => ({}));
+      const spoken = String(data?.text || '').trim();
+      if (!r.ok || !spoken) {
         setState('error');
         return;
       }
-      if (e.error === 'no-speech' || e.error === 'aborted') return;
-      if (!keepOn.current) setState('error');
-    };
-    rec.onend = () => {
-      if (!keepOn.current) {
-        recRef.current = null;
-        setState('idle');
-        return;
-      }
-      try {
-        rec.start();
-      } catch {
-        window.setTimeout(() => {
-          if (!keepOn.current) return;
-          try {
-            rec.start();
-          } catch {
-            keepOn.current = false;
-            recRef.current = null;
-            setState('idle');
-          }
-        }, 180);
-      }
-    };
-    rec.onresult = (ev) => {
-      let spoken = '';
-      for (let i = 0; i < ev.results.length; i++) {
-        spoken += ev.results[i][0].transcript;
-      }
-      spoken = spoken.trim();
-      const seed = seedRef.current.trim();
       const next = seed ? `${seed} ${spoken}` : spoken;
-      onTranscript(next, ev.results[ev.results.length - 1]?.isFinal ?? false);
-    };
+      onTranscript(next, true);
+      setState('idle');
+    } catch {
+      setState('error');
+    }
   };
 
-  const startListen = () => {
-    const Ctor = speechRecognitionCtor();
-    if (!Ctor) {
+  const stopListen = () => {
+    const rec = recRef.current;
+    if (!rec || rec.state === 'inactive') {
+      release();
+      if (state === 'listening') setState('idle');
+      return;
+    }
+    rec.stop();
+  };
+
+  const startListen = async () => {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setState('error');
       return;
     }
-    keepOn.current = true;
     seedRef.current = currentText;
-    const rec = new Ctor();
-    attach(rec);
-    recRef.current = rec;
+    chunks.current = [];
     try {
-      rec.start();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mime = pickRecorderMime();
+      const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      recRef.current = rec;
+      rec.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) chunks.current.push(ev.data);
+      };
+      rec.onerror = () => {
+        release();
+        setState('error');
+      };
+      rec.onstop = () => {
+        const blob = new Blob(chunks.current, { type: rec.mimeType || 'audio/webm' });
+        const seed = seedRef.current.trim();
+        release();
+        if (blob.size < 800) {
+          setState('idle');
+          return;
+        }
+        void transcribe(blob, seed);
+      };
+      rec.start(250);
+      setState('listening');
     } catch {
-      keepOn.current = false;
+      release();
       setState('error');
     }
   };
 
-  useEffect(() => () => {
-    keepOn.current = false;
-    try {
-      recRef.current?.stop();
-    } catch {
-      /* unmount */
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      try {
+        if (recRef.current && recRef.current.state !== 'inactive') recRef.current.stop();
+      } catch {
+        /* unmount */
+      }
+      release();
+    },
+    [],
+  );
 
   const active = state === 'listening';
+  const busy = state === 'transcribing';
 
   return (
     <button
       type="button"
       id="will-mic-btn"
-      disabled={disabled}
+      disabled={disabled || busy}
       onClick={() => (active ? stopListen() : startListen())}
       className={`p-2.5 min-h-11 min-w-11 shrink-0 flex items-center justify-center ${
-        active ? 'text-[#e8c37a] will-mic-live' : 'text-[#ead6b4]/35 hover:text-[#e8c37a]'
+        active || busy ? 'text-[#e8c37a] will-mic-live' : 'text-[#ead6b4]/35 hover:text-[#e8c37a]'
       }`}
       aria-pressed={active}
-      aria-label={active ? 'Dejar de escuchar' : 'Hablar con Will'}
-      title={active ? 'Dejar de escuchar' : 'Hablar con Will'}
+      aria-label={active ? 'Dejar de hablar' : 'Hablar con Will'}
+      title={active ? 'Dejar de hablar' : 'Hablar con Will'}
     >
-      <Mic className={`w-4 h-4 ${active ? '' : 'opacity-80'}`} />
+      <Mic className={`w-4 h-4 ${active || busy ? '' : 'opacity-80'}`} />
     </button>
   );
 };
@@ -243,7 +259,7 @@ export const VoiceStateLine: React.FC<{
   return (
     <p className="text-[12px] will-copy px-1 pb-2" role="status" aria-live="polite">
       {error || VOICE_STATE_LABEL[state]}
-      {state === 'listening' ? ' El micrófono sigue abierto hasta que lo cierres.' : ''}
+      {state === 'listening' ? ' Sigue abierto hasta que pulses de nuevo el micrófono.' : ''}
     </p>
   );
 };

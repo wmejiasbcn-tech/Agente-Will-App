@@ -1,6 +1,7 @@
 export const WILL_VOICE = {
   provider: 'ElevenLabs',
   endpoint: '/api/voice/speak',
+  listenEndpoint: '/api/voice/listen',
   upstream: 'https://api.elevenlabs.io/v1/text-to-speech',
   voiceId: 'DrwFQsjvHFpLcKyvtbE3',
   modelId: 'eleven_multilingual_v2',
@@ -12,6 +13,7 @@ export const WILL_VOICE = {
 export type VoiceUiState =
   | 'idle'
   | 'listening'
+  | 'transcribing'
   | 'processing'
   | 'speaking'
   | 'error';
@@ -19,6 +21,7 @@ export type VoiceUiState =
 export const VOICE_STATE_LABEL: Record<VoiceUiState, string> = {
   idle: 'En silencio',
   listening: 'Te escucho.',
+  transcribing: 'Estoy pasando a escrito lo que has dicho…',
   processing: 'Will está preparando la voz…',
   speaking: 'Will está hablando',
   error: 'La voz no está disponible ahora',
