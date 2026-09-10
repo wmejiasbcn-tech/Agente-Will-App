@@ -113,6 +113,7 @@ export function useWillSpeak(): WillSpeakApi {
 
 
 
+
 function blobToDataUrl(blob: Blob) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -131,23 +132,81 @@ interface MicProps {
 }
 
 export const WillMicButton: React.FC<MicProps> = ({
-  onTranscript,
   currentText = '',
   disabled,
   state,
   setState,
 }) => {
-  const seedRef = useRef(currentText);
   const startingRef = useRef(false);
+  const seedRef = useRef(currentText);
   seedRef.current = currentText;
 
-  useEffect(() => subscribeWillMic((snap) => {
-    if (snap.status === 'listening') setState('listening');
-  }), [setState]);
+  const onClick = async () => {
+    if (disabled || startingRef.current) return;
+    if (isWillMicListening() || state === 'listening' || state === 'transcribing') return;
+    startingRef.current = true;
+    try {
+      await startWillMic();
+      setState('listening');
+    } catch {
+      setState('error');
+    } finally {
+      startingRef.current = false;
+    }
+  };
 
-  const transcribe = async (blob: Blob) => {
+  const active = state === 'listening' || isWillMicListening();
+
+  return (
+    <button
+      type="button"
+      id="will-mic-btn"
+      disabled={disabled || active || state === 'transcribing'}
+      onClick={() => void onClick()}
+      className={`p-2.5 min-h-11 min-w-11 shrink-0 flex items-center justify-center ${
+        active ? 'text-[#e8c37a] will-mic-live' : 'text-[#ead6b4]/35 hover:text-[#e8c37a]'
+      }`}
+      aria-pressed={active}
+      aria-label="Hablar con Will"
+      title="Hablar con Will"
+    >
+      <Mic className={`w-4 h-4 ${active ? '' : 'opacity-80'}`} />
+    </button>
+  );
+};
+
+export const WillFinishTalkButton: React.FC<{
+  onTranscript: (text: string, final: boolean) => void;
+  currentText?: string;
+  state: VoiceUiState;
+  setState: (s: VoiceUiState) => void;
+}> = ({ onTranscript, currentText = '', state, setState }) => {
+  const [sec, setSec] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const seedRef = useRef(currentText);
+  seedRef.current = currentText;
+
+  useEffect(() => {
+    return subscribeWillMic((snap) => {
+      if (snap.status === 'listening') {
+        setSec(snap.seconds);
+        if (state !== 'listening') setState('listening');
+      }
+    });
+  }, [setState, state]);
+
+  if (state !== 'listening' && !isWillMicListening()) return null;
+
+  const onFinish = async () => {
+    if (busy || sec < 1) return;
+    setBusy(true);
     setState('transcribing');
     try {
+      const blob = await stopWillMic();
+      if (!blob) {
+        setState('error');
+        return;
+      }
       const dataUrl = await blobToDataUrl(blob);
       const r = await fetch('/api/voice/listen', {
         method: 'POST',
@@ -165,48 +224,22 @@ export const WillMicButton: React.FC<MicProps> = ({
       setState('idle');
     } catch {
       setState('error');
-    }
-  };
-
-  const onClick = async () => {
-    if (disabled || state === 'transcribing' || startingRef.current) return;
-    if (isWillMicListening() || state === 'listening') {
-      const blob = await stopWillMic();
-      if (!blob) {
-        setState('error');
-        return;
-      }
-      await transcribe(blob);
-      return;
-    }
-    startingRef.current = true;
-    try {
-      await startWillMic();
-      setState('listening');
-    } catch {
-      setState('error');
     } finally {
-      startingRef.current = false;
+      setBusy(false);
     }
   };
-
-  const active = state === 'listening' || isWillMicListening();
-  const busy = state === 'transcribing';
 
   return (
     <button
       type="button"
-      id="will-mic-btn"
-      disabled={disabled || busy}
-      onClick={() => void onClick()}
-      className={`p-2.5 min-h-11 min-w-11 shrink-0 flex items-center justify-center ${
-        active || busy ? 'text-[#e8c37a] will-mic-live' : 'text-[#ead6b4]/35 hover:text-[#e8c37a]'
-      }`}
-      aria-pressed={active}
-      aria-label={active ? 'Dejar de hablar' : 'Hablar con Will'}
-      title={active ? 'Dejar de hablar' : 'Hablar con Will'}
+      id="will-mic-finish"
+      onClick={() => void onFinish()}
+      disabled={busy || sec < 1}
+      className="mb-2 w-full min-h-11 px-4 py-2.5 text-[14px] will-copy arch-glass"
     >
-      <Mic className={`w-4 h-4 ${active || busy ? '' : 'opacity-80'}`} />
+      {busy || state === 'transcribing'
+        ? 'Estoy pasando a escrito lo que has dicho…'
+        : 'He terminado de hablar'}
     </button>
   );
 };
@@ -215,26 +248,11 @@ export const VoiceStateLine: React.FC<{
   state: VoiceUiState;
   error?: string | null;
 }> = ({ state, error }) => {
-  const [sec, setSec] = useState(0);
-  useEffect(() => {
-    return subscribeWillMic((snap) => {
-      if (snap.status === 'listening') setSec(snap.seconds);
-      else setSec(0);
-    });
-  }, []);
-  const listening = state === 'listening';
+  if (state === 'listening' || isWillMicListening()) return null;
   if (state === 'idle' && !error) return null;
-  const clock = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-  const text = listening
-    ? `Te estoy escuchando · ${clock} · pulsa el micrófono cuando termines.`
-    : error || VOICE_STATE_LABEL[state];
   return (
-    <p
-      className={`px-1 pb-2 ${listening ? 'text-[15px] will-copy' : 'text-[12px] will-copy'}`}
-      role="status"
-      aria-live="polite"
-    >
-      {text}
+    <p className="text-[12px] will-copy px-1 pb-2" role="status" aria-live="polite">
+      {error || VOICE_STATE_LABEL[state]}
     </p>
   );
 };

@@ -1,8 +1,9 @@
-export type MicCaptureStatus = 'idle' | 'listening' | 'error';
+export type MicCaptureStatus = 'idle' | 'listening';
 
 export type MicCaptureSnap = {
   status: MicCaptureStatus;
   seconds: number;
+  level: number;
 };
 
 type Listener = (snap: MicCaptureSnap) => void;
@@ -14,25 +15,62 @@ let ctx: AudioContext | null = null;
 let source: MediaStreamAudioSourceNode | null = null;
 let processor: ScriptProcessorNode | null = null;
 let mute: GainNode | null = null;
+let osc: OscillatorNode | null = null;
 let chunks: Float32Array[] = [];
 let sampleRate = 44100;
 let listening = false;
 let startedAt = 0;
 let tick: number | null = null;
+let level = 0;
+
+function pinGraph() {
+  (window as unknown as { __willMic?: unknown }).__willMic = {
+    ctx,
+    processor,
+    source,
+    stream,
+    osc,
+  };
+}
 
 function snap(): MicCaptureSnap {
   return {
     status: listening ? 'listening' : 'idle',
-    seconds: listening ? Math.floor((Date.now() - startedAt) / 1000) : 0,
+    seconds: listening ? Math.max(0, Math.floor((Date.now() - startedAt) / 1000)) : 0,
+    level,
   };
 }
 
 function emit() {
   const s = snap();
   listeners.forEach((fn) => fn(s));
+  drawHud(s);
+}
+
+function drawHud(s: MicCaptureSnap) {
+  const id = 'will-mic-hud';
+  let el = document.getElementById(id);
+  if (s.status !== 'listening') {
+    el?.remove();
+    return;
+  }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = id;
+    el.setAttribute('role', 'status');
+    document.body.appendChild(el);
+  }
+  const clock = `${Math.floor(s.seconds / 60)}:${String(s.seconds % 60).padStart(2, '0')}`;
+  const bars = Math.max(1, Math.min(12, Math.round(s.level * 12)));
+  el.textContent = `Will te está escuchando · ${clock} · ${'●'.repeat(bars)}`;
 }
 
 function clearGraph() {
+  try {
+    osc?.stop();
+  } catch {
+    /* ignore */
+  }
   try {
     processor?.disconnect();
   } catch {
@@ -51,6 +89,8 @@ function clearGraph() {
   processor = null;
   source = null;
   mute = null;
+  osc = null;
+  (window as unknown as { __willMic?: unknown }).__willMic = undefined;
 }
 
 async function closeCtx() {
@@ -123,6 +163,7 @@ export function subscribeWillMic(fn: Listener) {
 export async function startWillMic() {
   if (listening) return;
   chunks = [];
+  level = 0;
   const media = await navigator.mediaDevices.getUserMedia({ audio: true });
   stream = media;
   const AC =
@@ -136,17 +177,33 @@ export async function startWillMic() {
   processor.onaudioprocess = (ev) => {
     if (!listening) return;
     if (Date.now() - startedAt > 120000) return;
-    chunks.push(new Float32Array(ev.inputBuffer.getChannelData(0)));
+    const input = ev.inputBuffer.getChannelData(0);
+    const copy = new Float32Array(input);
+    chunks.push(copy);
+    let sum = 0;
+    for (let i = 0; i < copy.length; i++) sum += copy[i] * copy[i];
+    level = Math.min(1, Math.sqrt(sum / copy.length) * 4);
   };
   mute = ctx.createGain();
   mute.gain.value = 0;
+  osc = ctx.createOscillator();
+  osc.frequency.value = 20;
+  const keep = ctx.createGain();
+  keep.gain.value = 0.00001;
+  osc.connect(keep);
+  keep.connect(ctx.destination);
+  osc.start();
   source.connect(processor);
   processor.connect(mute);
   mute.connect(ctx.destination);
+  pinGraph();
   listening = true;
   startedAt = Date.now();
   if (tick) window.clearInterval(tick);
-  tick = window.setInterval(emit, 250);
+  tick = window.setInterval(() => {
+    if (ctx && ctx.state === 'suspended') void ctx.resume();
+    emit();
+  }, 250);
   emit();
 }
 
@@ -162,20 +219,8 @@ export async function stopWillMic(): Promise<Blob | null> {
   stopTracks();
   const data = mergeChunks();
   chunks = [];
+  level = 0;
   emit();
-  if (data.length < sampleRate * 0.25) return null;
+  if (data.length < sampleRate * 0.35) return null;
   return encodeWav(data, sampleRate);
-}
-
-export async function cancelWillMic() {
-  listening = false;
-  if (tick) {
-    window.clearInterval(tick);
-    tick = null;
-  }
-  chunks = [];
-  clearGraph();
-  await closeCtx();
-  stopTracks();
-  emit();
 }

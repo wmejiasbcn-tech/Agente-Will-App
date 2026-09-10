@@ -24,6 +24,7 @@ import { PagerArrows } from './PagerArrows';
 import {
   MessageVoiceControls,
   VoiceStateLine,
+  WillFinishTalkButton,
   WillMicButton,
   useWillSpeak,
 } from './WillVoice';
@@ -481,6 +482,12 @@ export const WillChat: React.FC<WillChatProps> = ({
                 ? null
                 : speak.error
             }
+          />
+          <WillFinishTalkButton
+            onTranscript={(text) => setInput(text)}
+            currentText={input}
+            state={voiceState}
+            setState={setVoiceState}
           />
           <div className="will-composer px-2 py-1.5 flex items-end gap-1">
             <textarea

@@ -534,3 +534,20 @@
   0% { opacity: 0.7; transform: scale(0.85); }
   100% { opacity: 0; transform: scale(1.35); }
 }
+
+#will-mic-hud {
+  position: fixed;
+  left: 50%;
+  bottom: 7.5rem;
+  transform: translateX(-50%);
+  z-index: 80;
+  max-width: min(36rem, calc(100vw - 2rem));
+  padding: 0.7rem 1rem;
+  background: rgba(10, 14, 20, 0.88);
+  border: 1px solid rgba(232, 195, 122, 0.35);
+  color: #f8efd8;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  text-align: center;
+  pointer-events: none;
+}
