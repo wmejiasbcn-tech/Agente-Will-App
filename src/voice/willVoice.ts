@@ -18,8 +18,8 @@ export type VoiceUiState =
 
 export const VOICE_STATE_LABEL: Record<VoiceUiState, string> = {
   idle: 'En silencio',
-  listening: 'Te escucho',
-  processing: 'Preparando',
+  listening: 'Te escucho.',
+  processing: 'Will está preparando la voz…',
   speaking: 'Will está hablando',
   error: 'La voz no está disponible ahora',
 };

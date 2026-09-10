@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Send,
-  RefreshCw,
   Compass,
   CheckCircle2,
   Copy,
@@ -399,10 +398,17 @@ export const WillChat: React.FC<WillChatProps> = ({
               })}
 
             {isLoading && (
-              <div className="flex items-center gap-3 text-xs text-[#ead6b4]/50">
-                <span className="font-serif text-[#e8c37a]">Will</span>
-                <span>está preparando la respuesta...</span>
-                <RefreshCw className="w-3 h-3 animate-spin text-[#e8c37a]" />
+              <div className="flex items-start gap-3" role="status" aria-live="polite">
+                <span className="font-serif text-[14px] text-[#e8c37a] pt-0.5">Will</span>
+                <div className="space-y-1">
+                  <p className="text-[15px] will-copy">Te he oído. Estoy con ello.</p>
+                  <p className="text-[12px] will-copy-muted flex items-center gap-2">
+                    <span className="will-think-dots" aria-hidden="true">
+                      <i /><i /><i />
+                    </span>
+                    Un momento.
+                  </p>
+                </div>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -463,7 +469,13 @@ export const WillChat: React.FC<WillChatProps> = ({
             }
           />
           <VoiceStateLine
-            state={speak.speakingId ? 'speaking' : voiceState}
+            state={
+              speak.loadingId
+                ? 'processing'
+                : speak.speakingId
+                  ? 'speaking'
+                  : voiceState
+            }
             error={speak.error}
           />
           <div className="will-composer px-2 py-1.5 flex items-end gap-1">
@@ -479,6 +491,7 @@ export const WillChat: React.FC<WillChatProps> = ({
             />
             <WillMicButton
               onTranscript={(text) => setInput(text)}
+              currentText={input}
               disabled={isLoading}
               state={voiceState}
               setState={setVoiceState}

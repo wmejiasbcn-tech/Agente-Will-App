@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Mic, Pause, Play, Square, Volume2 } from 'lucide-react';
+import { Loader2, Mic, Pause, Play, Square, Volume2 } from 'lucide-react';
 import {
   speechRecognitionCtor,
   VOICE_STATE_LABEL,
@@ -9,6 +9,7 @@ import {
 
 interface WillSpeakApi {
   speakingId: string | null;
+  loadingId: string | null;
   paused: boolean;
   error: string | null;
   play: (id: string, text: string) => Promise<void>;
@@ -23,6 +24,7 @@ export function useWillSpeak(): WillSpeakApi {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urls = useRef<Map<string, string>>(new Map());
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +36,7 @@ export function useWillSpeak(): WillSpeakApi {
     }
     audioRef.current = null;
     setSpeakingId(null);
+    setLoadingId(null);
     setPaused(false);
   };
 
@@ -49,6 +52,7 @@ export function useWillSpeak(): WillSpeakApi {
   const play = async (id: string, text: string) => {
     stopAudio();
     setError(null);
+    setLoadingId(id);
     try {
       const r = await fetch('/api/voice/speak', {
         method: 'POST',
@@ -56,6 +60,7 @@ export function useWillSpeak(): WillSpeakApi {
         body: JSON.stringify({ text }),
       });
       if (!r.ok) {
+        setLoadingId(null);
         setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
         return;
       }
@@ -73,17 +78,21 @@ export function useWillSpeak(): WillSpeakApi {
       audio.onerror = () => {
         setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
         setSpeakingId(null);
+        setLoadingId(null);
       };
+      setLoadingId(null);
       setSpeakingId(id);
       setPaused(false);
       await audio.play();
     } catch {
+      setLoadingId(null);
       setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
     }
   };
 
   return {
     speakingId,
+    loadingId,
     paused,
     error,
     play,
@@ -103,6 +112,7 @@ export function useWillSpeak(): WillSpeakApi {
 
 interface MicProps {
   onTranscript: (text: string, final: boolean) => void;
+  currentText?: string;
   disabled?: boolean;
   state: VoiceUiState;
   setState: (s: VoiceUiState) => void;
@@ -110,16 +120,71 @@ interface MicProps {
 
 export const WillMicButton: React.FC<MicProps> = ({
   onTranscript,
+  currentText = '',
   disabled,
   state,
   setState,
 }) => {
   const recRef = useRef<SpeechRecognition | null>(null);
+  const keepOn = useRef(false);
+  const seedRef = useRef('');
 
   const stopListen = () => {
-    recRef.current?.stop();
+    keepOn.current = false;
+    try {
+      recRef.current?.stop();
+    } catch {
+      /* already stopped */
+    }
     recRef.current = null;
-    if (state === 'listening') setState('idle');
+    setState('idle');
+  };
+
+  const attach = (rec: SpeechRecognition) => {
+    rec.lang = WILL_VOICE.locale;
+    rec.interimResults = true;
+    rec.continuous = true;
+    rec.onstart = () => setState('listening');
+    rec.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        keepOn.current = false;
+        setState('error');
+        return;
+      }
+      if (e.error === 'no-speech' || e.error === 'aborted') return;
+      if (!keepOn.current) setState('error');
+    };
+    rec.onend = () => {
+      if (!keepOn.current) {
+        recRef.current = null;
+        setState('idle');
+        return;
+      }
+      try {
+        rec.start();
+      } catch {
+        window.setTimeout(() => {
+          if (!keepOn.current) return;
+          try {
+            rec.start();
+          } catch {
+            keepOn.current = false;
+            recRef.current = null;
+            setState('idle');
+          }
+        }, 180);
+      }
+    };
+    rec.onresult = (ev) => {
+      let spoken = '';
+      for (let i = 0; i < ev.results.length; i++) {
+        spoken += ev.results[i][0].transcript;
+      }
+      spoken = spoken.trim();
+      const seed = seedRef.current.trim();
+      const next = seed ? `${seed} ${spoken}` : spoken;
+      onTranscript(next, ev.results[ev.results.length - 1]?.isFinal ?? false);
+    };
   };
 
   const startListen = () => {
@@ -128,36 +193,27 @@ export const WillMicButton: React.FC<MicProps> = ({
       setState('error');
       return;
     }
+    keepOn.current = true;
+    seedRef.current = currentText;
     const rec = new Ctor();
-    rec.lang = WILL_VOICE.locale;
-    rec.interimResults = true;
-    rec.continuous = false;
-    rec.onstart = () => setState('listening');
-    rec.onerror = (e) => {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        setState('error');
-      } else if (e.error === 'no-speech') {
-        setState('idle');
-      } else {
-        setState('error');
-      }
-    };
-    rec.onend = () => {
-      recRef.current = null;
-      setState('idle');
-    };
-    rec.onresult = (ev) => {
-      let text = '';
-      let final = false;
-      for (let i = ev.resultIndex; i < ev.results.length; i++) {
-        text += ev.results[i][0].transcript;
-        if (ev.results[i].isFinal) final = true;
-      }
-      onTranscript(text, final);
-    };
+    attach(rec);
     recRef.current = rec;
-    rec.start();
+    try {
+      rec.start();
+    } catch {
+      keepOn.current = false;
+      setState('error');
+    }
   };
+
+  useEffect(() => () => {
+    keepOn.current = false;
+    try {
+      recRef.current?.stop();
+    } catch {
+      /* unmount */
+    }
+  }, []);
 
   const active = state === 'listening';
 
@@ -168,7 +224,7 @@ export const WillMicButton: React.FC<MicProps> = ({
       disabled={disabled}
       onClick={() => (active ? stopListen() : startListen())}
       className={`p-2.5 min-h-11 min-w-11 shrink-0 flex items-center justify-center ${
-        active ? 'text-[#e8c37a]' : 'text-[#ead6b4]/35 hover:text-[#e8c37a]'
+        active ? 'text-[#e8c37a] will-mic-live' : 'text-[#ead6b4]/35 hover:text-[#e8c37a]'
       }`}
       aria-pressed={active}
       aria-label={active ? 'Dejar de escuchar' : 'Hablar con Will'}
@@ -185,9 +241,9 @@ export const VoiceStateLine: React.FC<{
 }> = ({ state, error }) => {
   if (state === 'idle' && !error) return null;
   return (
-    <p className="text-[11px] will-copy-muted px-1" role="status" aria-live="polite">
+    <p className="text-[12px] will-copy px-1 pb-2" role="status" aria-live="polite">
       {error || VOICE_STATE_LABEL[state]}
-      {state === 'listening' ? ' · el micrófono está abierto ahora' : ''}
+      {state === 'listening' ? ' El micrófono sigue abierto hasta que lo cierres.' : ''}
     </p>
   );
 };
@@ -198,9 +254,18 @@ export const MessageVoiceControls: React.FC<{
   speak: WillSpeakApi;
 }> = ({ id, text, speak }) => {
   const mine = speak.speakingId === id;
+  const loading = speak.loadingId === id;
   return (
     <div className="flex items-center gap-0.5">
-      {!mine && (
+      {loading && (
+        <span
+          className="p-1.5 min-h-11 min-w-11 flex items-center justify-center text-[#e8c37a]"
+          aria-label="Will está preparando la voz"
+        >
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        </span>
+      )}
+      {!mine && !loading && (
         <button
           type="button"
           onClick={() => speak.play(id, text)}
