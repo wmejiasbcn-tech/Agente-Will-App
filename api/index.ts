@@ -2,6 +2,7 @@ import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { registerGeoRoutes } from "./geo";
+import { registerVoiceRoutes } from "./voice";
 
 dotenv.config();
 
@@ -9,6 +10,7 @@ const app = express();
 app.use(express.json({ limit: "10mb" }));
 
 registerGeoRoutes(app);
+registerVoiceRoutes(app);
 
 function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;

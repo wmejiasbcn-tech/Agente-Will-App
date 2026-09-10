@@ -2,8 +2,6 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Send,
   RefreshCw,
-  Volume2,
-  VolumeX,
   Compass,
   CheckCircle2,
   Copy,
@@ -24,6 +22,13 @@ import { PRESENTE_DIMENSIONS } from '../data/presenteData';
 import { detectContext, getAllContextCategories } from '../utils/contextDetector';
 import { HUMAN_ENTRANCE_DOORS } from '../data/canonicalArchitectureData';
 import { PagerArrows } from './PagerArrows';
+import {
+  MessageVoiceControls,
+  VoiceStateLine,
+  WillMicButton,
+  useWillSpeak,
+} from './WillVoice';
+import { VoiceUiState } from '../voice/willVoice';
 
 interface WillChatProps {
   onSelectDimension?: (code: PresenteCode) => void;
@@ -74,8 +79,9 @@ export const WillChat: React.FC<WillChatProps> = ({
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [voiceState, setVoiceState] = useState<VoiceUiState>('idle');
+  const speak = useWillSpeak();
   const [showDimensionBar, setShowDimensionBar] = useState(false);
   const [expandedInspectId, setExpandedInspectId] = useState<string | null>(null);
   const [selectedContextOverride, setSelectedContextOverride] = useState<ContextCategory | 'auto'>('auto');
@@ -235,29 +241,9 @@ export const WillChat: React.FC<WillChatProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleToggleSpeak = (id: string, text: string) => {
-    if (!('speechSynthesis' in window)) return;
-
-    if (speakingId === id) {
-      window.speechSynthesis.cancel();
-      setSpeakingId(null);
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'es-ES';
-    utterance.rate = 1.0;
-    utterance.onend = () => setSpeakingId(null);
-    utterance.onerror = () => setSpeakingId(null);
-
-    setSpeakingId(id);
-    window.speechSynthesis.speak(utterance);
-  };
-
   const handleClearChat = () => {
-    window.speechSynthesis?.cancel();
-    setSpeakingId(null);
+    speak.clear();
+    setVoiceState('idle');
     setActiveDoorId(null);
     setMessages([welcomeMessage()]);
   };
@@ -274,8 +260,7 @@ export const WillChat: React.FC<WillChatProps> = ({
       return;
     }
     const welcome = welcomeMessage();
-    window.speechSynthesis?.cancel();
-    setSpeakingId(null);
+    speak.stop();
     setActiveDoorId(next.id);
     setMessages([welcome]);
     void handleSend(next.quickPrompt, [welcome]);
@@ -390,22 +375,11 @@ export const WillChat: React.FC<WillChatProps> = ({
 
                     {!isUser && (
                       <div className="flex flex-wrap items-center gap-1 text-[#ead6b4]/35">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSpeak(msg.id, msg.content)}
-                          className={`p-1.5 min-h-11 min-w-11 flex items-center justify-center ${
-                            speakingId === msg.id ? 'text-[#e8c37a]' : ''
-                          }`}
-                          title={speakingId === msg.id ? 'Detener lectura' : 'Escuchar en voz alta'}
-                          aria-label={speakingId === msg.id ? 'Detener lectura' : 'Escuchar en voz alta'}
-                          aria-pressed={speakingId === msg.id}
-                        >
-                          {speakingId === msg.id ? (
-                            <VolumeX className="w-3.5 h-3.5" />
-                          ) : (
-                            <Volume2 className="w-3.5 h-3.5" />
-                          )}
-                        </button>
+                        <MessageVoiceControls
+                          id={msg.id}
+                          text={msg.content}
+                          speak={speak}
+                        />
                         <button
                           type="button"
                           onClick={() => handleCopy(msg.id, msg.content)}
@@ -488,6 +462,10 @@ export const WillChat: React.FC<WillChatProps> = ({
                 : activeDoor?.doorTitle || 'Conversación'
             }
           />
+          <VoiceStateLine
+            state={speak.speakingId ? 'speaking' : voiceState}
+            usingFallback={speak.usingFallback}
+          />
           <div className="will-composer px-2 py-1.5 flex items-end gap-1">
             <textarea
               ref={textareaRef}
@@ -498,6 +476,12 @@ export const WillChat: React.FC<WillChatProps> = ({
               placeholder="Escribe lo que quieras contar, preguntar o explorar..."
               rows={2}
               className="will-composer-input flex-1 min-w-0 bg-transparent will-copy placeholder:text-[#ead6b4]/55 text-[15px] sm:text-sm leading-relaxed focus:outline-none px-3 py-2.5"
+            />
+            <WillMicButton
+              onTranscript={(text) => setInput(text)}
+              disabled={isLoading}
+              state={voiceState}
+              setState={setVoiceState}
             />
             <button
               type="button"
