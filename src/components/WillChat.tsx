@@ -473,7 +473,7 @@ export const WillChat: React.FC<WillChatProps> = ({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Escribe lo que quieras contar, preguntar o explorar..."
+              placeholder="Escribe o habla sobre lo que quieras contar, preguntar o explorar..."
               rows={2}
               className="will-composer-input flex-1 min-w-0 bg-transparent will-copy placeholder:text-[#ead6b4]/55 text-[15px] sm:text-sm leading-relaxed focus:outline-none px-3 py-2.5"
             />
