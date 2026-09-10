@@ -1,13 +1,28 @@
 {
-  "buildCommand": "vite build",
-  "outputDirectory": "dist",
-  "functions": {
-    "api/index.ts": {
-      "includeFiles": "api/**",
-      "maxDuration": 30
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
     }
-  },
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "/api" }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.ts"
+    },
+    {
+      "src": "/(.+\\.[A-Za-z0-9]+)$",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
