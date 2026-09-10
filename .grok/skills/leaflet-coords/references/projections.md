@@ -25,7 +25,9 @@ vista artística. Por eso:
 1. GCPs: ciudad con `lat,lng` reales y `x,y` % calibrados sobre esa foto.
 2. IDW en espacio Mercator → `%` de la imagen.
 3. Leaflet `CRS.Simple` con bounds `[[0,0],[556,1200]]`.
-   Coordenada Leaflet: `[yPx, xPx]` = `[y% * 556 / 100, x% * 1200 / 100]`.
+   En CRS.Simple y crece al norte. CSS y% es desde arriba.
+   Leaflet: `[(100-y%)/100 * 556, x%/100 * 1200]`.
+   Si no se invierte, Buenos Aires acaba en Canadá y Londres en África.
 
 ## Qué no hacer
 

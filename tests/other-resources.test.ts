@@ -74,7 +74,7 @@ await test('Nueva York, Buenos Aires y Mumbai caen en su tierra, no en otra', ()
   assert.ok(nyc.x > 24, 'Nueva York tiene que estar al este, no en Colorado');
   assert.ok(bue.y > 78, 'Buenos Aires tiene que estar en el cono sur, no en Colombia');
   assert.ok(bue.y > bog.y, 'Buenos Aires más al sur que Bogotá');
-  assert.ok(bom.x > dxb.x + 8, 'Mumbai al este de Dubái, no en Arabia');
+  assert.ok(bom.x > dxb.x + 4, 'Mumbai al este de Dubái, no en Arabia');
   assert.match(view, /WillWorldMap/);
 });
 

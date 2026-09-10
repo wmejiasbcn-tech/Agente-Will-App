@@ -48,14 +48,18 @@ export function imageToWgs(x: number, y: number): { lat: number; lng: number } {
   return mercatorToLonLat({ x: mx, y: my });
 }
 
+/** CSS % (arriba-izquierda) → Leaflet CRS.Simple (y crece al norte). */
 export function imagePctToLeaflet(pct: ImagePct): [number, number] {
-  return [(pct.y / 100) * MAP_IMAGE.height, (pct.x / 100) * MAP_IMAGE.width];
+  return [
+    ((100 - pct.y) / 100) * MAP_IMAGE.height,
+    (pct.x / 100) * MAP_IMAGE.width,
+  ];
 }
 
 export function leafletToImagePct(yPx: number, xPx: number): ImagePct {
   return {
     x: (xPx / MAP_IMAGE.width) * 100,
-    y: (yPx / MAP_IMAGE.height) * 100,
+    y: 100 - (yPx / MAP_IMAGE.height) * 100,
   };
 }
 

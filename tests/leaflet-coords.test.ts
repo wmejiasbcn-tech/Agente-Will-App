@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WORLD_NODES } from '../src/data/worldNodes';
-import { wgsToImage } from '../src/utils/mapGeoref';
+import { imagePctToLeaflet, leafletToImagePct, wgsToImage } from '../src/utils/mapGeoref';
 import { lonLatToMercator, mercatorToLonLat } from '../src/utils/webMercator';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -32,6 +32,26 @@ await test('Un GCP proyectado cae sobre su propio píxel', () => {
     assert.ok(Math.abs(p.x - n.x) < 2, `${n.label} x ${p.x} vs ${n.x}`);
     assert.ok(Math.abs(p.y - n.y) < 2, `${n.label} y ${p.y} vs ${n.y}`);
   }
+});
+
+
+await test('Leaflet no pone el sur arriba: Buenos Aires queda al sur de Nueva York', () => {
+  const bue = WORLD_NODES.find((n) => n.id === 'bue')!;
+  const nyc = WORLD_NODES.find((n) => n.id === 'nyc')!;
+  const lon = WORLD_NODES.find((n) => n.id === 'lon')!;
+  const cpt = WORLD_NODES.find((n) => n.id === 'cpt')!;
+  const lax = WORLD_NODES.find((n) => n.id === 'lax')!;
+  const [bueY] = imagePctToLeaflet({ x: bue.x, y: bue.y });
+  const [nycY] = imagePctToLeaflet({ x: nyc.x, y: nyc.y });
+  const [lonY] = imagePctToLeaflet({ x: lon.x, y: lon.y });
+  const [cptY] = imagePctToLeaflet({ x: cpt.x, y: cpt.y });
+  assert.ok(bueY < nycY, 'Buenos Aires no puede quedar al norte de Nueva York');
+  assert.ok(lonY > cptY, 'Londres no puede quedar al sur de Ciudad del Cabo');
+  assert.ok(lax.x < nyc.x, 'Los Ángeles al oeste de Nueva York');
+  assert.ok(lax.x > 16, 'Los Ángeles no está en medio del Pacífico');
+  const round = leafletToImagePct(...imagePctToLeaflet({ x: 32.5, y: 83.1 }));
+  assert.ok(Math.abs(round.x - 32.5) < 0.2);
+  assert.ok(Math.abs(round.y - 83.1) < 0.2);
 });
 
 await test('Nueva York no cae en Colorado; Buenos Aires no cae en Colombia; Mumbai no cae en Arabia', () => {
