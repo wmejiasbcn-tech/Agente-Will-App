@@ -11,6 +11,7 @@ import {
   writeVoiceMuted,
 } from '../voice/willVoice';
 import { recordMicDiag } from '../voice/micDiagnostics';
+import { probeWillCompat } from '../utils/browserCompat';
 import {
   isWillMicListening,
   startWillMic,
@@ -88,9 +89,12 @@ export function useWillSpeak(): WillSpeakApi {
   const [error, setError] = useState<string | null>(null);
   const [reveal, setReveal] = useState<Record<string, string>>({});
   const pausedRef = useRef(false);
+  const mutedRef = useRef(false);
 
   useEffect(() => {
-    setMuted(readVoiceMuted());
+    const next = readVoiceMuted();
+    setMuted(next);
+    mutedRef.current = next;
   }, []);
 
   const stopAudio = () => {
@@ -118,7 +122,7 @@ export function useWillSpeak(): WillSpeakApi {
   const play = async (id: string, text: string) => {
     const gen = ++playGen;
     setError(null);
-    if (muted) {
+    if (mutedRef.current) {
       setReveal((prev) => ({ ...prev, [id]: text }));
       setLoadingId(null);
       setSpeakingId(null);
@@ -131,10 +135,13 @@ export function useWillSpeak(): WillSpeakApi {
     pausedRef.current = false;
     let shown = '';
     try {
+      let pending = parts.length ? fetchWillSpeech(parts[0]) : Promise.resolve(null);
       for (let i = 0; i < parts.length; i++) {
         if (gen !== playGen) return;
-        const blob = await fetchWillSpeech(parts[i]);
+        const blob = await pending;
         if (gen !== playGen) return;
+        pending =
+          i + 1 < parts.length ? fetchWillSpeech(parts[i + 1]) : Promise.resolve(null);
         if (!blob) {
           setReveal((prev) => ({ ...prev, [id]: text }));
           setError('La voz de Will no se ha podido reproducir ahora. El texto sigue visible.');
@@ -193,11 +200,13 @@ export function useWillSpeak(): WillSpeakApi {
     replay: (id, text) => play(id, text),
     mute: () => {
       writeVoiceMuted(true);
+      mutedRef.current = true;
       setMuted(true);
       stopAudio();
     },
     unmute: () => {
       writeVoiceMuted(false);
+      mutedRef.current = false;
       setMuted(false);
       unlockWillAudio();
     },
@@ -261,7 +270,7 @@ export const WillMicButton: React.FC<MicProps> = ({
       recordMicDiag({ type: 'stt_ok', bytes: blob.size, detail: String(spoken.length) });
       const seed = seedRef.current.trim();
       onTranscript(seed ? `${seed} ${spoken}` : spoken, true);
-      setState('idle');
+      setState('ready_review');
     } catch {
       recordMicDiag({ type: 'stt_fail', detail: 'exception' });
       setState('error');
@@ -278,11 +287,16 @@ export const WillMicButton: React.FC<MicProps> = ({
       await finish();
       return;
     }
+    if (!probeWillCompat().mic.canCapture) {
+      setState('error');
+      return;
+    }
     startingRef.current = true;
+    setState('preparing_listen');
     try {
       unlockWillAudio();
       await startWillMic();
-      lockUntil.current = Date.now() + 900;
+      lockUntil.current = Date.now() + 1200;
       setState('listening');
     } catch {
       setState('error');
@@ -321,7 +335,12 @@ export const WillFinishTalkButton: React.FC<{
   const [busy, setBusy] = useState(false);
   const seedRef = useRef(currentText);
   seedRef.current = currentText;
-  const live = state === 'listening' || state === 'transcribing' || state === 'error' || isWillMicListening();
+  const live =
+    state === 'preparing_listen' ||
+    state === 'listening' ||
+    state === 'transcribing' ||
+    state === 'error' ||
+    isWillMicListening();
 
   useEffect(() => {
     return subscribeWillMic((snap) => {
@@ -362,7 +381,7 @@ export const WillFinishTalkButton: React.FC<{
       recordMicDiag({ type: 'stt_ok', bytes: blob.size, detail: String(spoken.length) });
       const seed = seedRef.current.trim();
       onTranscript(seed ? `${seed} ${spoken}` : spoken, true);
-      setState('idle');
+      setState('ready_review');
     } catch {
       recordMicDiag({ type: 'stt_fail', detail: 'hud exception' });
       setState('error');
@@ -377,8 +396,10 @@ export const WillFinishTalkButton: React.FC<{
         {state === 'error'
           ? 'No he podido usar el micrófono. Pulsa el micrófono otra vez.'
           : busy || state === 'transcribing'
-            ? 'Estoy pasando a escrito lo que has dicho…'
-            : `Te estoy escuchando · ${clock}`}
+            ? 'Procesando lo que has dicho'
+            : state === 'preparing_listen'
+              ? 'Preparando escucha'
+              : `Te estoy escuchando · ${clock}`}
       </p>
       {sec >= 1 && !busy && state !== 'transcribing' && state !== 'error' ? (
         <button

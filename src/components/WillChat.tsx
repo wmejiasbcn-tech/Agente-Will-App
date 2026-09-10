@@ -490,14 +490,20 @@ export const WillChat: React.FC<WillChatProps> = ({
           />
           <VoiceStateLine
             state={
-              speak.loadingId
-                ? 'processing'
-                : speak.speakingId
-                  ? 'speaking'
-                  : voiceState
+              speak.muted
+                ? 'muted'
+                : speak.paused
+                  ? 'paused'
+                  : speak.loadingId
+                    ? 'preparing_reply'
+                    : speak.speakingId
+                      ? 'speaking'
+                      : voiceState
             }
             error={
-              voiceState === 'listening' || voiceState === 'transcribing'
+              voiceState === 'listening' ||
+              voiceState === 'transcribing' ||
+              voiceState === 'preparing_listen'
                 ? null
                 : speak.error
             }

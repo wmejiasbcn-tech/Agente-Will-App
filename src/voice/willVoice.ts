@@ -12,19 +12,29 @@ export const WILL_VOICE = {
 
 export type VoiceUiState =
   | 'idle'
+  | 'preparing_listen'
   | 'listening'
   | 'transcribing'
+  | 'ready_review'
   | 'processing'
+  | 'preparing_reply'
   | 'speaking'
+  | 'paused'
+  | 'muted'
   | 'error';
 
 export const VOICE_STATE_LABEL: Record<VoiceUiState, string> = {
   idle: 'En silencio',
+  preparing_listen: 'Preparando escucha',
   listening: 'Te estoy escuchando.',
-  transcribing: 'Estoy pasando a escrito lo que has dicho…',
+  transcribing: 'Procesando lo que has dicho',
+  ready_review: 'Listo para revisar. Envíalo cuando quieras.',
   processing: 'Te he escuchado. Estoy con ello.',
-  speaking: 'Will está hablando',
-  error: 'No he podido escribir lo que has dicho. Pulsa el micrófono y prueba otra vez.',
+  preparing_reply: 'Preparando respuesta',
+  speaking: 'Will hablando',
+  paused: 'Pausado',
+  muted: 'Silenciado',
+  error: 'No he podido usar el micrófono. El texto sigue disponible.',
 };
 
 const MUTE_KEY = 'will-voice-muted';
@@ -98,35 +108,34 @@ export function getSharedWillAudio(): HTMLAudioElement | null {
   return el;
 }
 
+const SILENT_WAV =
+  'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+
 export function unlockWillAudio() {
   const el = getSharedWillAudio();
   if (!el) return;
   try {
+    el.setAttribute('playsinline', 'true');
     el.muted = true;
+    el.volume = 1;
+    if (!el.getAttribute('src')) el.src = SILENT_WAV;
     const p = el.play();
     if (p && typeof p.then === 'function') {
       void p
         .then(() => {
           el.pause();
           el.muted = false;
-          el.currentTime = 0;
+          try {
+            el.currentTime = 0;
+          } catch {
+            /* ignore */
+          }
         })
         .catch(() => {
           el.muted = false;
         });
     }
   } catch {
-    el.muted = false;
+    if (el) el.muted = false;
   }
-}
-
-export function speechRecognitionCtor():
-  | (new () => SpeechRecognition)
-  | null {
-  if (typeof window === 'undefined') return null;
-  const w = window as Window & {
-    SpeechRecognition?: new () => SpeechRecognition;
-    webkitSpeechRecognition?: new () => SpeechRecognition;
-  };
-  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
 }
