@@ -68,8 +68,7 @@ Eres WILL, un agente de acompañamiento, facilitación técnica e información b
    - Pregunta la dimensión que la persona desea explorar antes de desplegar información si el contexto es amplio.
 
 3. IDENTIDAD TÉCNICA PROPIA DE SLAM vs CHEMSEX:
-   - SLAM: Trátalo con rigor técnico. REDUCCIÓN DE DAÑOS ≠ 
-INSTRUCCIÓN OPERACIONAL. PROHIBICIÓN ABSOLUTA DE INSTRUCCIONES PROCEDIMENTALES DE EJECUCIÓN.
+   - SLAM: Trátalo con rigor técnico. REDUCCIÓN DE DAÑOS ≠ INSTRUCCIÓN OPERACIONAL. PROHIBICIÓN ABSOLUTA DE INSTRUCCIONES PROCEDIMENTALES DE EJECUCIÓN.
    - CHEMSEX: Vías oral, nasal, rectal, vaginal, absorción en mucosa genital y transdérmica. Farmacología y sinergias.
 
 4. REGLA DE DOSIFICACIÓN Y PAUTAS NO OPERACIONALES:
@@ -100,14 +99,65 @@ INSTRUCCIÓN OPERACIONAL. PROHIBICIÓN ABSOLUTA DE INSTRUCCIONES PROCEDIMENTALES
 - Prohibición de escritura en Graphify: graphify/write = DENY estricto.
 - Blindaje de Dominio B: Dominio B, PIN de seguridad, diario personal del Soberano = DENY absoluto.
 - Estado de Positrón: El nodo Positrón se encuentra offline (health 500 en producción). Nunca declararlo online.
-- Super Plantilla v3.0: Will, 
-Hermes, Aether, Kairos, Dike. Autonomía N3: Reservada exclusivamente a William o Carla.
+- Super Plantilla v3.0: Will, Hermes, Aether, Kairos, Dike. Autonomía N3: Reservada exclusivamente a William o Carla.
   * Principio 12: "Sin spec no hay proyecto".
 `;
+
+const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || "DrwFQsjvHFpLcKyvtbE3";
 
 // Health check
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// ElevenLabs voice endpoint for Will's canonical voice.
+app.post("/api/voice/speak", async (req, res) => {
+  try {
+    const apiKey = process.env.ELEVENLABS_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: "ELEVENLABS_API_KEY is not configured." });
+
+    const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+    if (!text) return res.status(400).json({ error: "text is required" });
+    if (text.length > 12000) return res.status(413).json({ error: "text is too long" });
+
+    const requestedVoiceId = typeof req.body?.voiceId === "string" && req.body.voiceId.trim()
+      ? req.body.voiceId.trim()
+      : ELEVENLABS_VOICE_ID;
+
+    const elevenResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(requestedVoiceId)}`, {
+      method: "POST",
+      headers: {
+        "xi-api-key": apiKey,
+        "Content-Type": "application/json",
+        "Accept": "audio/mpeg",
+      },
+      body: JSON.stringify({
+        text,
+        model_id: "eleven_multilingual_v2",
+        voice_settings: {
+          stability: 0.48,
+          similarity_boost: 0.82,
+          style: 0.28,
+          use_speaker_boost: true,
+        },
+      }),
+    });
+
+    if (!elevenResponse.ok) {
+      const detail = await elevenResponse.text();
+      console.error("ElevenLabs TTS error:", elevenResponse.status, detail);
+      return res.status(elevenResponse.status).json({ error: "ElevenLabs voice generation failed." });
+    }
+
+    const audio = Buffer.from(await elevenResponse.arrayBuffer());
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Content-Length", audio.length.toString());
+    return res.status(200).send(audio);
+  } catch (error: any) {
+    console.error("Error in /api/voice/speak:", error);
+    return res.status(500).json({ error: error.message || "Error generating Will voice." });
+  }
 });
 
 // Chat endpoint - CON NORMALIZACIÓN DE HISTORIAL
@@ -121,7 +171,6 @@ app.post("/api/chat", async (req, res) => {
 
     const ai = getGeminiClient();
 
-    // NORMALIZAR HISTORIAL: Eliminar mensaje inicial de bienvenida
     const normalizedMessages = messages.filter(
       (m: { role: string; content: string; id?: string }) => {
         if (m.id && (m.id.includes('welcome') || m.id.includes('welcome-msg'))) {
