@@ -44,25 +44,21 @@ function snap(): MicCaptureSnap {
 function emit() {
   const s = snap();
   listeners.forEach((fn) => fn(s));
-  drawHud(s);
 }
 
-function drawHud(s: MicCaptureSnap) {
-  const id = 'will-mic-hud';
-  let el = document.getElementById(id);
-  if (s.status !== 'listening') {
-    el?.remove();
-    return;
-  }
-  if (!el) {
-    el = document.createElement('div');
-    el.id = id;
-    el.setAttribute('role', 'status');
-    document.body.appendChild(el);
-  }
-  const clock = `${Math.floor(s.seconds / 60)}:${String(s.seconds % 60).padStart(2, '0')}`;
-  const bars = Math.max(1, Math.min(12, Math.round(s.level * 12)));
-  el.textContent = `Will te está escuchando · ${clock} · ${'●'.repeat(bars)}`;
+export function shieldClicks(ms = 1600) {
+  const until = Date.now() + ms;
+  const block = (event: Event) => {
+    if (Date.now() < until) {
+      event.stopPropagation();
+      event.preventDefault();
+      return;
+    }
+    document.removeEventListener('click', block, true);
+    document.removeEventListener('pointerup', block, true);
+  };
+  document.addEventListener('click', block, true);
+  document.addEventListener('pointerup', block, true);
 }
 
 function clearGraph() {
@@ -205,6 +201,7 @@ export async function startWillMic() {
     emit();
   }, 250);
   emit();
+  shieldClicks(1800);
 }
 
 export async function stopWillMic(): Promise<Blob | null> {

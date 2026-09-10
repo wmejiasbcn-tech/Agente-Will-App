@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2, Mic, Pause, Play, Square, Volume2 } from 'lucide-react';
 import { VOICE_STATE_LABEL, VoiceUiState } from '../voice/willVoice';
 import {
@@ -185,20 +186,21 @@ export const WillFinishTalkButton: React.FC<{
   const [busy, setBusy] = useState(false);
   const seedRef = useRef(currentText);
   seedRef.current = currentText;
+  const live = state === 'listening' || state === 'transcribing' || isWillMicListening();
 
   useEffect(() => {
     return subscribeWillMic((snap) => {
-      if (snap.status === 'listening') {
-        setSec(snap.seconds);
-        if (state !== 'listening') setState('listening');
-      }
+      setSec(snap.status === 'listening' ? snap.seconds : 0);
+      if (snap.status === 'listening') setState('listening');
     });
-  }, [setState, state]);
+  }, [setState]);
 
-  if (state !== 'listening' && !isWillMicListening()) return null;
+  if (!live) return null;
+
+  const clock = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 
   const onFinish = async () => {
-    if (busy || sec < 1) return;
+    if (busy || sec < 3) return;
     setBusy(true);
     setState('transcribing');
     try {
@@ -229,18 +231,25 @@ export const WillFinishTalkButton: React.FC<{
     }
   };
 
-  return (
-    <button
-      type="button"
-      id="will-mic-finish"
-      onClick={() => void onFinish()}
-      disabled={busy || sec < 1}
-      className="mb-2 w-full min-h-11 px-4 py-2.5 text-[14px] will-copy arch-glass"
-    >
-      {busy || state === 'transcribing'
-        ? 'Estoy pasando a escrito lo que has dicho…'
-        : 'He terminado de hablar'}
-    </button>
+  return createPortal(
+    <div className="will-mic-dock">
+      <p className="will-copy text-[15px]">
+        {busy || state === 'transcribing'
+          ? 'Estoy pasando a escrito lo que has dicho…'
+          : `Will te está escuchando · ${clock}`}
+      </p>
+      {sec >= 3 && !busy && state !== 'transcribing' ? (
+        <button
+          type="button"
+          id="will-mic-finish"
+          onClick={() => void onFinish()}
+          className="mt-2 min-h-11 px-4 py-2 text-[14px] will-copy arch-glass"
+        >
+          He terminado de hablar
+        </button>
+      ) : null}
+    </div>,
+    document.body,
   );
 };
 
