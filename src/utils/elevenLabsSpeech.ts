@@ -38,7 +38,7 @@ export function installWillElevenLabsVoice() {
       if (activeUtterance === utterance) {
         activeAudio = null;
         activeUtterance = null;
-        utterance.onerror?.(new SpeechSynthesisErrorEvent('error', { error: 'audio-busy' }));
+        utterance.onerror?.(new Event('error') as SpeechSynthesisErrorEvent);
       }
     };
 
