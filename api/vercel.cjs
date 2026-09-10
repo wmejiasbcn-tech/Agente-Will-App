@@ -497,7 +497,7 @@ function registerVoiceRoutes(app2) {
         });
       }
       const voiceId = process.env.ELEVENLABS_VOICE_ID?.trim() || WILL_VOICE_ID;
-      const url = `${WILL_UPSTREAM}/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`;
+      const url = `${WILL_UPSTREAM}/${encodeURIComponent(voiceId)}`;
       const r = await fetch(url, {
         method: "POST",
         headers: {
@@ -520,7 +520,8 @@ function registerVoiceRoutes(app2) {
         return res.status(502).json({
           error: "ElevenLabs no ha podido generar la voz ahora.",
           voiceId,
-          elevenStatus: r.status
+          elevenStatus: r.status,
+          elevenError: detail.slice(0, 300)
         });
       }
       const buf = Buffer.from(await r.arrayBuffer());

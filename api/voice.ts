@@ -50,7 +50,7 @@ export function registerVoiceRoutes(app: Express) {
       }
 
       const voiceId = process.env.ELEVENLABS_VOICE_ID?.trim() || WILL_VOICE_ID;
-      const url = `${WILL_UPSTREAM}/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`;
+      const url = `${WILL_UPSTREAM}/${encodeURIComponent(voiceId)}`;
       const r = await fetch(url, {
         method: 'POST',
         headers: {
@@ -75,6 +75,7 @@ export function registerVoiceRoutes(app: Express) {
           error: 'ElevenLabs no ha podido generar la voz ahora.',
           voiceId,
           elevenStatus: r.status,
+          elevenError: detail.slice(0, 300),
         });
       }
 
