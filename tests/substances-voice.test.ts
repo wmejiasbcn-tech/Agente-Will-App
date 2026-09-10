@@ -57,12 +57,13 @@ test('Entrar en Sustancias no presupone MDMA', () => {
   const explore = readFileSync(join(root, 'src/components/ExploreTopicsView.tsx'), 'utf8');
   const hr = readFileSync(join(root, 'src/components/HarmReductionView.tsx'), 'utf8');
   const app = readFileSync(join(root, 'src/App.tsx'), 'utf8');
-  assert.match(chat, /onOpenSubstancesGate/);
+  assert.match(chat, /onOpenExploration/);
   assert.match(chat, /consumo-psicotropicas/);
   assert.equal(doors.includes('cinética del MDMA'), false);
-  assert.match(explore, /¿Qué te gustaría explorar sobre sustancias\?/);
+  assert.match(explore, /invitationFor/);
+  assert.match(readFileSync(join(root, 'src/protocol/willEntry.ts'), 'utf8'), /¿Qué te gustaría explorar sobre sustancias/);
   assert.match(hr, /useState<SubstanceInfo \| null>\(null\)/);
-  assert.match(app, /openSubstancesGate/);
+  assert.match(app, /openExploration/);
   const mdma = SUBSTANCES_DATA.find((s) => s.id === 'mdma');
   assert.ok(mdma);
   assert.ok(substanceMatchesQuery(mdma!, 'MDMA'));

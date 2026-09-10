@@ -20,6 +20,7 @@ import { ChatMessage, ContextCategory, DetectedContextInfo, PresenteCode } from 
 import { PRESENTE_DIMENSIONS } from '../data/presenteData';
 import { detectContext, getAllContextCategories } from '../utils/contextDetector';
 import { HUMAN_ENTRANCE_DOORS } from '../data/canonicalArchitectureData';
+import { invitationFor, isConversationDoor, isExplorationDomain } from '../protocol/willEntry';
 import { PagerArrows } from './PagerArrows';
 import {
   MessageVoiceControls,
@@ -38,7 +39,7 @@ interface WillChatProps {
   initialPrompt?: string;
   onClearInitialPrompt?: () => void;
   onGoNextScene?: () => void;
-  onOpenSubstancesGate?: () => void;
+  onOpenExploration?: (domainId: string) => void;
 }
 
 const WELCOME_TEXT =
@@ -69,7 +70,7 @@ export const WillChat: React.FC<WillChatProps> = ({
   initialPrompt,
   onClearInitialPrompt,
   onGoNextScene,
-  onOpenSubstancesGate,
+  onOpenExploration,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -276,24 +277,28 @@ export const WillChat: React.FC<WillChatProps> = ({
       onGoNextScene?.();
       return;
     }
-    if (next.id === 'consumo-psicotropicas') {
-      onOpenSubstancesGate?.();
+    openDoor(next.id);
+  };
+
+  const openDoor = (doorId: string, _prompt?: string) => {
+    speak.unlock();
+    if (isExplorationDomain(doorId)) {
+      onOpenExploration?.(doorId);
       return;
     }
     const welcome = welcomeMessage();
-    speak.stop();
-    setActiveDoorId(next.id);
-    setMessages([welcome]);
-    void handleSend(next.quickPrompt, [welcome]);
-  };
-
-  const openDoor = (doorId: string, prompt: string) => {
-    if (doorId === 'consumo-psicotropicas') {
-      onOpenSubstancesGate?.();
+    const invite: ChatMessage = {
+      id: `invite-${doorId}`,
+      role: 'assistant',
+      content: invitationFor(doorId),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setActiveDoorId(doorId);
+    if (isConversationDoor(doorId) || doorId === 'chat') {
+      setMessages([welcome, invite]);
       return;
     }
-    setActiveDoorId(doorId);
-    void handleSend(prompt);
+    setMessages([welcome, invite]);
   };
 
   const getContextVisuals = (contextType?: ContextCategory) => {

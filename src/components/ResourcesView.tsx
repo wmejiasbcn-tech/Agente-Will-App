@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { CANONICAL_RESOURCES } from '../data/canonicalArchitectureData';
 import { NearbyResources } from './NearbyResources';
+import { ExplorationEntry } from './ExplorationEntry';
+import { invitationFor } from '../protocol/willEntry';
 
 interface ResourcesViewProps {
   onAskWill: (prompt: string) => void;
@@ -70,13 +72,17 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#ead6b4] font-sans">
       <div className="space-y-2 pb-2">
-        <h1 className="text-2xl sm:text-3xl font-serif font-bold will-copy">
-          Recursos de Apoyo y Servicios
-        </h1>
-        <p className="text-sm sm:text-base will-copy-muted max-w-3xl leading-relaxed">
-          Acceso estructurado a servicios asistenciales, sanitarios y comunitarios. Cada recurso
-          cumple una función distinta y complementaria.
-        </p>
+        <ExplorationEntry
+          pattern="C"
+          title="Recursos de Apoyo y Servicios"
+          invitation={invitationFor('resources')}
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Buscar recursos o teléfonos..."
+          searchedTerm={searchQuery}
+          emptyResults={searchQuery.trim() !== '' && filteredResources.length === 0}
+          onAskWill={onAskWill}
+        />
       </div>
 
       <NearbyResources onAskWill={onAskWill} />

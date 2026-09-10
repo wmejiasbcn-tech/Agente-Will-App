@@ -25,7 +25,7 @@ const app = readFileSync(join(root, 'src/App.tsx'), 'utf8');
 
 await test('El nombre canónico es Otros recursos, no un alias', () => {
   assert.match(nav, /label: 'Otros recursos'/);
-  assert.match(view, />\s*Otros recursos\s*</);
+  assert.match(view, /Otros recursos/);
   assert.equal(nav.includes('Explorar el mundo'), false);
   assert.equal(nav.includes('Recursos cerca de ti'), false);
   assert.equal(nav.includes('Apoyo donde estés'), false);

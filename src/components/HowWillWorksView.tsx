@@ -38,7 +38,8 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
     | 'presente'
     | 'epistemologia'
     | 'riesgo-dano'
-  >('principios');
+    | null
+  >(null);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#ead6b4] font-sans">
@@ -51,6 +52,9 @@ export const HowWillWorksView: React.FC<HowWillWorksViewProps> = ({
           Will no te conduce. Aquí puedes ver qué hace, qué no hará nunca, y cómo trata lo que sabe.
         </p>
       </div>
+
+      <p className="text-sm will-copy">¿Qué te gustaría conocer sobre cómo funciona Will?</p>
+      <p className="text-xs will-copy-muted">Elige una sección. No se abre un documento concreto por defecto.</p>
 
       {/* Navigation Sub-Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-stone-800 pb-3">

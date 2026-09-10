@@ -27,20 +27,24 @@ import {
 import { RRDD_CLASSIFICATION } from '../data/knowledgeLayerData';
 import { SUBSTANCES_DATA, substanceMatchesQuery } from '../data/substancesData';
 import { CanonicalDomainId, SubstanceInfo } from '../types';
+import { ExplorationEntry } from './ExplorationEntry';
+import { invitationFor } from '../protocol/willEntry';
 
 interface ExploreTopicsViewProps {
   onAskWill: (prompt: string, domainId?: string) => void;
   onOpenEmergency: () => void;
   initialDomainId?: string;
+  onOpenConversation?: (domainId?: string) => void;
 }
 
 export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
   onAskWill,
   onOpenEmergency,
   initialDomainId,
+  onOpenConversation,
 }) => {
-  const [selectedDomainId, setSelectedDomainId] = useState<CanonicalDomainId>(
-    (initialDomainId as CanonicalDomainId) || 'acompanamiento',
+  const [selectedDomainId, setSelectedDomainId] = useState<CanonicalDomainId | null>(
+    (initialDomainId as CanonicalDomainId) || null,
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFichaId, setExpandedFichaId] = useState<string | null>(null);
@@ -53,8 +57,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
     }
   }, [initialDomainId]);
 
-  const activeDomain =
-    CANONICAL_DOMAINS.find((d) => d.id === selectedDomainId) || CANONICAL_DOMAINS[0];
+  const activeDomain = CANONICAL_DOMAINS.find((d) => d.id === selectedDomainId);
 
   const getDomainIcon = (id: CanonicalDomainId) => {
     switch (id) {
@@ -80,10 +83,11 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
   const domainFichas = SUBSTANCES_DATA.filter((item) => {
     const q = searchQuery.trim();
     if (q) return substanceMatchesQuery(item, q);
+    if (!selectedDomainId) return false;
     return item.domainId === selectedDomainId;
   });
 
-  const ActiveIcon = getDomainIcon(activeDomain.id);
+  const ActiveIcon = activeDomain ? getDomainIcon(activeDomain.id) : Compass;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#ead6b4] font-sans">
@@ -174,120 +178,41 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
         <p className="text-[11px] text-[#ead6b4]/45 leading-relaxed">{RRDD_CLASSIFICATION.rule}</p>
       </div>
 
-      {/* Active Area Banner */}
-      <div className="glass-panel rounded-3xl p-6 sm:p-8 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800/80 pb-5">
-          <div className="flex items-start gap-4">
-            <div
-              className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${activeDomain.colorScheme.badgeBg} border ${activeDomain.colorScheme.border}`}
-            >
-              <ActiveIcon className={`w-6 h-6 ${activeDomain.colorScheme.text}`} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`text-xs font-mono font-semibold uppercase px-2 py-0.5 rounded-full border ${activeDomain.colorScheme.badgeBg}`}
-                >
-                  {activeDomain.shortTitle}
-                </span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-100 mt-1">
-                {activeDomain.doorTitle}
-              </h2>
-              <p className="text-sm text-stone-300 mt-0.5">{activeDomain.doorSubtitle || activeDomain.tagline}</p>
-            </div>
-          </div>
+      {!activeDomain && (
+        <ExplorationEntry
+          pattern="B"
+          title="Explorar temas"
+          invitation="¿Qué te gustaría explorar?"
+          onAskWill={(p) => onAskWill(p)}
+        >
+          <p className="text-sm will-copy-muted">
+            Elige un área. Will no decide por ti qué tema, sustancia, práctica o contexto te interesa.
+          </p>
+        </ExplorationEntry>
+      )}
 
-          {activeDomain.id !== 'consumo-psicotropicas' && (
-          <button
-            id={`talk-will-btn-${activeDomain.id}`}
-            onClick={() => onAskWill(activeDomain.sampleInquiries[0], activeDomain.id)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl will-nav-item-active text-xs font-semibold transition-colors shrink-0 min-h-11"
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>Hablar de esto con Will</span>
-          </button>
-          )}
-        </div>
-
-        {/* Clear Explanation */}
-        <div className="grid md:grid-cols-12 gap-5">
-          <div className="md:col-span-8 space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-stone-400">
-              ¿De qué trata este espacio?
-            </h3>
-            <p className="text-sm sm:text-base text-stone-200 leading-relaxed">
-              {activeDomain.description}
-            </p>
-
-            <div className="p-3.5 rounded-xl bg-stone-950/60 border border-stone-800 text-stone-300 text-xs leading-relaxed space-y-1">
-              <span className="font-semibold text-amber-300 block">Posición de Will:</span>
-              <p>{activeDomain.willStance}</p>
-            </div>
-          </div>
-
-          {/* Subtopics / Subcategories */}
-          <div className="md:col-span-4 space-y-2">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-stone-400">
-              Temas habituales
-            </h3>
-            <div className="flex flex-wrap gap-1.5">
-              {activeDomain.subcategories.map((sub, idx) => (
-                <span
-                  key={idx}
-                  className="text-[11px] px-2.5 py-1 rounded-lg bg-stone-900/80 border border-stone-800 text-stone-300"
-                >
-                  {sub}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {activeDomain.id === 'consumo-psicotropicas' && (
-          <div className="pt-2 border-t border-stone-800/80 space-y-3">
-            <h3 className="font-serif text-xl will-copy">¿Qué te gustaría explorar sobre sustancias?</h3>
-            <p className="text-sm will-copy-muted">
-              ¿Hay alguna sustancia concreta sobre la que quieras información? Escribe su nombre. No presuponemos ninguna.
-            </p>
-            <div className="relative max-w-xl">
-              <Search className="w-4 h-4 text-stone-500 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Nombre de la sustancia o lo que quieras explorar..."
-                className="w-full bg-stone-900 border border-stone-800 rounded-xl pl-10 pr-3 py-3 text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-500/80"
-                autoFocus={activeDomain.id === 'consumo-psicotropicas'}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Quick Questions to ask Will */}
-        {activeDomain.id !== 'consumo-psicotropicas' && (
-        <div className="pt-2 border-t border-stone-800/80 space-y-2">
-          <span className="text-xs font-mono uppercase tracking-wider text-stone-400 block">
-            Preguntas habituales que puedes hacerle a Will:
-          </span>
-          <div className="grid sm:grid-cols-2 gap-2">
-            {activeDomain.sampleInquiries.map((q, idx) => (
-              <button
-                key={idx}
-                onClick={() => onAskWill(q, activeDomain.id)}
-                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-stone-900/90 hover:bg-stone-800 border border-stone-800/90 text-left text-xs text-stone-200 hover:text-amber-300 transition-colors group"
-              >
-                <span className="line-clamp-2">«{q}»</span>
-                <ArrowRight className="w-3.5 h-3.5 text-stone-500 group-hover:text-amber-400 shrink-0" />
-              </button>
-            ))}
-          </div>
-        </div>
-        )}
-      </div>
+      {activeDomain && (
+        <ExplorationEntry
+          pattern="B"
+          title={activeDomain.doorTitle}
+          invitation={invitationFor(activeDomain.id)}
+          searchValue={searchQuery}
+          onSearchChange={(q) => {
+            setSearchQuery(q);
+            setExpandedFichaId(null);
+          }}
+          searchPlaceholder="Buscar una ficha, sustancia o tema..."
+          searchedTerm={searchQuery}
+          emptyResults={searchQuery.trim() !== '' && domainFichas.length === 0}
+          onAskWill={(p) => onAskWill(p, activeDomain.id)}
+        >
+          <p className="text-sm will-copy-muted leading-relaxed">{activeDomain.description}</p>
+          <p className="text-[11px] will-copy-muted">{activeDomain.willStance}</p>
+        </ExplorationEntry>
+      )}
 
       {/* Information Cards (Fichas Informativas Progresivas) */}
-      {!(activeDomain.id === 'consumo-psicotropicas' && searchQuery.trim() === '') && (
+      {activeDomain && (
       <div className="space-y-4 pt-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -315,7 +240,7 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
 
         {domainFichas.length === 0 ? (
           <div className="p-8 rounded-2xl glass-panel text-center space-y-3">
-            {activeDomain.id === 'prevencion' && searchQuery.trim() === '' ? (
+            {activeDomain && activeDomain.id === 'prevencion' && searchQuery.trim() === '' ? (
               <>
                 <p className="text-sm text-[#ead6b4]/70">
                   Este dominio no tiene fichas. No se ha inventado contenido. Pregunta a Will.
@@ -333,9 +258,9 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
             <button
               onClick={() =>
                 onAskWill(
-                  activeDomain.id === 'prevencion'
-                    ? activeDomain.sampleInquiries[0]
-                    : searchQuery || 'Quiero información sobre este tema',
+                  searchQuery.trim()
+                    ? `No he encontrado «${searchQuery.trim()}» en el catálogo y quiero hablarlo con Will.`
+                    : invitationFor(activeDomain.id),
                   activeDomain.id
                 )
               }

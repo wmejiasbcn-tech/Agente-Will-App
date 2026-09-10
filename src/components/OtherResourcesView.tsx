@@ -15,6 +15,8 @@ import {
   labelForLang,
 } from '../data/spokenLanguages';
 import { ResourceSiteCard } from './ResourceSiteCard';
+import { ExplorationEntry } from './ExplorationEntry';
+import { invitationFor } from '../protocol/willEntry';
 
 interface OtherResourcesViewProps {
   onAskWill: (prompt: string) => void;
@@ -104,11 +106,16 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 space-y-5 text-[#ead6b4]">
-      <header className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-serif font-bold will-copy">
-          Otros recursos
-        </h1>
-      </header>
+      <ExplorationEntry
+        pattern="B"
+        title="Otros recursos"
+        invitation={invitationFor('other-resources')}
+        onAskWill={onAskWill}
+      >
+        <p className="text-sm will-copy-muted">
+          Primero el lugar. Después los recursos. Will no elige un hospital, una ONG ni una farmacia por ti.
+        </p>
+      </ExplorationEntry>
 
       <WillWorldMap
         marker={

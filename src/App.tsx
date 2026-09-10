@@ -25,9 +25,17 @@ export default function App() {
     setActiveTab('chat');
   };
 
-  const openSubstancesGate = () => {
-    setTopicsDomain('consumo-psicotropicas');
+  const openExploration = (domainId?: string) => {
+    unlockWillAudio();
+    setTopicsDomain(domainId || null);
     setActiveTab('topics');
+  };
+
+  const openConversation = (domainId?: string) => {
+    unlockWillAudio();
+    if (domainId) setCurrentDimension(domainId);
+    setChatInitialPrompt('');
+    setActiveTab('chat');
   };
 
   const scene: WillScene =
@@ -57,7 +65,13 @@ export default function App() {
 
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(id) => {
+          if (id === 'topics' && activeTab !== 'topics' && activeTab !== 'chat') {
+            setTopicsDomain(null);
+          }
+          if (id !== 'topics' && id !== 'chat') setTopicsDomain(null);
+          setActiveTab(id);
+        }}
         onOpenEmergency={() => setIsEmergencyOpen(true)}
       />
 
@@ -73,7 +87,7 @@ export default function App() {
             initialPrompt={chatInitialPrompt}
             onClearInitialPrompt={() => setChatInitialPrompt('')}
             onGoNextScene={goNextScene}
-            onOpenSubstancesGate={openSubstancesGate}
+            onOpenExploration={openExploration}
           />
         </div>
 
@@ -82,6 +96,7 @@ export default function App() {
             onAskWill={handleAskWill}
             onOpenEmergency={() => setIsEmergencyOpen(true)}
             initialDomainId={topicsDomain || undefined}
+            onOpenConversation={openConversation}
           />
         )}
 
