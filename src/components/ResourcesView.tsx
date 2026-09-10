@@ -1,25 +1,38 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   PhoneCall,
-  Building2,
-  Shield,
-  ExternalLink,
   Search,
-  AlertTriangle,
   HeartHandshake,
   Stethoscope,
   Sparkles,
   MapPin,
-  Clock,
-  ArrowRight,
   MessageSquare,
 } from 'lucide-react';
 import { CANONICAL_RESOURCES } from '../data/canonicalArchitectureData';
-import { ResourceType } from '../types';
+import { CanonicalResource } from '../types';
+import {
+  GeoStatus,
+  KnownCityId,
+  KNOWN_CITIES,
+  nearestCity,
+  requestUserCoords,
+} from '../utils/geolocation';
 
 interface ResourcesViewProps {
   onAskWill: (prompt: string) => void;
   onOpenEmergency: () => void;
+}
+
+function resourcePlaces(res: CanonicalResource): KnownCityId[] {
+  const t = `${res.name} ${res.description} ${res.contact || ''}`.toLowerCase();
+  const places: KnownCityId[] = [];
+  if (t.includes('barcelona') || t.includes('bcn') || t.includes('drassanes')) {
+    places.push('barcelona');
+  }
+  if (t.includes('madrid') || t.includes('sandoval')) {
+    places.push('madrid');
+  }
+  return places;
 }
 
 export const ResourcesView: React.FC<ResourcesViewProps> = ({
@@ -28,6 +41,26 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
 }) => {
   const [filterType, setFilterType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [geoStatus, setGeoStatus] = useState<GeoStatus>('idle');
+  const [cityId, setCityId] = useState<KnownCityId | 'nacional' | null>(null);
+
+  const askLocation = async () => {
+    setGeoStatus('asking');
+    const result = await requestUserCoords();
+    if (!result.ok) {
+      setGeoStatus(result.status);
+      return;
+    }
+    const city = nearestCity(result.lat, result.lng);
+    if (city) {
+      setCityId(city.id);
+    } else {
+      setCityId('nacional');
+    }
+    setGeoStatus('ready');
+  };
+
+  const activeCity = KNOWN_CITIES.find((c) => c.id === cityId) || null;
 
   const resourceCategories = [
     {
@@ -62,15 +95,23 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
     },
   ];
 
-  const filteredResources = CANONICAL_RESOURCES.filter((res) => {
-    const matchesFilter = filterType === 'all' || res.type === filterType;
-    const matchesSearch =
-      searchQuery.trim() === '' ||
-      res.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      res.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (res.contact && res.contact.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesFilter && matchesSearch;
-  });
+  const filteredResources = useMemo(() => {
+    const list = CANONICAL_RESOURCES.filter((res) => {
+      const matchesFilter = filterType === 'all' || res.type === filterType;
+      const matchesSearch =
+        searchQuery.trim() === '' ||
+        res.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        res.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (res.contact && res.contact.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesFilter && matchesSearch;
+    });
+    if (!activeCity) return list;
+    return [...list].sort((a, b) => {
+      const aHit = resourcePlaces(a).includes(activeCity.id) ? 0 : 1;
+      const bHit = resourcePlaces(b).includes(activeCity.id) ? 0 : 1;
+      return aHit - bHit;
+    });
+  }, [filterType, searchQuery, activeCity]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-[#ead6b4] font-sans">
@@ -82,6 +123,90 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
           Acceso estructurado a servicios asistenciales, sanitarios y comunitarios. Cada recurso
           cumple una función distinta y complementaria.
         </p>
+      </div>
+
+      <div className="arch-glass p-4 sm:p-5 space-y-3">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 flex items-center justify-center text-[#e8c37a] shrink-0 border border-[rgba(232,195,122,0.35)]">
+            <MapPin className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-serif font-bold will-copy">Cerca de ti</h2>
+            <p className="text-xs will-copy-muted mt-0.5 leading-relaxed">
+              Will no guarda tu ubicación. Solo se usa en este momento, si tú lo pides, para
+              acercarte los recursos que ya conocemos de tu ciudad.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={askLocation}
+            disabled={geoStatus === 'asking'}
+            className="px-3 py-2 text-xs font-medium border border-[rgba(232,195,122,0.45)] text-[#e8c37a] hover:bg-[rgba(232,195,122,0.08)] disabled:opacity-60"
+          >
+            {geoStatus === 'asking' ? 'Leyendo ubicación…' : 'Usar mi ubicación'}
+          </button>
+          {KNOWN_CITIES.map((city) => (
+            <button
+              key={city.id}
+              type="button"
+              onClick={() => {
+                setCityId(city.id);
+                setGeoStatus('idle');
+              }}
+              className={`px-3 py-2 text-xs font-medium border ${
+                cityId === city.id
+                  ? 'border-[#e8c37a] text-[#e8c37a] bg-[rgba(232,195,122,0.08)]'
+                  : 'border-stone-800 text-stone-300 hover:text-[#ead6b4]'
+              }`}
+            >
+              {city.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+              setCityId('nacional');
+              setGeoStatus('idle');
+            }}
+            className={`px-3 py-2 text-xs font-medium border ${
+              cityId === 'nacional'
+                ? 'border-[#e8c37a] text-[#e8c37a] bg-[rgba(232,195,122,0.08)]'
+                : 'border-stone-800 text-stone-300 hover:text-[#ead6b4]'
+            }`}
+          >
+            Toda España
+          </button>
+        </div>
+
+        {geoStatus === 'denied' && (
+          <p className="text-xs will-copy-muted">
+            No se ha concedido el permiso. Puedes elegir ciudad a mano. Nada se ha guardado.
+          </p>
+        )}
+        {geoStatus === 'unavailable' && (
+          <p className="text-xs will-copy-muted">
+            Este dispositivo o esta ventana no permiten leer la ubicación. Elige ciudad a mano.
+          </p>
+        )}
+        {geoStatus === 'ready' && activeCity && (
+          <p className="text-xs will-copy">
+            Cerca de {activeCity.label}. Los recursos de esa ciudad aparecen primero.
+          </p>
+        )}
+        {geoStatus === 'ready' && cityId === 'nacional' && (
+          <p className="text-xs will-copy-muted">
+            Estás más lejos de las ciudades que ya tenemos localizadas. Se muestran los recursos
+            nacionales. Los locales se irán incorporando.
+          </p>
+        )}
+        {cityId && cityId !== 'nacional' && geoStatus !== 'ready' && (
+          <p className="text-xs will-copy">
+            Mostrando primero lo de {activeCity?.label}.
+          </p>
+        )}
       </div>
 
       {/* Emergency — same visual language, not ambulance chrome */}
@@ -154,6 +279,8 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
         {/* Resources Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredResources.map((res, idx) => {
+            const local =
+              activeCity && resourcePlaces(res).includes(activeCity.id);
             return (
               <div
                 key={idx}
@@ -164,6 +291,11 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
                     <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 border border-[rgba(232,195,122,0.28)] text-[#e8c37a]">
                       {res.typeLabel}
                     </span>
+                    {local && (
+                      <span className="text-[10px] uppercase tracking-wide text-[#e8c37a]">
+                        En {activeCity.label}
+                      </span>
+                    )}
                   </div>
 
                   <h3 className="text-base font-serif font-bold text-stone-100">
