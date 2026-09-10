@@ -1,16 +1,49 @@
 import { emergencyForCountry, EmergencyInfo } from '../data/emergencyNumbers';
-import { LanguageFilterMode } from '../data/spokenLanguages';
+import { LanguageFilterMode, ResourceCategory } from '../data/spokenLanguages';
 
-export type GeoStatus = 'idle' | 'asking' | 'ready' | 'denied' | 'unavailable';
+export type GeoStatus =
+  | 'idle'
+  | 'asking'
+  | 'ready'
+  | 'denied'
+  | 'unavailable'
+  | 'map_error'
+  | 'place_not_found';
+
+export type GeoOrigin = 'gps' | 'search';
+
+export type LookupAbsence =
+  | 'none'
+  | 'no_map_hits'
+  | 'filter_empty'
+  | 'place_not_found'
+  | 'map_error';
 
 export interface NearbySite {
   name: string;
   kind: string;
+  category: ResourceCategory;
   km: number;
+  phone?: string;
+  address?: string;
+  website?: string;
   mapsUrl: string;
-  languages: string[];
+  careLanguages: string[];
+  nameLanguages: string[];
   lat: number;
   lng: number;
+  source: {
+    name: string;
+    url: string;
+    checkedAt?: string;
+  };
+}
+
+export interface GeoPrivacyReceipt {
+  stored: false;
+  origin: GeoOrigin;
+  sent: Array<{ service: string; fields: string[] }>;
+  keptAfterResponse: false;
 }
 
 export interface GeoLookupResult {
@@ -21,8 +54,12 @@ export interface GeoLookupResult {
   sites: NearbySite[];
   languages: string[];
   languageMode: LanguageFilterMode;
+  origin: GeoOrigin;
+  absence: LookupAbsence;
+  unfilteredCount: number;
   center: { lat: number; lng: number };
   mapEmbedUrl: string;
+  privacy: GeoPrivacyReceipt;
 }
 
 export function distanceKm(
@@ -73,15 +110,24 @@ export async function lookupPlace(body: {
   q?: string;
   languages?: string[];
   languageMode?: LanguageFilterMode;
+  origin: GeoOrigin;
 }): Promise<GeoLookupResult> {
   const r = await fetch('/api/geo/lookup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+  if (r.status === 404) {
+    const err = await r.json().catch(() => ({}));
+    throw Object.assign(new Error(err.error || 'Lugar no encontrado.'), {
+      absence: 'place_not_found' as const,
+    });
+  }
   if (!r.ok) {
     const err = await r.json().catch(() => ({}));
-    throw new Error(err.error || 'No se ha podido leer el lugar.');
+    throw Object.assign(new Error(err.error || 'No se ha podido leer el lugar.'), {
+      absence: 'map_error' as const,
+    });
   }
   return r.json();
 }
@@ -90,7 +136,10 @@ export function emergencyFallback(code?: string) {
   return emergencyForCountry(code);
 }
 
-export function osmEmbedUrl(center: { lat: number; lng: number }, sites: { lat: number; lng: number }[]) {
+export function osmEmbedUrl(
+  center: { lat: number; lng: number },
+  sites: { lat: number; lng: number }[],
+) {
   const pts = [center, ...sites];
   const lats = pts.map((p) => p.lat);
   const lngs = pts.map((p) => p.lng);

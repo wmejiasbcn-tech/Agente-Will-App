@@ -1,10 +1,11 @@
 import type { Express, Request, Response } from 'express';
 import { emergencyForCountry } from '../src/data/emergencyNumbers';
 import {
+  extractLanguageLayers,
   LanguageFilterMode,
-  languagesFromOsmTags,
   nameInLanguages,
-  sortByLanguages,
+  ResourceCategory,
+  sortByCareLanguages,
 } from '../src/data/spokenLanguages';
 import { osmEmbedUrl } from '../src/utils/geolocation';
 
@@ -15,6 +16,22 @@ const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://lz4.overpass-api.de/api/interpreter',
 ];
+
+type Site = {
+  name: string;
+  kind: string;
+  category: ResourceCategory;
+  km: number;
+  phone?: string;
+  address?: string;
+  website?: string;
+  mapsUrl: string;
+  careLanguages: string[];
+  nameLanguages: string[];
+  lat: number;
+  lng: number;
+  source: { name: string; url: string; checkedAt?: string };
+};
 
 function validCoord(lat: unknown, lng: unknown) {
   const a = Number(lat);
@@ -38,13 +55,34 @@ function distanceKm(
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
 }
 
-function kindLabel(tags: Record<string, string> | undefined) {
-  const a = tags?.amenity || tags?.healthcare || '';
-  if (a === 'hospital') return 'Hospital';
-  if (a === 'clinic' || a === 'centre' || a === 'center') return 'Centro de salud';
-  if (a === 'doctors' || a === 'doctor') return 'Consulta';
-  if (a === 'pharmacy') return 'Farmacia';
-  return 'Recurso sanitario';
+function classify(tags: Record<string, string> | undefined): {
+  kind: string;
+  category: ResourceCategory;
+} {
+  const a = tags?.amenity || tags?.healthcare || tags?.office || '';
+  if (a === 'hospital' || tags?.emergency === 'yes') {
+    return { kind: 'Urgencias / Hospital', category: 'emergency' };
+  }
+  if (a === 'clinic' || a === 'doctors' || a === 'doctor' || a === 'centre' || a === 'center') {
+    return { kind: 'Atención sanitaria', category: 'health' };
+  }
+  if (a === 'pharmacy') return { kind: 'Farmacia', category: 'health' };
+  if (a === 'social_facility' || a === 'community_centre' || a === 'ngo') {
+    return { kind: 'Recurso comunitario', category: 'community' };
+  }
+  return { kind: 'Otro recurso', category: 'other' };
+}
+
+function phoneFrom(tags: Record<string, string>) {
+  return tags.phone || tags['contact:phone'] || tags['contact:mobile'] || undefined;
+}
+
+function addressFrom(tags: Record<string, string>) {
+  const parts = [
+    [tags['addr:street'], tags['addr:housenumber']].filter(Boolean).join(' '),
+    tags['addr:city'] || tags['addr:town'],
+  ].filter(Boolean);
+  return parts.length ? parts.join(', ') : undefined;
 }
 
 async function nominatimSearch(q: string, acceptLang: string) {
@@ -74,14 +112,80 @@ async function nominatimReverse(lat: number, lng: number, acceptLang: string) {
   };
 }
 
-async function overpassNearby(lat: number, lng: number) {
+function toSite(
+  tags: Record<string, string>,
+  plat: number,
+  plng: number,
+  origin: { lat: number; lng: number },
+  preferred: string[],
+  checkedAt?: string,
+): Site | null {
+  const name = nameInLanguages(tags, preferred);
+  if (!name) return null;
+  const layers = extractLanguageLayers(tags);
+  const { kind, category } = classify(tags);
+  const phone = phoneFrom(tags);
+  const address = addressFrom(tags);
+  const website = tags.website || tags['contact:website'] || undefined;
+  return {
+    name,
+    kind,
+    category,
+    km: Math.round(distanceKm(origin, { lat: plat, lng: plng }) * 10) / 10,
+    phone,
+    address,
+    website,
+    mapsUrl: `https://www.openstreetmap.org/?mlat=${plat}&mlon=${plng}#map=16/${plat}/${plng}`,
+    careLanguages: layers.careLanguages,
+    nameLanguages: layers.nameLanguages,
+    lat: plat,
+    lng: plng,
+    source: {
+      name: 'OpenStreetMap',
+      url: `https://www.openstreetmap.org/?mlat=${plat}&mlon=${plng}`,
+      checkedAt,
+    },
+  };
+}
+
+function parseSites(
+  data: any,
+  lat: number,
+  lng: number,
+  preferred: string[],
+): { sites: Site[]; checkedAt?: string } {
+  const checkedAt = data?.osm3s?.timestamp_osm_base;
+  if (!data?.elements) return { sites: [], checkedAt };
+  const seen = new Set<string>();
+  const sites: Site[] = [];
+  for (const el of data.elements || []) {
+    const tags = el.tags || {};
+    const plat = el.lat ?? el.center?.lat;
+    const plng = el.lon ?? el.center?.lon;
+    if (!Number.isFinite(plat) || !Number.isFinite(plng)) continue;
+    const site = toSite(tags, plat, plng, { lat, lng }, preferred, checkedAt);
+    if (!site) continue;
+    const key = site.name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    sites.push(site);
+  }
+  sites.sort((a, b) => a.km - b.km);
+  return { sites: sites.slice(0, 24), checkedAt };
+}
+
+async function overpassNearby(lat: number, lng: number, preferred: string[]) {
   const query = `[out:json][timeout:12];
 (
   node["amenity"="hospital"](around:5000,${lat},${lng});
   way["amenity"="hospital"](around:5000,${lat},${lng});
   node["amenity"="clinic"](around:5000,${lat},${lng});
+  way["amenity"="clinic"](around:5000,${lat},${lng});
+  node["amenity"="pharmacy"](around:5000,${lat},${lng});
+  node["amenity"="social_facility"](around:5000,${lat},${lng});
+  node["office"="ngo"](around:5000,${lat},${lng});
 );
-out center 20;`;
+out center 40;`;
   let data: any = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
@@ -98,65 +202,25 @@ out center 20;`;
       continue;
     }
   }
-  const fromOverpass = parseSites(data, lat, lng, []);
-  if (fromOverpass.length) return fromOverpass;
-  return nominatimHealthcare(lat, lng, []);
+  const parsed = parseSites(data, lat, lng, preferred);
+  if (parsed.sites.length) return parsed;
+  return nominatimHealthcare(lat, lng, preferred);
 }
 
-function parseSites(data: any, lat: number, lng: number, preferred: string[]) {
-  if (!data?.elements) return [];
-  const seen = new Set<string>();
-  const sites: Array<{
-    name: string;
-    kind: string;
-    km: number;
-    mapsUrl: string;
-    languages: string[];
-    lat: number;
-    lng: number;
-  }> = [];
-  for (const el of data.elements || []) {
-    const tags = el.tags || {};
-    const name = nameInLanguages(tags, preferred);
-    if (!name) continue;
-    const plat = el.lat ?? el.center?.lat;
-    const plng = el.lon ?? el.center?.lon;
-    if (!Number.isFinite(plat) || !Number.isFinite(plng)) continue;
-    const key = name.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    sites.push({
-      name,
-      kind: kindLabel(tags),
-      km: Math.round(distanceKm({ lat, lng }, { lat: plat, lng: plng }) * 10) / 10,
-      mapsUrl: `https://www.openstreetmap.org/?mlat=${plat}&mlon=${plng}#map=16/${plat}/${plng}`,
-      languages: languagesFromOsmTags(tags),
-      lat: plat,
-      lng: plng,
-    });
-  }
-  sites.sort((a, b) => a.km - b.km);
-  return sites.slice(0, 12);
-}
-
-async function nominatimHealthcare(lat: number, lng: number, preferred: string[]) {
+async function nominatimHealthcare(
+  lat: number,
+  lng: number,
+  preferred: string[],
+): Promise<{ sites: Site[]; checkedAt?: string }> {
   const delta = 0.08;
   const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
-  const queries = ['hospital', 'clinic', 'international hospital'];
+  const queries = ['hospital', 'clinic', 'pharmacy', 'community health'];
   const seen = new Set<string>();
-  const sites: Array<{
-    name: string;
-    kind: string;
-    km: number;
-    mapsUrl: string;
-    languages: string[];
-    lat: number;
-    lng: number;
-  }> = [];
+  const sites: Site[] = [];
   const accept = preferred.length ? preferred.join(',') : 'es,en';
   for (const q of queries) {
     try {
-      const url = `${NOMINATIM}/search?format=jsonv2&limit=8&q=${encodeURIComponent(q)}&viewbox=${viewbox}&bounded=1`;
+      const url = `${NOMINATIM}/search?format=jsonv2&limit=8&addressdetails=1&extratags=1&q=${encodeURIComponent(q)}&viewbox=${viewbox}&bounded=1`;
       const r = await fetch(url, {
         headers: { 'User-Agent': UA, 'Accept-Language': accept },
         signal: AbortSignal.timeout(10000),
@@ -164,32 +228,27 @@ async function nominatimHealthcare(lat: number, lng: number, preferred: string[]
       if (!r.ok) continue;
       const hits = (await r.json()) as any[];
       for (const hit of hits || []) {
-        const name = String(hit.namedetails?.name || hit.display_name || '').split(',')[0];
-        if (!name) continue;
-        const key = name.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
+        const tags = {
+          name: String(hit.namedetails?.name || '').split(',')[0] || String(hit.display_name || '').split(',')[0],
+          amenity: /hospital/i.test(hit.display_name) ? 'hospital' : /pharm/i.test(hit.display_name) ? 'pharmacy' : 'clinic',
+          ...(hit.extratags || {}),
+        };
         const plat = Number(hit.lat);
         const plng = Number(hit.lon);
         if (!Number.isFinite(plat) || !Number.isFinite(plng)) continue;
-        const blob = String(hit.display_name || '').toLowerCase();
-        const languages = /international|english/.test(blob) ? ['en'] : [];
-        sites.push({
-          name,
-          kind: /hospital/.test(blob) ? 'Hospital' : 'Centro de salud',
-          km: Math.round(distanceKm({ lat, lng }, { lat: plat, lng: plng }) * 10) / 10,
-          mapsUrl: `https://www.openstreetmap.org/?mlat=${plat}&mlon=${plng}#map=16/${plat}/${plng}`,
-          languages,
-          lat: plat,
-          lng: plng,
-        });
+        const site = toSite(tags, plat, plng, { lat, lng }, preferred);
+        if (!site) continue;
+        const key = site.name.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        sites.push(site);
       }
     } catch {
       continue;
     }
   }
   sites.sort((a, b) => a.km - b.km);
-  return sites.slice(0, 12);
+  return { sites: sites.slice(0, 24) };
 }
 
 function placeLabel(address: any, fallback: string) {
@@ -214,36 +273,63 @@ async function handleLookup(req: Request, res: Response) {
       : [];
     const languageMode: LanguageFilterMode =
       req.body?.languageMode === 'only' ? 'only' : 'prioritize';
+    const origin = req.body?.origin === 'gps' ? 'gps' : 'search';
     const acceptLang = languages.length ? `${languages.join(',')},es,en` : 'es,en';
     let coords = validCoord(req.body?.lat, req.body?.lng);
     let address: any = {};
     let fallbackLabel = '';
+    const sent: Array<{ service: string; fields: string[] }> = [];
 
-    if (q && !coords) {
+    if (q && origin === 'search') {
+      sent.push({ service: 'nominatim.openstreetmap.org', fields: ['q'] });
       const found = await nominatimSearch(q, acceptLang);
       if (!found) {
-        return res.status(404).json({ error: 'No se ha encontrado ese lugar.' });
+        return res.status(404).json({
+          error: 'No se ha encontrado ese lugar en el mapa abierto.',
+          absence: 'place_not_found',
+          privacy: { stored: false, origin, sent, keptAfterResponse: false },
+        });
       }
       coords = { lat: found.lat, lng: found.lng };
       address = found.address;
       fallbackLabel = found.label;
-    } else if (coords) {
+      sent.push({ service: 'openstreetmap', fields: ['lat', 'lng del lugar buscado'] });
+    } else if (coords && origin === 'gps') {
+      sent.push({ service: 'nominatim.openstreetmap.org', fields: ['lat', 'lng'] });
+      sent.push({ service: 'openstreetmap', fields: ['lat', 'lng'] });
       const rev = await nominatimReverse(coords.lat, coords.lng, acceptLang);
       address = rev?.address || {};
       fallbackLabel = rev?.label || '';
+    } else if (q) {
+      const found = await nominatimSearch(q, acceptLang);
+      if (!found) {
+        return res.status(404).json({
+          error: 'No se ha encontrado ese lugar en el mapa abierto.',
+          absence: 'place_not_found',
+          privacy: { stored: false, origin: 'search', sent, keptAfterResponse: false },
+        });
+      }
+      coords = { lat: found.lat, lng: found.lng };
+      address = found.address;
+      fallbackLabel = found.label;
     } else {
       return res.status(400).json({ error: 'Indica un lugar o una ubicación.' });
     }
 
     const countryCode = (address.country_code || '').toUpperCase();
     const countryName = address.country || '';
-    let sites: Awaited<ReturnType<typeof overpassNearby>> = [];
+    let fetched: { sites: Site[]; checkedAt?: string } = { sites: [] };
     try {
-      sites = await overpassNearby(coords!.lat, coords!.lng);
+      fetched = await overpassNearby(coords!.lat, coords!.lng, languages);
     } catch {
-      sites = [];
+      fetched = { sites: [] };
     }
-    sites = sortByLanguages(sites, languages, languageMode);
+
+    const unfilteredCount = fetched.sites.length;
+    let sites = sortByCareLanguages(fetched.sites, languages, languageMode);
+    let absence: 'none' | 'no_map_hits' | 'filter_empty' = 'none';
+    if (unfilteredCount === 0) absence = 'no_map_hits';
+    else if (sites.length === 0) absence = 'filter_empty';
 
     const center = { lat: coords!.lat, lng: coords!.lng };
     return res.json({
@@ -254,11 +340,24 @@ async function handleLookup(req: Request, res: Response) {
       sites,
       languages,
       languageMode,
+      origin,
+      absence,
+      unfilteredCount,
       center,
       mapEmbedUrl: osmEmbedUrl(center, sites),
+      privacy: {
+        stored: false,
+        origin,
+        sent,
+        keptAfterResponse: false,
+      },
     });
   } catch {
-    return res.status(502).json({ error: 'No se ha podido consultar el mapa ahora.' });
+    return res.status(502).json({
+      error: 'No se ha podido consultar el mapa ahora.',
+      absence: 'map_error',
+      privacy: { stored: false, origin: 'search', sent: [], keptAfterResponse: false },
+    });
   }
 }
 

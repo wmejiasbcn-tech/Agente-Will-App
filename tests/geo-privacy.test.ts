@@ -6,7 +6,12 @@ import {
   looksLikeCoordinates,
   readGeoLeaksFromStorage,
 } from '../src/utils/geoPrivacy';
-import { languagesFromOsmTags, sortByLanguages } from '../src/data/spokenLanguages';
+import {
+  extractLanguageLayers,
+  sortByCareLanguages,
+  sortByLanguages,
+  languagesFromOsmTags,
+} from '../src/data/spokenLanguages';
 
 function mockStorage(entries: Record<string, string>) {
   const keys = Object.keys(entries);
@@ -75,7 +80,49 @@ test('privacidad: detecta coordenadas guardadas', () => {
   assert.ok(leaks.includes('user'));
 });
 
-test('filtros de idioma: priorizar y solo', () => {
+test('idioma: el nombre en inglés no es atención en inglés', () => {
+  const layers = extractLanguageLayers({
+    name: '聖路加国際病院',
+    'name:en': 'St. Luke International Hospital',
+    'name:ja': '聖路加国際病院',
+  });
+  assert.ok(layers.nameLanguages.includes('en'));
+  assert.equal(layers.careLanguages.includes('en'), false);
+});
+
+test('idioma: international sí es indicio de atención en inglés', () => {
+  const layers = extractLanguageLayers({
+    name: 'St. Luke\'s International Hospital',
+  });
+  assert.ok(layers.careLanguages.includes('en'));
+});
+
+test('idioma: language:en sí es atención', () => {
+  const layers = extractLanguageLayers({
+    name: 'Clinic',
+    'language:en': 'yes',
+    languages: 'en;ja',
+  });
+  assert.ok(layers.careLanguages.includes('en'));
+  assert.ok(layers.careLanguages.includes('ja'));
+});
+
+test('filtros: priorizar y solo usan atención, no el nombre', () => {
+  const sites = [
+    { name: 'A', careLanguages: ['ja'], km: 1 },
+    { name: 'B', careLanguages: ['en', 'ja'], km: 3 },
+    { name: 'C', careLanguages: [], km: 2 },
+  ];
+  const prior = sortByCareLanguages(sites, ['en'], 'prioritize');
+  assert.equal(prior[0].name, 'B');
+  const only = sortByCareLanguages(sites, ['en'], 'only');
+  assert.deepEqual(
+    only.map((s) => s.name),
+    ['B'],
+  );
+});
+
+test('filtros de idioma legado: priorizar y solo', () => {
   const sites = [
     { name: 'A', languages: ['ja'], km: 1 },
     { name: 'B', languages: ['en', 'ja'], km: 3 },
@@ -100,4 +147,4 @@ if (failed) {
   console.error(`\n${failed} pruebas fallidas`);
   process.exit(1);
 }
-console.log('\nPruebas de geolocalización y privacidad: verde.');
+console.log('\nPruebas de geolocalización, idiomas y privacidad: verde.');
