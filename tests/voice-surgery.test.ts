@@ -1,27 +1,42 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const voice = readFileSync(join(root, 'api/voice.ts'), 'utf8');
-const adapter = readFileSync(join(root, 'api/kokoroAdapter.ts'), 'utf8');
+const bundle = readFileSync(join(root, 'api/vercel.cjs'), 'utf8');
 const ui = readFileSync(join(root, 'src/components/WillVoice.tsx'), 'utf8');
 const core = readFileSync(join(root, 'src/voice/willVoice.ts'), 'utf8');
 const chat = readFileSync(join(root, 'src/components/WillChat.tsx'), 'utf8');
 const explore = readFileSync(join(root, 'src/components/ExploreTopicsView.tsx'), 'utf8');
+const pkg = readFileSync(join(root, 'package.json'), 'utf8');
+const vercelJson = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8'));
 
-assert.match(adapter, /em_alex/);
-assert.match(adapter, /Kokoro/);
-assert.match(voice, /generateKokoroSpeech/);
+assert.equal(existsSync(join(root, 'api/kokoroAdapter.ts')), false);
+assert.equal(pkg.includes('kokoro-js'), false);
+assert.equal(pkg.includes('"ephone"'), false);
+assert.equal(voice.includes('generateKokoroSpeech'), false);
+assert.equal(voice.includes('kokoroAdapter'), false);
+assert.equal(voice.includes('em_alex'), false);
+assert.equal(voice.includes('Kokoro'), false);
+assert.match(voice, /DrwFQsjvHFpLcKyvtbE3/);
+assert.match(voice, /eleven_multilingual_v2/);
+assert.match(bundle, /DrwFQsjvHFpLcKyvtbE3/);
+assert.equal(bundle.includes('kokoro-js'), false);
+assert.equal(bundle.includes('generateKokoroSpeech'), false);
+assert.equal(bundle.includes('em_alex'), false);
+assert.equal(core.includes('em_alex'), false);
+assert.match(core, /DrwFQsjvHFpLcKyvtbE3/);
 assert.equal(voice.includes('speechSynthesis'), false);
 assert.equal(core.includes('speechSynthesis'), false);
 assert.equal(ui.includes('speechSynthesis'), false);
-assert.equal(core.includes('DrwFQsjvHFpLcKyvtbE3'), false);
 assert.match(ui, /for \(let attempt = 0; attempt < 2/);
 assert.match(ui, /audio\.pause\(\)/);
 assert.equal(chat.includes('handleSend(next.quickPrompt'), false);
 assert.match(explore, /useState<CanonicalDomainId \| null>/);
 assert.equal(explore.includes("|| 'acompanamiento'"), false);
+assert.ok(Array.isArray(vercelJson.builds));
+assert.equal(JSON.stringify(vercelJson).toLowerCase().includes('kokoro'), false);
 
 console.log('ok voice surgery isolation');

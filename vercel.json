@@ -5,8 +5,7 @@
       "src": "api/vercel.cjs",
       "use": "@vercel/node",
       "config": {
-        "maxDuration": 60,
-        "includeFiles": "{node_modules/kokoro-js/**,node_modules/ephone/**,node_modules/@huggingface/transformers/**,node_modules/onnxruntime-node/**,node_modules/onnxruntime-web/**,node_modules/phonemizer/**}"
+        "maxDuration": 60
       }
     },
     {
