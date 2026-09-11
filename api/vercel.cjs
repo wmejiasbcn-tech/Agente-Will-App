@@ -107,6 +107,11 @@ async function getKokoroEngine() {
   if (engine) return engine;
   if (!engineLoading) {
     engineLoading = (async () => {
+      const { mkdirSync } = await import("node:fs");
+      const { env } = await import("@huggingface/transformers");
+      const cacheDir = "/tmp/will-kokoro-cache";
+      mkdirSync(cacheDir, { recursive: true });
+      env.cacheDir = cacheDir;
       const { KokoroTTS } = await import("kokoro-js");
       return await KokoroTTS.from_pretrained(KOKORO_MODEL_ID, {
         dtype: "q8",
