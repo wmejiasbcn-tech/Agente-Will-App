@@ -1,6 +1,3 @@
-import { KokoroTTS } from 'kokoro-js';
-import createEphone, { roa } from 'ephone';
-
 export const KOKORO_PROVIDER = 'Kokoro';
 export const KOKORO_VOICE = 'em_alex';
 export const KOKORO_MODEL_ID = 'onnx-community/Kokoro-82M-v1.0-ONNX';
@@ -13,10 +10,26 @@ type RawLike = {
   samplingRate?: number;
 };
 
-let engine: KokoroTTS | null = null;
-let engineLoading: Promise<KokoroTTS> | null = null;
-let g2p: Awaited<ReturnType<typeof createEphone>> | null = null;
-let g2pLoading: Promise<Awaited<ReturnType<typeof createEphone>>> | null = null;
+type KokoroEngine = {
+  tokenizer: (
+    phonemes: string,
+    opts: { truncation: boolean },
+  ) => { input_ids: unknown };
+  generate_from_ids: (
+    ids: unknown,
+    opts: { voice: string; speed: number },
+  ) => Promise<RawLike>;
+};
+
+type EphoneEngine = {
+  setVoice: (id: string) => void;
+  textToIpaWithSourceMap: (text: string) => { ipa?: string };
+};
+
+let engine: KokoroEngine | null = null;
+let engineLoading: Promise<KokoroEngine> | null = null;
+let g2p: EphoneEngine | null = null;
+let g2pLoading: Promise<EphoneEngine> | null = null;
 
 export function kokoroIdentity() {
   return {
@@ -66,10 +79,13 @@ function rawToWav(raw: RawLike) {
 export async function getSpanishG2P() {
   if (g2p) return g2p;
   if (!g2pLoading) {
-    g2pLoading = createEphone(roa).then((loaded) => {
+    g2pLoading = (async () => {
+      const mod = await import('ephone');
+      const createEphone = mod.default;
+      const loaded = (await createEphone(mod.roa)) as EphoneEngine;
       loaded.setVoice('es');
       return loaded;
-    });
+    })();
   }
   g2p = await g2pLoading;
   return g2p;
@@ -77,17 +93,20 @@ export async function getSpanishG2P() {
 
 export async function spanishPhonemes(text: string) {
   const phonemizer = await getSpanishG2P();
-  const result = phonemizer.textToIpaWithSourceMap(text) as { ipa?: string };
+  const result = phonemizer.textToIpaWithSourceMap(text);
   return String(result?.ipa || '').replace(/\s+/g, ' ').trim();
 }
 
 export async function getKokoroEngine() {
   if (engine) return engine;
   if (!engineLoading) {
-    engineLoading = KokoroTTS.from_pretrained(KOKORO_MODEL_ID, {
-      dtype: 'q8',
-      device: 'cpu',
-    });
+    engineLoading = (async () => {
+      const { KokoroTTS } = await import('kokoro-js');
+      return (await KokoroTTS.from_pretrained(KOKORO_MODEL_ID, {
+        dtype: 'q8',
+        device: 'cpu',
+      })) as unknown as KokoroEngine;
+    })();
   }
   try {
     engine = await engineLoading;
@@ -108,16 +127,14 @@ export async function generateKokoroSpeech(text: string) {
   if (!phonemes) {
     throw new Error('Kokoro no ha podido fonetizar el texto.');
   }
-  const encoded = tts.tokenizer(phonemes, { truncation: true }) as {
-    input_ids: unknown;
-  };
+  const encoded = tts.tokenizer(phonemes, { truncation: true });
   if (!encoded?.input_ids) {
     throw new Error('Kokoro no ha podido tokenizar los fonemas.');
   }
-  const raw = (await tts.generate_from_ids(encoded.input_ids as never, {
-    voice: KOKORO_VOICE as never,
+  const raw = await tts.generate_from_ids(encoded.input_ids, {
+    voice: KOKORO_VOICE,
     speed: 1,
-  })) as RawLike;
+  });
   const wav = rawToWav(raw);
   if (wav.length < 200) {
     throw new Error('Kokoro ha devuelto audio vacío.');

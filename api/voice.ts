@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from 'express';
-import { generateKokoroSpeech, kokoroIdentity } from './kokoroAdapter';
+import { kokoroIdentity } from './kokoroAdapter';
 
 function elevenLabsKey() {
   const raw =
@@ -99,6 +99,7 @@ export function registerVoiceRoutes(app: Express) {
       const text = prepareWillSpeech(raw);
       if (!text) return res.status(400).json({ error: 'No hay texto para leer.' });
 
+      const { generateKokoroSpeech } = await import('./kokoroAdapter');
       const spoken = await generateKokoroSpeech(text);
       res.status(200);
       res.setHeader('Content-Type', spoken.mime);
