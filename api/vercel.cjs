@@ -161,6 +161,185 @@ function nameInLanguages(tags, preferred) {
   return tags.name || tags["name:en"] || tags["name:es"] || "";
 }
 
+// api/willHealthSites.ts
+var WILL_HEALTH_SITES = [
+  {
+    name: "BCN Checkpoint",
+    kind: "Salud sexual comunitaria",
+    category: "community",
+    lat: 41.3789,
+    lng: 2.1625,
+    address: "Carrer de Comte Borrell, 164-166, Barcelona",
+    website: "https://www.bcncheckpoint.com",
+    city: "Barcelona",
+    audience: "Atenci\xF3n espec\xEDfica a hombres que tienen sexo con hombres y mujeres trans."
+  },
+  {
+    name: "Stop",
+    kind: "Salud sexual y apoyo comunitario",
+    category: "community",
+    lat: 41.3816,
+    lng: 2.1708,
+    address: "Barcelona",
+    website: "https://stop.org.es",
+    city: "Barcelona",
+    audience: "Atenci\xF3n espec\xEDfica a hombres gais, bisexuales y otros HSH."
+  },
+  {
+    name: "CJAS \u2014 Centre Jove d\u2019Atenci\xF3 a les Sexualitats",
+    kind: "Salud sexual",
+    category: "health",
+    lat: 41.3729,
+    lng: 2.1658,
+    address: "Carrer de Vit\xF2ria, 7, Barcelona",
+    website: "https://www.cjas.org",
+    city: "Barcelona",
+    audience: "Atenci\xF3n espec\xEDfica a j\xF3venes."
+  },
+  {
+    name: "Unitat d\u2019ITS Drassanes",
+    kind: "Centro sanitario / ITS",
+    category: "health",
+    lat: 41.3757,
+    lng: 2.1754,
+    address: "Avinguda de les Drassanes, 17-21, Barcelona",
+    city: "Barcelona",
+    audience: "Atenci\xF3n a poblaci\xF3n general. Salud sexual e ITS."
+  },
+  {
+    name: "Parc Sanitari Pere Virgili",
+    kind: "Centro sociosanitario",
+    category: "health",
+    lat: 41.4186,
+    lng: 2.1418,
+    address: "Carrer d\u2019Esteve Terradas, 30, Barcelona",
+    website: "https://www.perevirgili.cat",
+    city: "Barcelona",
+    audience: "Atenci\xF3n a poblaci\xF3n general. Centro sociosanitario."
+  },
+  {
+    name: "Energy Control (ABD)",
+    kind: "Reducci\xF3n de riesgos y da\xF1os",
+    category: "community",
+    lat: 41.4032,
+    lng: 2.1618,
+    address: "Barcelona",
+    website: "https://energycontrol.org",
+    city: "Barcelona",
+    audience: "Atenci\xF3n a poblaci\xF3n general. An\xE1lisis de sustancias y reducci\xF3n de da\xF1os."
+  },
+  {
+    name: "Hospital Cl\xEDnic de Barcelona",
+    kind: "Urgencias / Hospital",
+    category: "emergency",
+    lat: 41.3888,
+    lng: 2.1519,
+    address: "Carrer de Villarroel, 170, Barcelona",
+    city: "Barcelona",
+    audience: "Atenci\xF3n a poblaci\xF3n general."
+  },
+  {
+    name: "Centro Sanitario Sandoval",
+    kind: "Centro sanitario / ITS",
+    category: "health",
+    lat: 40.4305,
+    lng: -3.7034,
+    address: "Calle de Sandoval, 7, Madrid",
+    city: "Madrid",
+    audience: "Atenci\xF3n a poblaci\xF3n general. Unidad de ITS."
+  },
+  {
+    name: "Checkpoint Madrid",
+    kind: "Salud sexual comunitaria",
+    category: "community",
+    lat: 40.4215,
+    lng: -3.6998,
+    address: "Madrid",
+    website: "https://checkpointmadrid.org",
+    city: "Madrid",
+    audience: "Atenci\xF3n espec\xEDfica a hombres que tienen sexo con hombres y mujeres trans."
+  },
+  {
+    name: "Acci\xF3n Solidaria",
+    kind: "ONG / VIH y apoyo comunitario",
+    category: "community",
+    lat: 10.4965,
+    lng: -66.8515,
+    address: "Avenida Francisco de Miranda, Chacao, Caracas",
+    website: "https://accionsolidaria.info",
+    city: "Caracas",
+    audience: "Atenci\xF3n a poblaci\xF3n general. VIH y apoyo comunitario."
+  },
+  {
+    name: "ACCSI \u2014 Acci\xF3n Ciudadana Contra el SIDA",
+    kind: "ONG / VIH",
+    category: "community",
+    lat: 10.4982,
+    lng: -66.849,
+    address: "Altamira, Caracas",
+    city: "Caracas",
+    audience: "Atenci\xF3n a poblaci\xF3n general. VIH."
+  },
+  {
+    name: "StopVIH",
+    kind: "ONG / VIH y salud sexual",
+    category: "community",
+    lat: 10.492,
+    lng: -66.879,
+    address: "Caracas",
+    website: "https://stopvih.org",
+    city: "Caracas",
+    audience: "Atenci\xF3n a poblaci\xF3n general. VIH y salud sexual."
+  },
+  {
+    name: "Red Venezolana de Gente Positiva",
+    kind: "ONG / apoyo entre iguales",
+    category: "community",
+    lat: 10.5,
+    lng: -66.87,
+    address: "Caracas",
+    city: "Caracas",
+    audience: "Atenci\xF3n a poblaci\xF3n general. Apoyo entre iguales en VIH."
+  },
+  {
+    name: "Venezuela Diversa",
+    kind: "ONG / LGBTIQ+ y salud",
+    category: "community",
+    lat: 10.488,
+    lng: -66.879,
+    address: "Caracas",
+    city: "Caracas",
+    audience: "Atenci\xF3n espec\xEDfica a personas LGBTIQ+."
+  },
+  {
+    name: "Hospital Vargas de Caracas",
+    kind: "Hospital p\xFAblico",
+    category: "emergency",
+    lat: 10.5055,
+    lng: -66.9172,
+    address: "San Jos\xE9, Caracas",
+    city: "Caracas",
+    audience: "Atenci\xF3n a poblaci\xF3n general. Hospital p\xFAblico."
+  }
+];
+var CIVIC = /cívic[oa]?|\bcivic\b|casal\b|ateneu|biblioteca|centro cultural|cultural centre|casa de cultura|maison de la culture|teatro|\btheatre\b|\bcine\b|polideportiv|sport centre|arts centre|centro de barrio/i;
+var THEME = /checkpoint|cjas|drassanes|sandoval|stop sida|energy control|salud sexual|sexual health|saúde sexual|santé sexuelle|\bits\b|\bvih\b|\bhiv\b|\bsida\b|\baids\b|\bprep\b|chemsex|reducción de dañ|reduccion de dan|harm reduction|pere virgili|infectolog|drogodepend|\bcas\b|jeringuill|needle exchange|salud mental|mental health|addiction|lgbt|lgtbi|lgtb|diversidad sexual|acción solidaria|accsi|stopvih|gente positiva|venezuela diversa|reflejos de venezuela|aliansa|trabajadoras sexuales|sex worker|derechos sexuales|salud comunitaria|cruz roja|médicos del mundo|doctors of the world|onusida|unaids/i;
+function isCivicOrCulturalName(name) {
+  return CIVIC.test(name);
+}
+function isWillThemeName(name) {
+  return THEME.test(name);
+}
+function isMaternityName(name) {
+  return /maternidad|maternity|materno.?infantil|gineco.?obstetr|obstetric/i.test(name);
+}
+function isPrivateCare(tags, name) {
+  const op = (tags?.["operator:type"] || tags?.operator || "").toLowerCase();
+  if (tags?.fee === "yes") return true;
+  if (op === "private" || /\bprivate\b/.test(op)) return true;
+  return /clínica caracas|teknon|quirónsalud|quiron|centro médico de caracas|policínica metropolitana/i.test(name);
+}
+
 // api/geo.ts
 function osmEmbedUrl(center, sites) {
   const pts = [center, ...sites];
@@ -196,18 +375,47 @@ function distanceKm(a, b) {
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
 }
 function classify(tags) {
-  const a = tags?.amenity || tags?.healthcare || tags?.office || "";
-  if (a === "hospital" || tags?.emergency === "yes") {
+  const a = (tags?.amenity || tags?.healthcare || tags?.office || "").toLowerCase();
+  const spec = (tags?.["healthcare:speciality"] || tags?.social_facility || "").toLowerCase();
+  const name = tags?.name || "";
+  if (a === "community_centre" || a === "arts_centre" || a === "library" || a === "theatre") {
+    return { kind: "Fuera de \xE1mbito", category: "other" };
+  }
+  if (isWillThemeName(name) || /infect|hiv|sexual|addict|psychiatr/.test(spec)) {
+    if (a === "hospital") return { kind: "Urgencias / Hospital", category: "emergency" };
+    if (/drug|addict|chemsex|dañ|harm/.test(spec + name.toLowerCase())) {
+      return { kind: "Reducci\xF3n de riesgos y da\xF1os", category: "community" };
+    }
+    return { kind: "Salud sexual / sociosanitario", category: "health" };
+  }
+  if (a === "hospital" || tags?.emergency === "yes" || tags?.healthcare === "hospital") {
     return { kind: "Urgencias / Hospital", category: "emergency" };
   }
-  if (a === "clinic" || a === "doctors" || a === "doctor" || a === "centre" || a === "center") {
-    return { kind: "Atenci\xF3n sanitaria", category: "health" };
+  if (a === "clinic" || a === "doctors" || a === "doctor" || a === "health_centre" || tags?.healthcare === "clinic" || tags?.healthcare === "centre" || tags?.healthcare === "center") {
+    return { kind: "Centro sanitario", category: "health" };
   }
-  if (a === "pharmacy") return { kind: "Farmacia", category: "health" };
-  if (a === "social_facility" || a === "community_centre" || a === "ngo") {
-    return { kind: "Recurso comunitario", category: "community" };
+  if (a === "pharmacy" || a === "dentist" || a === "veterinary") {
+    return { kind: "Farmacia", category: "other" };
+  }
+  if (spec === "drug_addiction" || spec === "mental_health") {
+    return { kind: "Centro sociosanitario", category: "community" };
+  }
+  if (a === "ngo" || a === "association" || a === "charity" || tags?.office === "ngo") {
+    return { kind: "ONG / recurso comunitario", category: "community" };
   }
   return { kind: "Otro recurso", category: "other" };
+}
+function rejectSite(tags, name) {
+  const a = (tags.amenity || tags.healthcare || tags.office || "").toLowerCase();
+  if (["pharmacy", "dentist", "veterinary", "community_centre", "arts_centre", "library", "theatre", "townhall"].includes(a)) {
+    return true;
+  }
+  if (isCivicOrCulturalName(name)) return true;
+  if ((a === "ngo" || a === "association" || a === "charity" || tags.office === "ngo") && !isWillThemeName(name)) {
+    const spec = `${tags.healthcare || ""} ${tags.social_facility || ""} ${tags["healthcare:speciality"] || ""}`.toLowerCase();
+    if (!/infect|hiv|sexual|addict|psychiatr|health/.test(spec)) return true;
+  }
+  return false;
 }
 function phoneFrom(tags) {
   return tags.phone || tags["contact:phone"] || tags["contact:mobile"] || void 0;
@@ -233,6 +441,30 @@ async function nominatimSearch(q, acceptLang) {
     address: hit.address || {}
   };
 }
+var PHOTON = "https://photon.komoot.io";
+async function photonSearch(q) {
+  const url = `${PHOTON}/api/?limit=1&q=${encodeURIComponent(q)}`;
+  const r = await fetch(url, { headers: { "User-Agent": UA } });
+  if (!r.ok) return null;
+  const data = await r.json();
+  const hit = data?.features?.[0];
+  if (!hit?.geometry?.coordinates) return null;
+  const [lng, lat] = hit.geometry.coordinates;
+  const props = hit.properties || {};
+  return {
+    lat: Number(lat),
+    lng: Number(lng),
+    label: [props.name, props.city, props.country].filter(Boolean).join(", ") || q,
+    address: {
+      country: props.country,
+      country_code: props.countrycode,
+      city: props.city || props.name
+    }
+  };
+}
+async function geocodeSearch(q, acceptLang) {
+  return await nominatimSearch(q, acceptLang) || photonSearch(q);
+}
 async function nominatimReverse(lat, lng, acceptLang) {
   const url = `${NOMINATIM}/reverse?format=jsonv2&zoom=12&addressdetails=1&lat=${lat}&lon=${lng}`;
   const r = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": acceptLang } });
@@ -247,8 +479,10 @@ async function nominatimReverse(lat, lng, acceptLang) {
 function toSite(tags, plat, plng, origin, preferred, checkedAt) {
   const name = nameInLanguages(tags, preferred);
   if (!name) return null;
+  if (rejectSite(tags, name)) return null;
   const layers = extractLanguageLayers(tags);
   const { kind, category } = classify(tags);
+  if (kind === "Fuera de \xE1mbito" || kind === "Farmacia") return null;
   const phone = phoneFrom(tags);
   const address = addressFrom(tags);
   const website = tags.website || tags["contact:website"] || void 0;
@@ -269,7 +503,9 @@ function toSite(tags, plat, plng, origin, preferred, checkedAt) {
       name: "OpenStreetMap",
       url: `https://www.openstreetmap.org/?mlat=${plat}&mlon=${plng}`,
       checkedAt
-    }
+    },
+    privateCare: isPrivateCare(tags, name),
+    maternity: isMaternityName(name)
   };
 }
 function parseSites(data, lat, lng, preferred) {
@@ -289,21 +525,58 @@ function parseSites(data, lat, lng, preferred) {
     seen.add(key);
     sites.push(site);
   }
-  sites.sort((a, b) => a.km - b.km);
-  return { sites: sites.slice(0, 24), checkedAt };
+  sites.sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km);
+  return { sites: mixSites(sites.filter((s) => s.kind !== "Farmacia")), checkedAt };
+}
+function rankSite(site) {
+  if (isWillThemeName(site.name) || /ONG|salud sexual|sociosanitario|reducción de riesgos|apoyo comunitario/i.test(site.kind)) {
+    return 0;
+  }
+  if (site.category === "community") return 1;
+  if (site.maternity || site.privateCare) return 5;
+  if (site.category === "health") return 2;
+  if (site.category === "emergency") return 3;
+  return 4;
+}
+function mixSites(sites) {
+  const theme = sites.filter((s) => rankSite(s) <= 1);
+  const health = sites.filter((s) => s.category === "health" && rankSite(s) > 1);
+  const publicH = sites.filter((s) => s.category === "emergency" && !s.privateCare && !s.maternity);
+  const rest = sites.filter((s) => !theme.includes(s) && !health.includes(s) && !publicH.includes(s));
+  const out = [];
+  const push = (list, n) => {
+    for (const s of list) {
+      if (out.length >= 24) break;
+      if (out.includes(s)) continue;
+      if (n-- <= 0) break;
+      out.push(s);
+    }
+  };
+  push(theme, 12);
+  push(health, 6);
+  push(publicH, 4);
+  push(rest, 2);
+  return out.slice(0, 24);
 }
 async function overpassNearby(lat, lng, preferred) {
-  const query = `[out:json][timeout:12];
+  const query = `[out:json][timeout:22];
 (
-  node["amenity"="hospital"](around:5000,${lat},${lng});
-  way["amenity"="hospital"](around:5000,${lat},${lng});
-  node["amenity"="clinic"](around:5000,${lat},${lng});
-  way["amenity"="clinic"](around:5000,${lat},${lng});
-  node["amenity"="pharmacy"](around:5000,${lat},${lng});
-  node["amenity"="social_facility"](around:5000,${lat},${lng});
-  node["office"="ngo"](around:5000,${lat},${lng});
+  nwr["office"="ngo"](around:15000,${lat},${lng});
+  nwr["office"="association"](around:15000,${lat},${lng});
+  nwr["office"="charity"](around:15000,${lat},${lng});
+  nwr["amenity"="hospital"](around:12000,${lat},${lng});
+  nwr["healthcare"="hospital"](around:12000,${lat},${lng});
+  nwr["amenity"="clinic"](around:12000,${lat},${lng});
+  nwr["healthcare"="clinic"](around:12000,${lat},${lng});
+  nwr["amenity"="doctors"](around:12000,${lat},${lng});
+  nwr["amenity"="health_centre"](around:12000,${lat},${lng});
+  nwr["healthcare"="centre"](around:12000,${lat},${lng});
+  nwr["social_facility"="drug_addiction"](around:15000,${lat},${lng});
+  nwr["social_facility"="mental_health"](around:15000,${lat},${lng});
+  nwr["healthcare:speciality"~"infect|hiv|sexual|addict|psychiatr|dermatol",i](around:15000,${lat},${lng});
+  nwr["name"~"checkpoint|salud sexual|sexual health|ITS|VIH|HIV|SIDA|LGBT|LGTB|PrEP|chemsex|harm reduction|reducci\xF3n de da\xF1os|solidaria|positivo|diversa|CJAS|Drassanes|Sandoval",i](around:15000,${lat},${lng});
 );
-out center 40;`;
+out center 100;`;
   let data = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
@@ -327,7 +600,7 @@ out center 40;`;
 async function nominatimHealthcare(lat, lng, preferred) {
   const delta = 0.08;
   const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
-  const queries = ["hospital", "clinic", "pharmacy", "community health"];
+  const queries = ["ONG VIH", "HIV NGO", "sexual health", "LGBT health", "hospital", "clinic"];
   const seen = /* @__PURE__ */ new Set();
   const sites = [];
   const accept = preferred.length ? preferred.join(",") : "es,en";
@@ -360,8 +633,8 @@ async function nominatimHealthcare(lat, lng, preferred) {
       continue;
     }
   }
-  sites.sort((a, b) => a.km - b.km);
-  return { sites: sites.slice(0, 24) };
+  sites.sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km);
+  return { sites: sites.filter((s) => s.kind !== "Farmacia").slice(0, 24) };
 }
 function placeLabel(address, fallback) {
   const city = address.city || address.town || address.village || address.municipality || address.hamlet || address.county;
@@ -383,7 +656,7 @@ async function handleLookup(req, res) {
     const sent = [];
     if (q && origin === "search") {
       sent.push({ service: "nominatim.openstreetmap.org", fields: ["q"] });
-      const found = await nominatimSearch(q, acceptLang);
+      const found = await geocodeSearch(q, acceptLang);
       if (!found) {
         return res.status(404).json({
           error: "No se ha encontrado ese lugar en el mapa abierto.",
@@ -402,7 +675,7 @@ async function handleLookup(req, res) {
       address = rev?.address || {};
       fallbackLabel = rev?.label || "";
     } else if (q) {
-      const found = await nominatimSearch(q, acceptLang);
+      const found = await geocodeSearch(q, acceptLang);
       if (!found) {
         return res.status(404).json({
           error: "No se ha encontrado ese lugar en el mapa abierto.",
@@ -424,8 +697,35 @@ async function handleLookup(req, res) {
     } catch {
       fetched = { sites: [] };
     }
-    const unfilteredCount = fetched.sites.length;
-    let sites = sortByCareLanguages(fetched.sites, languages, languageMode);
+    const curated = WILL_HEALTH_SITES.filter((s) => {
+      const km = distanceKm(coords, { lat: s.lat, lng: s.lng });
+      return km <= 25;
+    }).map((s) => ({
+      name: s.name,
+      kind: s.kind,
+      category: s.category,
+      km: Math.round(distanceKm(coords, { lat: s.lat, lng: s.lng }) * 10) / 10,
+      address: s.address,
+      website: s.website,
+      mapsUrl: `https://www.openstreetmap.org/?mlat=${s.lat}&mlon=${s.lng}#map=16/${s.lat}/${s.lng}`,
+      careLanguages: [],
+      nameLanguages: [],
+      lat: s.lat,
+      lng: s.lng,
+      source: { name: "Directorio Will", url: s.website || "https://www.openstreetmap.org/" },
+      audience: s.audience
+    }));
+    const merged = [...curated];
+    const seen = new Set(curated.map((s) => s.name.toLowerCase()));
+    for (const s of fetched.sites) {
+      if (seen.has(s.name.toLowerCase())) continue;
+      seen.add(s.name.toLowerCase());
+      merged.push(s);
+    }
+    merged.sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km);
+    const mixed = mixSites(merged);
+    const unfilteredCount = mixed.length;
+    let sites = sortByCareLanguages(mixed, languages, languageMode);
     let absence = "none";
     if (unfilteredCount === 0) absence = "no_map_hits";
     else if (sites.length === 0) absence = "filter_empty";
@@ -458,17 +758,181 @@ async function handleLookup(req, res) {
     });
   }
 }
+async function handleGeocode(req, res) {
+  try {
+    const q = typeof req.body?.q === "string" ? req.body.q.trim().slice(0, 80) : "";
+    const origin = req.body?.origin === "gps" ? "gps" : "search";
+    const coords = validCoord(req.body?.lat, req.body?.lng);
+    const sent = [];
+    let found = null;
+    if (q) {
+      sent.push({ service: "nominatim.openstreetmap.org", fields: ["q"] });
+      found = await geocodeSearch(q, "es,en");
+      if (!found) sent.push({ service: "photon.komoot.io", fields: ["q"] });
+    } else if (coords && origin === "gps") {
+      sent.push({ service: "nominatim.openstreetmap.org", fields: ["lat", "lng"] });
+      const rev = await nominatimReverse(coords.lat, coords.lng, "es,en");
+      found = {
+        lat: coords.lat,
+        lng: coords.lng,
+        label: rev?.label || `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`,
+        address: rev?.address || {}
+      };
+    } else {
+      return res.status(400).json({ error: "Indica un lugar o una ubicaci\xF3n." });
+    }
+    if (!found) {
+      return res.status(404).json({
+        error: "No hemos encontrado resultados para esta b\xFAsqueda.",
+        absence: "place_not_found",
+        privacy: { stored: false, origin, sent, keptAfterResponse: false }
+      });
+    }
+    return res.json({
+      lat: found.lat,
+      lng: found.lng,
+      label: placeLabel(found.address, found.label),
+      countryCode: (found.address?.country_code || "").toUpperCase(),
+      countryName: found.address?.country || "",
+      origin,
+      privacy: { stored: false, origin, sent, keptAfterResponse: false }
+    });
+  } catch {
+    return res.status(502).json({
+      error: "No se ha podido consultar el lugar ahora.",
+      absence: "map_error",
+      privacy: { stored: false, origin: "search", sent: [], keptAfterResponse: false }
+    });
+  }
+}
 function registerGeoRoutes(app2) {
   app2.post("/api/geo/lookup", handleLookup);
+  app2.post("/api/geo/geocode", handleGeocode);
+}
+
+// api/kokoroAdapter.ts
+var import_kokoro_js = require("kokoro-js");
+var import_ephone = __toESM(require("ephone"), 1);
+var KOKORO_PROVIDER = "Kokoro";
+var KOKORO_VOICE = "em_alex";
+var KOKORO_MODEL_ID = "onnx-community/Kokoro-82M-v1.0-ONNX";
+var KOKORO_SAMPLE_RATE = 24e3;
+var engine = null;
+var engineLoading = null;
+var g2p = null;
+var g2pLoading = null;
+function kokoroIdentity() {
+  return {
+    provider: KOKORO_PROVIDER,
+    voiceId: KOKORO_VOICE,
+    modelId: "Kokoro-82M",
+    language: "es",
+    locale: "es-ES",
+    storesAudio: false
+  };
+}
+function floatToPcm16Wav(samples, sampleRate) {
+  const bytesPerSample = 2;
+  const dataSize = samples.length * bytesPerSample;
+  const buffer = Buffer.alloc(44 + dataSize);
+  buffer.write("RIFF", 0);
+  buffer.writeUInt32LE(36 + dataSize, 4);
+  buffer.write("WAVE", 8);
+  buffer.write("fmt ", 12);
+  buffer.writeUInt32LE(16, 16);
+  buffer.writeUInt16LE(1, 20);
+  buffer.writeUInt16LE(1, 22);
+  buffer.writeUInt32LE(sampleRate, 24);
+  buffer.writeUInt32LE(sampleRate * bytesPerSample, 28);
+  buffer.writeUInt16LE(bytesPerSample, 32);
+  buffer.writeUInt16LE(16, 34);
+  buffer.write("data", 36);
+  buffer.writeUInt32LE(dataSize, 40);
+  let offset = 44;
+  for (let i = 0; i < samples.length; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    buffer.writeInt16LE(s < 0 ? s * 32768 : s * 32767, offset);
+    offset += 2;
+  }
+  return buffer;
+}
+function rawToWav(raw) {
+  const src = raw.audio || raw.data;
+  if (!src) throw new Error("Kokoro no ha devuelto audio.");
+  const samples = src instanceof Float32Array ? src : Float32Array.from(src);
+  const rate = raw.sampling_rate || raw.samplingRate || KOKORO_SAMPLE_RATE;
+  return floatToPcm16Wav(samples, rate);
+}
+async function getSpanishG2P() {
+  if (g2p) return g2p;
+  if (!g2pLoading) {
+    g2pLoading = (0, import_ephone.default)(import_ephone.roa).then((loaded) => {
+      loaded.setVoice("es");
+      return loaded;
+    });
+  }
+  g2p = await g2pLoading;
+  return g2p;
+}
+async function spanishPhonemes(text) {
+  const phonemizer = await getSpanishG2P();
+  const result = phonemizer.textToIpaWithSourceMap(text);
+  return String(result?.ipa || "").replace(/\s+/g, " ").trim();
+}
+async function getKokoroEngine() {
+  if (engine) return engine;
+  if (!engineLoading) {
+    engineLoading = import_kokoro_js.KokoroTTS.from_pretrained(KOKORO_MODEL_ID, {
+      dtype: "q8",
+      device: "cpu"
+    });
+  }
+  try {
+    engine = await engineLoading;
+    return engine;
+  } catch (error) {
+    engineLoading = null;
+    engine = null;
+    throw error;
+  }
+}
+async function generateKokoroSpeech(text) {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (!clean) {
+    throw new Error("No hay texto para leer.");
+  }
+  const [tts, phonemes] = await Promise.all([getKokoroEngine(), spanishPhonemes(clean)]);
+  if (!phonemes) {
+    throw new Error("Kokoro no ha podido fonetizar el texto.");
+  }
+  const encoded = tts.tokenizer(phonemes, { truncation: true });
+  if (!encoded?.input_ids) {
+    throw new Error("Kokoro no ha podido tokenizar los fonemas.");
+  }
+  const raw = await tts.generate_from_ids(encoded.input_ids, {
+    voice: KOKORO_VOICE,
+    speed: 1
+  });
+  const wav = rawToWav(raw);
+  if (wav.length < 200) {
+    throw new Error("Kokoro ha devuelto audio vac\xEDo.");
+  }
+  return {
+    wav,
+    mime: "audio/wav",
+    voiceId: KOKORO_VOICE,
+    provider: KOKORO_PROVIDER,
+    phonemes
+  };
 }
 
 // api/voice.ts
-var WILL_VOICE_ID = "DrwFQsjvHFpLcKyvtbE3";
-var WILL_MODEL = "eleven_multilingual_v2";
-var WILL_UPSTREAM = "https://api.elevenlabs.io/v1/text-to-speech";
-var WILL_STT = "https://api.elevenlabs.io/v1/speech-to-text";
 function elevenLabsKey() {
-  return process.env.ELEVENLABS_API_KEY || process.env.ELEVEN_LABS_API_KEY || process.env.XI_API_KEY || "";
+  const raw = process.env.ELEVENLABS_API_KEY || process.env.ELEVEN_LABS_API_KEY || process.env.XI_API_KEY || "";
+  const key = String(raw).replace(/^\uFEFF/, "").trim().replace(/^Bearer\s+/i, "").replace(/^['"]+|['"]+$/g, "").trim();
+  if (!key || key.length < 20) return "";
+  if (/^(MY_|YOUR_|CHANGE|TODO|PLACEHOLDER|xxx)/i.test(key)) return "";
+  return key;
 }
 function prepareWillSpeech(text) {
   return text.replace(/\*\*/g, "").replace(/[_`#]/g, "").replace(/\n{3,}/g, "\n\n").trim().slice(0, 4e3);
@@ -483,13 +947,7 @@ function mimeToName(mime) {
 function registerVoiceRoutes(app2) {
   app2.get("/api/voice/config", (_req, res) => {
     res.json({
-      provider: "ElevenLabs",
-      voiceId: process.env.ELEVENLABS_VOICE_ID?.trim() || WILL_VOICE_ID,
-      modelId: WILL_MODEL,
-      language: "es",
-      locale: "es-ES",
-      storesAudio: false,
-      hasServerKey: Boolean(elevenLabsKey()),
+      ...kokoroIdentity(),
       listen: true
     });
   });
@@ -497,7 +955,7 @@ function registerVoiceRoutes(app2) {
     try {
       const apiKey = elevenLabsKey();
       if (!apiKey) {
-        return res.status(503).json({ error: "Falta la clave de ElevenLabs en el servidor." });
+        return res.status(503).json({ error: "El reconocimiento de voz no est\xE1 disponible ahora." });
       }
       const rawAudio = typeof req.body?.audio === "string" ? req.body.audio : "";
       const b64 = rawAudio.replace(/^data:[^;]+;base64,/, "");
@@ -511,7 +969,7 @@ function registerVoiceRoutes(app2) {
       form.append("language_code", "es");
       form.append("tag_audio_events", "false");
       form.append("file", new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
-      let r = await fetch(WILL_STT, {
+      let r = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
         method: "POST",
         headers: { "xi-api-key": apiKey },
         body: form
@@ -522,7 +980,7 @@ function registerVoiceRoutes(app2) {
         retry.append("language_code", "es");
         retry.append("tag_audio_events", "false");
         retry.append("file", new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
-        r = await fetch(WILL_STT, {
+        r = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
           method: "POST",
           headers: { "xi-api-key": apiKey },
           body: retry
@@ -530,7 +988,7 @@ function registerVoiceRoutes(app2) {
       }
       if (!r.ok) {
         const detail = await r.text().catch(() => "");
-        console.error("ElevenLabs STT error", r.status, detail.slice(0, 300));
+        console.error("STT error", r.status, detail.slice(0, 300));
         return res.status(502).json({ error: "No he podido pasar a escrito lo que has dicho ahora." });
       }
       const data = await r.json();
@@ -546,50 +1004,21 @@ function registerVoiceRoutes(app2) {
       const raw = typeof req.body?.text === "string" ? req.body.text : "";
       const text = prepareWillSpeech(raw);
       if (!text) return res.status(400).json({ error: "No hay texto para leer." });
-      const apiKey = elevenLabsKey();
-      if (!apiKey) {
-        return res.status(503).json({
-          error: "Falta la clave de ElevenLabs en el servidor.",
-          voiceId: WILL_VOICE_ID
-        });
-      }
-      const voiceId = process.env.ELEVENLABS_VOICE_ID?.trim() || WILL_VOICE_ID;
-      const url = `${WILL_UPSTREAM}/${encodeURIComponent(voiceId)}`;
-      const r = await fetch(url, {
-        method: "POST",
-        headers: {
-          "xi-api-key": apiKey,
-          "Content-Type": "application/json",
-          Accept: "audio/mpeg"
-        },
-        body: JSON.stringify({
-          text,
-          model_id: WILL_MODEL,
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.8
-          }
-        })
-      });
-      if (!r.ok) {
-        const detail = await r.text().catch(() => "");
-        console.error("ElevenLabs TTS error", r.status, detail.slice(0, 300));
-        return res.status(502).json({
-          error: "ElevenLabs no ha podido generar la voz ahora.",
-          voiceId
-        });
-      }
-      const audio = Buffer.from(await r.arrayBuffer());
-      res.setHeader("Content-Type", "audio/mpeg");
+      const spoken = await generateKokoroSpeech(text);
+      res.status(200);
+      res.setHeader("Content-Type", spoken.mime);
       res.setHeader("Cache-Control", "no-store");
-      res.setHeader("X-Will-Voice", voiceId);
-      res.setHeader("X-Will-Provider", "ElevenLabs");
-      return res.send(audio);
+      res.setHeader("Content-Length", String(spoken.wav.length));
+      res.setHeader("X-Will-Voice", spoken.voiceId);
+      res.setHeader("X-Will-Provider", spoken.provider);
+      return res.end(spoken.wav);
     } catch (error) {
       console.error("Error in /api/voice/speak", error?.message || error);
       return res.status(502).json({
         error: "La voz de Will no est\xE1 disponible ahora.",
-        voiceId: WILL_VOICE_ID
+        voiceId: kokoroIdentity().voiceId,
+        reason: "kokoro",
+        provider: "Kokoro"
       });
     }
   });

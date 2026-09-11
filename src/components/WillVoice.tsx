@@ -97,7 +97,11 @@ function playOnShared(blob: Blob, gen: number): Promise<'ended' | 'error' | 'sto
     audio.muted = false;
     audio.volume = 1;
     audio.src = url;
-    audio.currentTime = 0;
+    try {
+      audio.currentTime = 0;
+    } catch {
+      /* El elemento acaba de cambiar de src; play() parte del inicio. */
+    }
     const go = audio.play();
     if (go && typeof go.then === 'function') {
       void go.catch(() => {

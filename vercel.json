@@ -4,7 +4,7 @@
     {
       "src": "api/vercel.cjs",
       "use": "@vercel/node",
-      "config": { "maxDuration": 30 }
+      "config": { "maxDuration": 60 }
     },
     {
       "src": "package.json",

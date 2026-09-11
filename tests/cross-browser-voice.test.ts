@@ -44,9 +44,9 @@ await test('Un solo reproductor canónico: no existe elevenLabsSpeech ni speechS
   assert.equal((voice.match(/createElement\('audio'\)/g) || []).length, 1);
 });
 
-await test('Voice ID canónico ElevenLabs, no Atlas ni síntesis del navegador', () => {
-  assert.equal(WILL_VOICE.provider, 'ElevenLabs');
-  assert.equal(WILL_VOICE.voiceId, 'DrwFQsjvHFpLcKyvtbE3');
+await test('Voice ID canónico Kokoro em_alex, no Atlas ni síntesis del navegador', () => {
+  assert.equal(WILL_VOICE.provider, 'Kokoro');
+  assert.equal(WILL_VOICE.voiceId, 'em_alex');
   assert.notEqual(String(WILL_VOICE.voiceId), 'atlas');
 });
 

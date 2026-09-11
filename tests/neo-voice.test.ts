@@ -74,7 +74,7 @@ await test('El código de voz no cierra Neo por ser distinto de Chrome', () => {
   assert.equal(sourceUsesChromeOnlyGate(capture), false);
   assert.equal(sourceUsesChromeOnlyGate(voice), false);
   assert.equal(sourceUsesChromeOnlyGate(chat), false);
-  assert.equal(WILL_VOICE.voiceId, 'DrwFQsjvHFpLcKyvtbE3');
+  assert.equal(WILL_VOICE.voiceId, 'em_alex');
 });
 
 await test('inferEngine no es un permiso: Neo se informa, las APIs deciden', () => {
