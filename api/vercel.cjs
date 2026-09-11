@@ -4,9 +4,6 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __esm = (fn, res) => function __init() {
-  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
-};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -28,148 +25,6 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// api/kokoroAdapter.ts
-var kokoroAdapter_exports = {};
-__export(kokoroAdapter_exports, {
-  KOKORO_MODEL_ID: () => KOKORO_MODEL_ID,
-  KOKORO_PROVIDER: () => KOKORO_PROVIDER,
-  KOKORO_SAMPLE_RATE: () => KOKORO_SAMPLE_RATE,
-  KOKORO_VOICE: () => KOKORO_VOICE,
-  generateKokoroSpeech: () => generateKokoroSpeech,
-  getKokoroEngine: () => getKokoroEngine,
-  getSpanishG2P: () => getSpanishG2P,
-  kokoroIdentity: () => kokoroIdentity,
-  spanishPhonemes: () => spanishPhonemes
-});
-function kokoroIdentity() {
-  return {
-    provider: KOKORO_PROVIDER,
-    voiceId: KOKORO_VOICE,
-    modelId: "Kokoro-82M",
-    language: "es",
-    locale: "es-ES",
-    storesAudio: false
-  };
-}
-function floatToPcm16Wav(samples, sampleRate) {
-  const bytesPerSample = 2;
-  const dataSize = samples.length * bytesPerSample;
-  const buffer = Buffer.alloc(44 + dataSize);
-  buffer.write("RIFF", 0);
-  buffer.writeUInt32LE(36 + dataSize, 4);
-  buffer.write("WAVE", 8);
-  buffer.write("fmt ", 12);
-  buffer.writeUInt32LE(16, 16);
-  buffer.writeUInt16LE(1, 20);
-  buffer.writeUInt16LE(1, 22);
-  buffer.writeUInt32LE(sampleRate, 24);
-  buffer.writeUInt32LE(sampleRate * bytesPerSample, 28);
-  buffer.writeUInt16LE(bytesPerSample, 32);
-  buffer.writeUInt16LE(16, 34);
-  buffer.write("data", 36);
-  buffer.writeUInt32LE(dataSize, 40);
-  let offset = 44;
-  for (let i = 0; i < samples.length; i++) {
-    const s = Math.max(-1, Math.min(1, samples[i]));
-    buffer.writeInt16LE(s < 0 ? s * 32768 : s * 32767, offset);
-    offset += 2;
-  }
-  return buffer;
-}
-function rawToWav(raw) {
-  const src = raw.audio || raw.data;
-  if (!src) throw new Error("Kokoro no ha devuelto audio.");
-  const samples = src instanceof Float32Array ? src : Float32Array.from(src);
-  const rate = raw.sampling_rate || raw.samplingRate || KOKORO_SAMPLE_RATE;
-  return floatToPcm16Wav(samples, rate);
-}
-async function getSpanishG2P() {
-  if (g2p) return g2p;
-  if (!g2pLoading) {
-    g2pLoading = (async () => {
-      const mod = await import("ephone");
-      const createEphone = mod.default;
-      const loaded = await createEphone(mod.roa);
-      loaded.setVoice("es");
-      return loaded;
-    })();
-  }
-  g2p = await g2pLoading;
-  return g2p;
-}
-async function spanishPhonemes(text) {
-  const phonemizer = await getSpanishG2P();
-  const result = phonemizer.textToIpaWithSourceMap(text);
-  return String(result?.ipa || "").replace(/\s+/g, " ").trim();
-}
-async function getKokoroEngine() {
-  if (engine) return engine;
-  if (!engineLoading) {
-    engineLoading = (async () => {
-      const { mkdirSync } = await import("node:fs");
-      const { env } = await import("@huggingface/transformers");
-      const cacheDir = "/tmp/will-kokoro-cache";
-      mkdirSync(cacheDir, { recursive: true });
-      env.cacheDir = cacheDir;
-      const { KokoroTTS } = await import("kokoro-js");
-      return await KokoroTTS.from_pretrained(KOKORO_MODEL_ID, {
-        dtype: "q8",
-        device: "cpu"
-      });
-    })();
-  }
-  try {
-    engine = await engineLoading;
-    return engine;
-  } catch (error) {
-    engineLoading = null;
-    engine = null;
-    throw error;
-  }
-}
-async function generateKokoroSpeech(text) {
-  const clean = text.replace(/\s+/g, " ").trim();
-  if (!clean) {
-    throw new Error("No hay texto para leer.");
-  }
-  const [tts, phonemes] = await Promise.all([getKokoroEngine(), spanishPhonemes(clean)]);
-  if (!phonemes) {
-    throw new Error("Kokoro no ha podido fonetizar el texto.");
-  }
-  const encoded = tts.tokenizer(phonemes, { truncation: true });
-  if (!encoded?.input_ids) {
-    throw new Error("Kokoro no ha podido tokenizar los fonemas.");
-  }
-  const raw = await tts.generate_from_ids(encoded.input_ids, {
-    voice: KOKORO_VOICE,
-    speed: 1
-  });
-  const wav = rawToWav(raw);
-  if (wav.length < 200) {
-    throw new Error("Kokoro ha devuelto audio vac\xEDo.");
-  }
-  return {
-    wav,
-    mime: "audio/wav",
-    voiceId: KOKORO_VOICE,
-    provider: KOKORO_PROVIDER,
-    phonemes
-  };
-}
-var KOKORO_PROVIDER, KOKORO_VOICE, KOKORO_MODEL_ID, KOKORO_SAMPLE_RATE, engine, engineLoading, g2p, g2pLoading;
-var init_kokoroAdapter = __esm({
-  "api/kokoroAdapter.ts"() {
-    KOKORO_PROVIDER = "Kokoro";
-    KOKORO_VOICE = "em_alex";
-    KOKORO_MODEL_ID = "onnx-community/Kokoro-82M-v1.0-ONNX";
-    KOKORO_SAMPLE_RATE = 24e3;
-    engine = null;
-    engineLoading = null;
-    g2p = null;
-    g2pLoading = null;
-  }
-});
 
 // api/app.ts
 var app_exports = {};
@@ -956,13 +811,82 @@ function registerGeoRoutes(app2) {
 }
 
 // api/voice.ts
-init_kokoroAdapter();
 function elevenLabsKey() {
   const raw = process.env.ELEVENLABS_API_KEY || process.env.ELEVEN_LABS_API_KEY || process.env.XI_API_KEY || "";
   const key = String(raw).replace(/^\uFEFF/, "").trim().replace(/^Bearer\s+/i, "").replace(/^['"]+|['"]+$/g, "").trim();
   if (!key || key.length < 20) return "";
   if (/^(MY_|YOUR_|CHANGE|TODO|PLACEHOLDER|xxx)/i.test(key)) return "";
   return key;
+}
+var WILL_VOICE_ID = "DrwFQsjvHFpLcKyvtbE3";
+var WILL_MODEL = "eleven_multilingual_v2";
+var WILL_TTS = "https://api.elevenlabs.io/v1/text-to-speech";
+function elevenLabsIdentity() {
+  return {
+    provider: "ElevenLabs",
+    voiceId: WILL_VOICE_ID,
+    modelId: WILL_MODEL,
+    language: "es",
+    locale: "es-ES",
+    storesAudio: false
+  };
+}
+function classifyEleven(status, body) {
+  let reason = "";
+  try {
+    const parsed = JSON.parse(body);
+    const detail = parsed?.detail;
+    if (typeof detail === "string") reason = detail;
+    else if (detail && typeof detail === "object") {
+      reason = String(detail.status || detail.message || "");
+    } else if (parsed?.status) {
+      reason = String(parsed.status);
+    }
+  } catch {
+    reason = body.slice(0, 120);
+  }
+  const blob = `${status} ${reason}`.toLowerCase();
+  if (status === 401 || /invalid_api_key|unauthorized/.test(blob)) return "auth";
+  if (status === 404 || /voice_not_found/.test(blob)) return "voice";
+  if (status === 402 || status === 429 || /quota|credits|limit|concurrency/.test(blob)) {
+    return "quota";
+  }
+  if (status === 422) return "request";
+  return "upstream";
+}
+function userErrorFor(kind) {
+  if (kind === "auth") return "La voz de Will no est\xE1 disponible ahora.";
+  if (kind === "quota") return "La voz de Will no est\xE1 disponible ahora por l\xEDmite de uso.";
+  if (kind === "voice") return "La voz de Will no est\xE1 accesible ahora.";
+  return "La voz de Will no se ha podido generar ahora.";
+}
+async function requestWillSpeech(apiKey, text) {
+  const url = `${WILL_TTS}/${encodeURIComponent(WILL_VOICE_ID)}?output_format=mp3_44100_128`;
+  const headers = {
+    "xi-api-key": apiKey,
+    "Content-Type": "application/json",
+    Accept: "audio/mpeg"
+  };
+  const body = JSON.stringify({
+    text,
+    model_id: WILL_MODEL,
+    voice_settings: {
+      stability: 0.5,
+      similarity_boost: 0.8
+    }
+  });
+  const once = () => fetch(url, {
+    method: "POST",
+    headers,
+    body,
+    signal: AbortSignal.timeout(2e4)
+  });
+  let r = await once();
+  if (r.status === 429 || r.status >= 500) {
+    await new Promise((ok) => setTimeout(ok, 600));
+    r = await once();
+  }
+  return r;
 }
 function prepareWillSpeech(text) {
   return text.replace(/\*\*/g, "").replace(/[_`#]/g, "").replace(/\n{3,}/g, "\n\n").trim().slice(0, 4e3);
@@ -977,8 +901,9 @@ function mimeToName(mime) {
 function registerVoiceRoutes(app2) {
   app2.get("/api/voice/config", (_req, res) => {
     res.json({
-      ...kokoroIdentity(),
-      listen: true
+      ...elevenLabsIdentity(),
+      listen: Boolean(elevenLabsKey()),
+      hasServerKey: Boolean(elevenLabsKey())
     });
   });
   app2.post("/api/voice/listen", async (req, res) => {
@@ -1034,22 +959,53 @@ function registerVoiceRoutes(app2) {
       const raw = typeof req.body?.text === "string" ? req.body.text : "";
       const text = prepareWillSpeech(raw);
       if (!text) return res.status(400).json({ error: "No hay texto para leer." });
-      const { generateKokoroSpeech: generateKokoroSpeech2 } = await Promise.resolve().then(() => (init_kokoroAdapter(), kokoroAdapter_exports));
-      const spoken = await generateKokoroSpeech2(text);
+      const apiKey = elevenLabsKey();
+      if (!apiKey) {
+        console.error("TTS speak", { reason: "no_tts_key", voiceId: WILL_VOICE_ID });
+        return res.status(503).json({
+          error: "La voz de Will no est\xE1 disponible ahora.",
+          code: "SERVER",
+          reason: "no_tts_key",
+          voiceId: WILL_VOICE_ID,
+          provider: "ElevenLabs"
+        });
+      }
+      const r = await requestWillSpeech(apiKey, text);
+      if (!r.ok) {
+        const detail = await r.text().catch(() => "");
+        const kind = classifyEleven(r.status, detail);
+        console.error("ElevenLabs TTS error", r.status, kind, detail.slice(0, 300));
+        return res.status(502).json({
+          error: userErrorFor(kind),
+          voiceId: WILL_VOICE_ID,
+          provider: "ElevenLabs",
+          reason: kind,
+          status: r.status
+        });
+      }
+      const audio = Buffer.from(await r.arrayBuffer());
+      if (audio.length < 200) {
+        return res.status(502).json({
+          error: "La voz de Will no se ha podido generar ahora.",
+          voiceId: WILL_VOICE_ID,
+          provider: "ElevenLabs",
+          reason: "empty"
+        });
+      }
       res.status(200);
-      res.setHeader("Content-Type", spoken.mime);
+      res.setHeader("Content-Type", "audio/mpeg");
       res.setHeader("Cache-Control", "no-store");
-      res.setHeader("Content-Length", String(spoken.wav.length));
-      res.setHeader("X-Will-Voice", spoken.voiceId);
-      res.setHeader("X-Will-Provider", spoken.provider);
-      return res.end(spoken.wav);
+      res.setHeader("Content-Length", String(audio.length));
+      res.setHeader("X-Will-Voice", WILL_VOICE_ID);
+      res.setHeader("X-Will-Provider", "ElevenLabs");
+      return res.end(audio);
     } catch (error) {
       console.error("Error in /api/voice/speak", error?.message || error);
       return res.status(502).json({
         error: "La voz de Will no est\xE1 disponible ahora.",
-        voiceId: kokoroIdentity().voiceId,
-        reason: "kokoro",
-        provider: "Kokoro",
+        voiceId: WILL_VOICE_ID,
+        provider: "ElevenLabs",
+        reason: "exception",
         detail: String(error?.message || error).slice(0, 300)
       });
     }

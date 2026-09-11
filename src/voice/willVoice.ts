@@ -1,13 +1,13 @@
 export const WILL_VOICE = {
-  provider: 'Kokoro',
+  provider: 'ElevenLabs',
   endpoint: '/api/voice/speak',
   listenEndpoint: '/api/voice/listen',
-  upstream: 'kokoro-local',
-  voiceId: 'em_alex',
-  modelId: 'Kokoro-82M',
+  upstream: 'https://api.elevenlabs.io/v1/text-to-speech',
+  voiceId: 'DrwFQsjvHFpLcKyvtbE3',
+  modelId: 'eleven_multilingual_v2',
   language: 'es',
   locale: 'es-ES',
-  outputFormat: 'audio/wav',
+  outputFormat: 'mp3_44100_128',
 };
 
 export type VoiceUiState =
