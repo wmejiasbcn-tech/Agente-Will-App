@@ -46,7 +46,7 @@ await test('Rendimiento de la app: portada y config no se miden en un solo motor
   const config = await timed(async () => {
     const r = await fetch(`${BASE}/api/voice/config`);
     const data = await r.json();
-    assert.equal(data.provider, 'Kokoro');
+    assert.equal(data.provider, 'ElevenLabs');
     return data;
   });
   rows.push({

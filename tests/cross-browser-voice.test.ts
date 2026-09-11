@@ -44,10 +44,11 @@ await test('Un solo reproductor canónico: no existe elevenLabsSpeech ni speechS
   assert.equal((voice.match(/createElement\('audio'\)/g) || []).length, 1);
 });
 
-await test('Voice ID canónico Kokoro em_alex, no Atlas ni síntesis del navegador', () => {
-  assert.equal(WILL_VOICE.provider, 'Kokoro');
-  assert.equal(WILL_VOICE.voiceId, 'em_alex');
+await test('Voice ID canónico ElevenLabs Will, no Atlas ni síntesis del navegador', () => {
+  assert.equal(WILL_VOICE.provider, 'ElevenLabs');
+  assert.equal(WILL_VOICE.voiceId, 'DrwFQsjvHFpLcKyvtbE3');
   assert.notEqual(String(WILL_VOICE.voiceId), 'atlas');
+  assert.notEqual(String(WILL_VOICE.voiceId), 'em_alex');
 });
 
 await test('Captura independiente de transcripción: ni SpeechRecognition ni ScriptProcessor ni silencio', () => {
@@ -60,7 +61,8 @@ await test('Captura independiente de transcripción: ni SpeechRecognition ni Scr
   assert.equal(flags.chromeOnly, false);
   assert.equal(capture.includes('createScriptProcessor'), false);
   assert.equal(capture.includes('start(1000)'), true);
-  assert.equal(ui.includes('probeWillCompat'), true);
+  assert.equal(capture.includes('getUserMedia({ audio: true })') || /getUserMedia\(\{\s*audio:\s*true\s*\}\)/.test(capture), true);
+  assert.equal(ui.includes('probeWillCompat'), false);
 });
 
 await test('No hay if Chrome como arquitectura', () => {

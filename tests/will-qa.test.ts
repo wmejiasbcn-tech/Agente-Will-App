@@ -54,28 +54,48 @@ await test('PRIV almacenamiento limpio', () => {
   assert.equal(looksLikeCoordinates('Hola Will'), false);
 });
 
-await test('VOICE config Kokoro em_alex', async () => {
+await test('VOICE config ElevenLabs Will', async () => {
   const r = await fetch(`${BASE}/api/voice/config`);
   const data = await r.json();
-  assert.equal(data.provider, 'Kokoro');
-  assert.equal(data.voiceId, 'em_alex');
-  assert.equal(data.modelId, 'Kokoro-82M');
+  assert.equal(data.provider, 'ElevenLabs');
+  assert.equal(data.voiceId, 'DrwFQsjvHFpLcKyvtbE3');
+  assert.equal(data.modelId, 'eleven_multilingual_v2');
   assert.equal(data.storesAudio, false);
   assert.equal(data.voiceId === 'atlas', false);
+  assert.equal(data.lab?.voiceId, 'em_alex');
 });
 
-await test('VOICE speak usa Kokoro y em_alex', async () => {
+await test('VOICE speak usa ElevenLabs cuando hay clave; si no, no cae a Kokoro', async () => {
+  const cfg = await fetch(`${BASE}/api/voice/config`).then((r) => r.json());
   const r = await fetch(`${BASE}/api/voice/speak`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: 'Hola. Soy Will.' }),
   });
-  if (r.status === 503) {
-    throw new Error('BLOQUEADO: Kokoro no está disponible en el servidor');
+  if (!cfg.hasServerKey) {
+    assert.equal(r.status, 503);
+    const body = await r.json();
+    assert.equal(body.reason, 'no_tts_key');
+    assert.equal(body.voiceId, 'DrwFQsjvHFpLcKyvtbE3');
+    assert.equal(body.provider, 'ElevenLabs');
+    return;
   }
   assert.equal(r.status, 200);
   assert.match(r.headers.get('content-type') || '', /audio/);
   assert.equal(r.headers.get('cache-control'), 'no-store');
+  assert.equal(r.headers.get('x-will-voice'), 'DrwFQsjvHFpLcKyvtbE3');
+  assert.equal(r.headers.get('x-will-provider'), 'ElevenLabs');
+  const buf = Buffer.from(await r.arrayBuffer());
+  assert.ok(buf.length > 1000);
+});
+
+await test('VOICE lab Kokoro em_alex sigue accesible', async () => {
+  const r = await fetch(`${BASE}/api/voice/speak`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: 'Hola. Soy Will.', engine: 'kokoro' }),
+  });
+  assert.equal(r.status, 200);
   assert.equal(r.headers.get('x-will-voice'), 'em_alex');
   assert.equal(r.headers.get('x-will-provider'), 'Kokoro');
   const buf = Buffer.from(await r.arrayBuffer());

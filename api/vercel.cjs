@@ -36,6 +36,7 @@ __export(kokoroAdapter_exports, {
   KOKORO_PROVIDER: () => KOKORO_PROVIDER,
   KOKORO_SAMPLE_RATE: () => KOKORO_SAMPLE_RATE,
   KOKORO_VOICE: () => KOKORO_VOICE,
+  formatKokoroTimings: () => formatKokoroTimings,
   generateKokoroSpeech: () => generateKokoroSpeech,
   getKokoroEngine: () => getKokoroEngine,
   getSpanishG2P: () => getSpanishG2P,
@@ -51,6 +52,9 @@ function kokoroIdentity() {
     locale: "es-ES",
     storesAudio: false
   };
+}
+function formatKokoroTimings(t) {
+  return `load=${t.loadMs};g2p=${t.g2pMs};infer=${t.inferMs};wav=${t.wavMs};total=${t.totalMs}`;
 }
 function floatToPcm16Wav(samples, sampleRate) {
   const bytesPerSample = 2;
@@ -129,11 +133,24 @@ async function getKokoroEngine() {
   }
 }
 async function generateKokoroSpeech(text) {
+  const t0 = Date.now();
   const clean = text.replace(/\s+/g, " ").trim();
   if (!clean) {
     throw new Error("No hay texto para leer.");
   }
-  const [tts, phonemes] = await Promise.all([getKokoroEngine(), spanishPhonemes(clean)]);
+  const loadStarted = Date.now();
+  const ttsP = getKokoroEngine().then((loaded) => ({
+    engine: loaded,
+    loadMs: Date.now() - loadStarted
+  }));
+  const g2pStarted = Date.now();
+  const g2pP = spanishPhonemes(clean).then((ipa) => ({
+    phonemes: ipa,
+    g2pMs: Date.now() - g2pStarted
+  }));
+  const [ttsLoaded, g2pLoaded] = await Promise.all([ttsP, g2pP]);
+  const tts = ttsLoaded.engine;
+  const phonemes = g2pLoaded.phonemes;
   if (!phonemes) {
     throw new Error("Kokoro no ha podido fonetizar el texto.");
   }
@@ -141,11 +158,15 @@ async function generateKokoroSpeech(text) {
   if (!encoded?.input_ids) {
     throw new Error("Kokoro no ha podido tokenizar los fonemas.");
   }
+  const tInfer = Date.now();
   const raw = await tts.generate_from_ids(encoded.input_ids, {
     voice: KOKORO_VOICE,
     speed: 1
   });
+  const inferMs = Date.now() - tInfer;
+  const tWav = Date.now();
   const wav = rawToWav(raw);
+  const wavMs = Date.now() - tWav;
   if (wav.length < 200) {
     throw new Error("Kokoro ha devuelto audio vac\xEDo.");
   }
@@ -154,7 +175,14 @@ async function generateKokoroSpeech(text) {
     mime: "audio/wav",
     voiceId: KOKORO_VOICE,
     provider: KOKORO_PROVIDER,
-    phonemes
+    phonemes,
+    timings: {
+      loadMs: ttsLoaded.loadMs,
+      g2pMs: g2pLoaded.g2pMs,
+      inferMs,
+      wavMs,
+      totalMs: Date.now() - t0
+    }
   };
 }
 var KOKORO_PROVIDER, KOKORO_VOICE, KOKORO_MODEL_ID, KOKORO_SAMPLE_RATE, engine, engineLoading, g2p, g2pLoading;
@@ -956,13 +984,99 @@ function registerGeoRoutes(app2) {
 }
 
 // api/voice.ts
+var import_node_child_process = require("node:child_process");
+var import_promises = require("node:fs/promises");
+var import_node_os = require("node:os");
+var import_node_path = require("node:path");
 init_kokoroAdapter();
+function xaiKey() {
+  const raw = process.env.XAI_API_KEY || "";
+  const key = String(raw).replace(/^\uFEFF/, "").trim().replace(/^Bearer\s+/i, "").replace(/^['"]+|['"]+$/g, "").trim();
+  if (!key || key.length < 20) return "";
+  if (/^(MY_|YOUR_|CHANGE|TODO|PLACEHOLDER|xxx)/i.test(key)) return "";
+  return key;
+}
+var WILL_VOICE_ID = "DrwFQsjvHFpLcKyvtbE3";
+var WILL_MODEL = "eleven_multilingual_v2";
+var WILL_TTS = "https://api.elevenlabs.io/v1/text-to-speech";
 function elevenLabsKey() {
   const raw = process.env.ELEVENLABS_API_KEY || process.env.ELEVEN_LABS_API_KEY || process.env.XI_API_KEY || "";
   const key = String(raw).replace(/^\uFEFF/, "").trim().replace(/^Bearer\s+/i, "").replace(/^['"]+|['"]+$/g, "").trim();
   if (!key || key.length < 20) return "";
   if (/^(MY_|YOUR_|CHANGE|TODO|PLACEHOLDER|xxx)/i.test(key)) return "";
   return key;
+}
+function elevenLabsIdentity() {
+  return {
+    provider: "ElevenLabs",
+    voiceId: WILL_VOICE_ID,
+    modelId: WILL_MODEL,
+    language: "es",
+    locale: "es-ES",
+    storesAudio: false
+  };
+}
+function wantsKokoroLab(req) {
+  const q = String(req.query?.engine || req.query?.lab || "").toLowerCase();
+  const bodyEngine = typeof req.body?.engine === "string" ? req.body.engine.toLowerCase() : "";
+  return q === "kokoro" || bodyEngine === "kokoro" || bodyEngine === "em_alex";
+}
+function classifyEleven(status, body) {
+  let reason = "";
+  try {
+    const parsed = JSON.parse(body);
+    const detail = parsed?.detail;
+    if (typeof detail === "string") reason = detail;
+    else if (detail && typeof detail === "object") {
+      reason = String(detail.status || detail.message || "");
+    } else if (parsed?.status) {
+      reason = String(parsed.status);
+    }
+  } catch {
+    reason = body.slice(0, 120);
+  }
+  const blob = `${status} ${reason}`.toLowerCase();
+  if (status === 401 || /invalid_api_key|unauthorized/.test(blob)) return "auth";
+  if (status === 404 || /voice_not_found/.test(blob)) return "voice";
+  if (status === 402 || status === 429 || /quota|credits|limit|concurrency/.test(blob)) {
+    return "quota";
+  }
+  if (status === 422) return "request";
+  return "upstream";
+}
+function userErrorFor(kind) {
+  if (kind === "auth") return "La voz de Will no est\xE1 disponible ahora.";
+  if (kind === "quota") return "La voz de Will no est\xE1 disponible ahora por l\xEDmite de uso.";
+  if (kind === "voice") return "La voz de Will no est\xE1 accesible ahora.";
+  return "La voz de Will no se ha podido generar ahora.";
+}
+async function requestWillSpeech(apiKey, text) {
+  const url = `${WILL_TTS}/${encodeURIComponent(WILL_VOICE_ID)}?output_format=mp3_44100_128`;
+  const headers = {
+    "xi-api-key": apiKey,
+    "Content-Type": "application/json",
+    Accept: "audio/mpeg"
+  };
+  const body = JSON.stringify({
+    text,
+    model_id: WILL_MODEL,
+    voice_settings: {
+      stability: 0.5,
+      similarity_boost: 0.8
+    }
+  });
+  const once = () => fetch(url, {
+    method: "POST",
+    headers,
+    body,
+    signal: AbortSignal.timeout(2e4)
+  });
+  let r = await once();
+  if (r.status === 429 || r.status >= 500) {
+    await new Promise((ok) => setTimeout(ok, 600));
+    r = await once();
+  }
+  return r;
 }
 function prepareWillSpeech(text) {
   return text.replace(/\*\*/g, "").replace(/[_`#]/g, "").replace(/\n{3,}/g, "\n\n").trim().slice(0, 4e3);
@@ -972,61 +1086,161 @@ function mimeToName(mime) {
   if (mime.includes("ogg")) return "will.ogg";
   if (mime.includes("mpeg") || mime.includes("mp3")) return "will.mp3";
   if (mime.includes("wav")) return "will.wav";
+  if (mime.includes("opus")) return "will.opus";
   return "will.webm";
+}
+function looksLikeWav(mime, buf) {
+  if (/wav|wave/i.test(mime)) return true;
+  return buf.length >= 12 && buf.toString("ascii", 0, 4) === "RIFF" && buf.toString("ascii", 8, 12) === "WAVE";
+}
+function needsWavWrap(mime, buf) {
+  if (looksLikeWav(mime, buf)) return false;
+  if (/webm/i.test(mime)) return true;
+  if (buf.length >= 4 && buf[0] === 26 && buf[1] === 69 && buf[2] === 223 && buf[3] === 163) {
+    return true;
+  }
+  return false;
+}
+function runFfmpegToWav(inputPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    const child = (0, import_node_child_process.spawn)(
+      "ffmpeg",
+      ["-y", "-i", inputPath, "-ac", "1", "-ar", "16000", "-f", "wav", outputPath],
+      { stdio: ["ignore", "ignore", "pipe"] }
+    );
+    let stderr = "";
+    child.stderr?.on("data", (chunk) => {
+      stderr += String(chunk);
+      if (stderr.length > 400) stderr = stderr.slice(-400);
+    });
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      reject(new Error("ffmpeg timeout"));
+    }, 12e3);
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      if (code === 0) resolve();
+      else reject(new Error(`ffmpeg ${code} ${stderr.slice(0, 180)}`));
+    });
+  });
+}
+async function wrapAsWav(buf, mime) {
+  if (!needsWavWrap(mime, buf)) return { buf, mime: looksLikeWav(mime, buf) ? "audio/wav" : mime };
+  const dir = await (0, import_promises.mkdtemp)((0, import_node_path.join)((0, import_node_os.tmpdir)(), "will-stt-"));
+  const input = (0, import_node_path.join)(dir, mimeToName(mime || "audio/webm"));
+  const output = (0, import_node_path.join)(dir, "will.wav");
+  try {
+    await (0, import_promises.writeFile)(input, buf);
+    await runFfmpegToWav(input, output);
+    const wav = await (0, import_promises.readFile)(output);
+    if (wav.length < 200) throw new Error("wav vac\xEDo");
+    return { buf: wav, mime: "audio/wav" };
+  } finally {
+    await (0, import_promises.rm)(dir, { recursive: true, force: true }).catch(() => void 0);
+  }
+}
+async function transcribeWithXai(apiKey, buf, mime) {
+  const form = new FormData();
+  form.append("format", "true");
+  form.append("language", "es");
+  form.append("keyterm", "Will");
+  form.append("file", new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
+  const r = await fetch("https://api.x.ai/v1/stt", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: form,
+    signal: AbortSignal.timeout(25e3)
+  });
+  const detail = r.ok ? "" : (await r.text().catch(() => "")).slice(0, 300);
+  return { r, detail };
 }
 function registerVoiceRoutes(app2) {
   app2.get("/api/voice/config", (_req, res) => {
     res.json({
-      ...kokoroIdentity(),
-      listen: true
+      ...elevenLabsIdentity(),
+      listen: Boolean(xaiKey()),
+      hasServerKey: Boolean(elevenLabsKey()),
+      lab: { ...kokoroIdentity(), role: "experimental" }
     });
   });
   app2.post("/api/voice/listen", async (req, res) => {
     try {
-      const apiKey = elevenLabsKey();
-      if (!apiKey) {
-        return res.status(503).json({ error: "El reconocimiento de voz no est\xE1 disponible ahora." });
-      }
       const rawAudio = typeof req.body?.audio === "string" ? req.body.audio : "";
-      const b64 = rawAudio.replace(/^data:[^;]+;base64,/, "");
-      const buf = b64 ? Buffer.from(b64, "base64") : Buffer.alloc(0);
-      if (buf.length < 200) {
-        return res.status(400).json({ error: "No ha llegado audio." });
-      }
-      const mime = typeof req.body?.mime === "string" && req.body.mime ? req.body.mime : "audio/webm";
-      const form = new FormData();
-      form.append("model_id", "scribe_v2");
-      form.append("language_code", "es");
-      form.append("tag_audio_events", "false");
-      form.append("file", new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
-      let r = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
-        method: "POST",
-        headers: { "xi-api-key": apiKey },
-        body: form
-      });
-      if (!r.ok) {
-        const retry = new FormData();
-        retry.append("model_id", "scribe_v1");
-        retry.append("language_code", "es");
-        retry.append("tag_audio_events", "false");
-        retry.append("file", new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
-        r = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
-          method: "POST",
-          headers: { "xi-api-key": apiKey },
-          body: retry
+      const marker = rawAudio.indexOf("base64,");
+      const b64 = marker >= 0 ? rawAudio.slice(marker + 7) : rawAudio.replace(/^data:[^,]*,/, "");
+      const incoming = b64 ? Buffer.from(b64, "base64") : Buffer.alloc(0);
+      const incomingMime = typeof req.body?.mime === "string" && req.body.mime ? req.body.mime : "audio/webm";
+      const bytes = incoming.length;
+      if (bytes < 200) {
+        console.error("STT listen", { reason: "empty_audio", bytes, mime: incomingMime.slice(0, 40) });
+        return res.status(400).json({
+          error: "No ha llegado audio.",
+          code: "AUDIO_FORMAT",
+          reason: "empty_audio",
+          bytes,
+          mime: incomingMime.slice(0, 80)
         });
       }
+      const apiKey = xaiKey();
+      if (!apiKey) {
+        console.error("STT listen", { reason: "no_stt_key", bytes, mime: incomingMime.slice(0, 40) });
+        return res.status(503).json({
+          error: "El reconocimiento de voz no est\xE1 disponible ahora.",
+          code: "SERVER",
+          reason: "no_stt_key",
+          bytes,
+          mime: incomingMime.slice(0, 80)
+        });
+      }
+      let payload = { buf: incoming, mime: incomingMime };
+      try {
+        payload = await wrapAsWav(incoming, incomingMime);
+      } catch (wrapErr) {
+        console.error("STT wrap", String(wrapErr?.message || wrapErr).slice(0, 180));
+      }
+      let { r, detail } = await transcribeWithXai(apiKey, payload.buf, payload.mime);
+      if (!r.ok && payload.mime !== "audio/wav") {
+        try {
+          const retry = await wrapAsWav(incoming, incomingMime);
+          if (retry.mime === "audio/wav" && retry.buf.length >= 200) {
+            const second = await transcribeWithXai(apiKey, retry.buf, retry.mime);
+            r = second.r;
+            detail = second.detail;
+            payload = retry;
+          }
+        } catch (wrapErr) {
+          console.error("STT wrap retry", String(wrapErr?.message || wrapErr).slice(0, 180));
+        }
+      }
       if (!r.ok) {
-        const detail = await r.text().catch(() => "");
-        console.error("STT error", r.status, detail.slice(0, 300));
-        return res.status(502).json({ error: "No he podido pasar a escrito lo que has dicho ahora." });
+        console.error("STT error", r.status, detail, {
+          bytes,
+          mime: incomingMime.slice(0, 40),
+          sent: payload.mime
+        });
+        return res.status(502).json({
+          error: "No he podido pasar a escrito lo que has dicho ahora.",
+          code: "STT",
+          reason: "upstream",
+          status: r.status,
+          bytes,
+          mime: incomingMime.slice(0, 80)
+        });
       }
       const data = await r.json();
       const text = String(data?.text || "").replace(/\s+/g, " ").trim();
       return res.json({ text, storesAudio: false });
     } catch (error) {
       console.error("Error in /api/voice/listen", error?.message || error);
-      return res.status(502).json({ error: "No he podido pasar a escrito lo que has dicho ahora." });
+      return res.status(502).json({
+        error: "No he podido pasar a escrito lo que has dicho ahora.",
+        code: "NETWORK",
+        reason: "network"
+      });
     }
   });
   app2.post("/api/voice/speak", async (req, res) => {
@@ -1034,22 +1248,66 @@ function registerVoiceRoutes(app2) {
       const raw = typeof req.body?.text === "string" ? req.body.text : "";
       const text = prepareWillSpeech(raw);
       if (!text) return res.status(400).json({ error: "No hay texto para leer." });
-      const { generateKokoroSpeech: generateKokoroSpeech2 } = await Promise.resolve().then(() => (init_kokoroAdapter(), kokoroAdapter_exports));
-      const spoken = await generateKokoroSpeech2(text);
+      if (wantsKokoroLab(req)) {
+        const { generateKokoroSpeech: generateKokoroSpeech2 } = await Promise.resolve().then(() => (init_kokoroAdapter(), kokoroAdapter_exports));
+        const spoken = await generateKokoroSpeech2(text);
+        res.status(200);
+        res.setHeader("Content-Type", spoken.mime);
+        res.setHeader("Cache-Control", "no-store");
+        res.setHeader("Content-Length", String(spoken.wav.length));
+        res.setHeader("X-Will-Voice", spoken.voiceId);
+        res.setHeader("X-Will-Provider", spoken.provider);
+        res.setHeader("X-Will-Voice-Ms", formatKokoroTimings(spoken.timings));
+        res.setHeader("X-Will-Lab", "experimental");
+        return res.end(spoken.wav);
+      }
+      const apiKey = elevenLabsKey();
+      if (!apiKey) {
+        console.error("TTS speak", { reason: "no_tts_key", voiceId: WILL_VOICE_ID });
+        return res.status(503).json({
+          error: "La voz de Will no est\xE1 disponible ahora.",
+          code: "SERVER",
+          reason: "no_tts_key",
+          voiceId: WILL_VOICE_ID,
+          provider: "ElevenLabs"
+        });
+      }
+      const r = await requestWillSpeech(apiKey, text);
+      if (!r.ok) {
+        const detail = await r.text().catch(() => "");
+        const kind = classifyEleven(r.status, detail);
+        console.error("ElevenLabs TTS error", r.status, kind, detail.slice(0, 300));
+        return res.status(502).json({
+          error: userErrorFor(kind),
+          voiceId: WILL_VOICE_ID,
+          provider: "ElevenLabs",
+          reason: kind,
+          status: r.status
+        });
+      }
+      const audio = Buffer.from(await r.arrayBuffer());
+      if (audio.length < 200) {
+        return res.status(502).json({
+          error: "La voz de Will no se ha podido generar ahora.",
+          voiceId: WILL_VOICE_ID,
+          provider: "ElevenLabs",
+          reason: "empty"
+        });
+      }
       res.status(200);
-      res.setHeader("Content-Type", spoken.mime);
+      res.setHeader("Content-Type", "audio/mpeg");
       res.setHeader("Cache-Control", "no-store");
-      res.setHeader("Content-Length", String(spoken.wav.length));
-      res.setHeader("X-Will-Voice", spoken.voiceId);
-      res.setHeader("X-Will-Provider", spoken.provider);
-      return res.end(spoken.wav);
+      res.setHeader("Content-Length", String(audio.length));
+      res.setHeader("X-Will-Voice", WILL_VOICE_ID);
+      res.setHeader("X-Will-Provider", "ElevenLabs");
+      return res.end(audio);
     } catch (error) {
       console.error("Error in /api/voice/speak", error?.message || error);
       return res.status(502).json({
         error: "La voz de Will no est\xE1 disponible ahora.",
-        voiceId: kokoroIdentity().voiceId,
-        reason: "kokoro",
-        provider: "Kokoro",
+        voiceId: WILL_VOICE_ID,
+        provider: "ElevenLabs",
+        reason: "exception",
         detail: String(error?.message || error).slice(0, 300)
       });
     }
@@ -1059,6 +1317,10 @@ function registerVoiceRoutes(app2) {
 // api/app.ts
 import_dotenv.default.config();
 var app = (0, import_express.default)();
+app.use((_req, res, next) => {
+  res.setHeader("Permissions-Policy", "microphone=(self), geolocation=(self)");
+  next();
+});
 app.use(import_express.default.json({ limit: "12mb" }));
 registerGeoRoutes(app);
 registerVoiceRoutes(app);
