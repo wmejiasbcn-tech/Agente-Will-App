@@ -115,6 +115,7 @@ export function registerVoiceRoutes(app: Express) {
         voiceId: kokoroIdentity().voiceId,
         reason: 'kokoro',
         provider: 'Kokoro',
+        detail: String(error?.message || error).slice(0, 300),
       });
     }
   });

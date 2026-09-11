@@ -1044,7 +1044,8 @@ function registerVoiceRoutes(app2) {
         error: "La voz de Will no est\xE1 disponible ahora.",
         voiceId: kokoroIdentity().voiceId,
         reason: "kokoro",
-        provider: "Kokoro"
+        provider: "Kokoro",
+        detail: String(error?.message || error).slice(0, 300)
       });
     }
   });
