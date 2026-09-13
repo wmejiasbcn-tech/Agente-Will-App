@@ -17,15 +17,12 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           p=Path('api/geo.ts'); s=p.read_text()
-
-          # Reject irrelevant health providers: proximity alone is never enough.
           old="""  if (['pharmacy', 'dentist', 'veterinary', 'community_centre', 'arts_centre', 'library', 'theatre', 'townhall'].includes(a)) {"""
           new="""  if (['pharmacy', 'dentist', 'veterinary', 'podiatrist', 'physiotherapist', 'optometrist', 'audiologist', 'community_centre', 'arts_centre', 'library', 'theatre', 'townhall'].includes(a)) {"""
           if old not in s: raise SystemExit('reject list not found')
           s=s.replace(old,new,1)
-
-          # Add a broad but explicit Will-relevance signal from OSM metadata.
           old="""  if (isCivicOrCulturalName(name)) return true;
   if ((a === 'ngo' || a === 'association' || a === 'charity' || tags.office === 'ngo') && !isWillThemeName(name)) {
     const spec = `${tags.healthcare || ''} ${tags.social_facility || ''} ${tags['healthcare:speciality'] || ''}`.toLowerCase();
@@ -34,31 +31,25 @@ jobs:
   return false;"""
           new="""  if (isCivicOrCulturalName(name)) return true;
   const metadata = Object.entries(tags).map(([k, v]) => `${k}=${v}`).join(' ').toLowerCase();
-  const relevant = isWillThemeName(name) || /sexual health|salud sexual|salud comunitaria|hiv|\bvi?h\b|aids|sida|sti|its|prep|pep|chemsex|slamming|slam|harm reduction|reducción de daños|drug addiction|addiction|substance use|needle exchange|syringe|sexual rights|lgbt|lgbti|lgbtiq|trans health|mental health|salud mental|sex worker|trabajador(?:es|as) sexuales|derechos sexuales|drogodepend|adicciones|consumo de sustancias|reduccion de riesgos|reducción de riesgos/.test(metadata);
-  if (a === 'podiatrist' || a === 'physiotherapist' || a === 'optometrist' || a === 'audiologist') return true;
+  const relevant = isWillThemeName(name) || /sexual health|salud sexual|salud comunitaria|hiv|\\bvi?h\\b|aids|sida|sti|its|prep|pep|chemsex|slamming|slam|harm reduction|reducción de daños|drug addiction|addiction|substance use|needle exchange|syringe|sexual rights|lgbt|lgbti|lgbtiq|trans health|mental health|salud mental|sex worker|trabajador(?:es|as) sexuales|derechos sexuales|drogodepend|adicciones|consumo de sustancias|reduccion de riesgos|reducción de riesgos/.test(metadata);
   if ((a === 'ngo' || a === 'association' || a === 'charity' || tags.office === 'ngo') && !relevant) return true;
   if ((a === 'clinic' || a === 'doctors' || a === 'doctor' || a === 'health_centre' || tags.healthcare === 'clinic' || tags.healthcare === 'centre' || tags.healthcare === 'center') && !relevant) return true;
   return false;"""
           if old not in s: raise SystemExit('relevance block not found')
           s=s.replace(old,new,1)
-
-          # Expand discovery beyond the old small hand-picked set while preserving thematic relevance.
           old='''  nwr["office"="ngo"](around:15000,${lat},${lng});
   nwr["office"="association"](around:15000,${lat},${lng});
   nwr["office"="charity"](around:15000,${lat},${lng});'''
-          # This literal is inside a TS template, so replace with exact source fragment.
-          if old not in s: raise SystemExit('ngo query fragment not found')
           new='''  nwr["office"="ngo"](around:25000,${lat},${lng});
   nwr["office"="association"](around:25000,${lat},${lng});
   nwr["office"="charity"](around:25000,${lat},${lng});
   nwr["social_facility"](around:25000,${lat},${lng});
   nwr["healthcare"](around:20000,${lat},${lng});'''
+          if old not in s: raise SystemExit('ngo query fragment not found')
           s=s.replace(old,new,1)
           s=s.replace('nwr["amenity"="hospital"](around:12000,${lat},${lng});','nwr["amenity"="hospital"](around:20000,${lat},${lng});',1)
           s=s.replace('nwr["healthcare"="hospital"](around:12000,${lat},${lng});','nwr["healthcare"="hospital"](around:20000,${lat},${lng});',1)
           s=s.replace('out center 100;`;','out center 500;`;',1)
-
-          # Do not cap the final answer at 24; keep all discovered relevant resources returned by the source.
           old='''  const out: Site[] = [];
   const push = (list: Site[], n: number) => {
     for (const s of list) {
@@ -73,19 +64,13 @@ jobs:
   push(publicH, 4);
   push(rest, 2);
   return out.slice(0, 24);'''
-          new='''  return [...theme, ...health, ...publicH, ...rest];'''
-          if old not in s: raise SystemExit('24-result mix block not found')
-          s=s.replace(old,new,1)
-
-          # Expand fallback geocoder queries, with thematic terms first and hospitals last.
+          if old not in s: raise SystemExit('24-result block not found')
+          s=s.replace(old,'  return [...theme, ...health, ...publicH, ...rest];',1)
           s=s.replace("const queries = ['ONG VIH', 'HIV NGO', 'sexual health', 'LGBT health', 'hospital', 'clinic'];", "const queries = ['ONG VIH', 'HIV NGO', 'sexual health', 'salud sexual', 'LGBT health', 'harm reduction', 'chemsex', 'substance use', 'drug addiction', 'mental health', 'hospital', 'clinic'];",1)
           p.write_text(s)
           PY
       - name: Validate
-        run: |
-          npm install
-          npm run lint
-          npm run build
+        run: npm install && npm run lint && npm run build
       - name: Commit and remove workflow
         run: |
           git config user.name "github-actions[bot]"
