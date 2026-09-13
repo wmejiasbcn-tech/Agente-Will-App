@@ -898,6 +898,27 @@ function mimeToName(mime) {
   if (mime.includes("wav")) return "will.wav";
   return "will.webm";
 }
+function visorTtsOrigin(origin) {
+  if (!origin) return "";
+  try {
+    const host = new URL(origin).hostname;
+    if (host === "agente-will-app.vercel.app") return origin;
+    if (host.endsWith(".grok.me") || host === "grok.me") return origin;
+    if (host.endsWith(".x.ai")) return origin;
+  } catch {
+    return "";
+  }
+  return "";
+}
+function applyTtsCors(req, res) {
+  const allowed = visorTtsOrigin(String(req.headers.origin || ""));
+  if (!allowed) return;
+  res.setHeader("Access-Control-Allow-Origin", allowed);
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+  res.setHeader("Access-Control-Max-Age", "86400");
+}
 function registerVoiceRoutes(app2) {
   app2.get("/api/voice/config", (_req, res) => {
     res.json({
@@ -905,6 +926,10 @@ function registerVoiceRoutes(app2) {
       listen: Boolean(elevenLabsKey()),
       hasServerKey: Boolean(elevenLabsKey())
     });
+  });
+  app2.options("/api/voice/speak", (req, res) => {
+    applyTtsCors(req, res);
+    return res.status(204).end();
   });
   app2.post("/api/voice/listen", async (req, res) => {
     try {
@@ -955,6 +980,7 @@ function registerVoiceRoutes(app2) {
     }
   });
   app2.post("/api/voice/speak", async (req, res) => {
+    applyTtsCors(req, res);
     try {
       const raw = typeof req.body?.text === "string" ? req.body.text : "";
       const text = prepareWillSpeech(raw);
