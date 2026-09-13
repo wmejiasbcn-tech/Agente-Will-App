@@ -545,6 +545,7 @@ export const WillChat: React.FC<WillChatProps> = ({
             <div className="will-composer-tools">
             <WillMuteButton speak={speak} />
             <WillMicButton
+              onStartListening={() => speak.stop()}
               onTranscript={(text) => setInput(text)}
               currentText={input}
               disabled={isLoading}
