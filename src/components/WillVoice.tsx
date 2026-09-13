@@ -52,7 +52,7 @@ const PUBLISHED_SPEAK = 'https://agente-will-app.vercel.app/api/voice/speak';
 function speakUrls(): string[] {
   if (typeof location === 'undefined') return ['/api/voice/speak'];
   if (location.hostname === 'agente-will-app.vercel.app') return ['/api/voice/speak'];
-  return [PUBLISHED_SPEAK, '/api/voice/speak'];
+  return ['/api/voice/speak', PUBLISHED_SPEAK];
 }
 
 function classifiedReason(status: number, reason: string) {
