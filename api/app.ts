@@ -212,22 +212,6 @@ app.post("/api/chat", async (req, res) => {
 
     let systemInstruction = WAIPL_SYSTEM_INSTRUCTION;
 
-    if (detectedContext?.type) {
-      const contextMap: Record<string, string> = {
-        slam: "\n\n[DOMINIO 6: AUTOGESTIÓN EN LA REDUCCIÓN DE RIESGOS Y DAÑOS DEL SLAM]\n- SLAM: uso intravenoso. REDUCCIÓN DE DAÑOS ≠ INSTRUCCIÓN OPERACIONAL.",
-        chemsex: "\n\n[DOMINIO 5: AUTOGESTIÓN EN LA REDUCCIÓN DE RIESGOS Y DAÑOS DEL CHEMSEX]\n- Chemsex: sexo + sustancias. Farmacología, riesgos, consentimiento.",
-        "consumo-psicotropicas": "\n\n[DOMINIO 4: AUTOGESTIÓN EN EL CONSUMO NO PROBLEMÁTICO]\n- Consumo recreativo vs problemático.",
-        "placer-sexual": "\n\n[DOMINIO 3: AUTOGESTIÓN DEL PLACER SEXUAL]\n- Derecho al placer sin moralización.",
-        "salud-sexual": "\n\n[DOMINIO 2: AUTOGESTIÓN DE LA SALUD SEXUAL]\n- ITS, PrEP, PEP, I=I.",
-        acompanamiento: "\n\n[DOMINIO 1: ACOMPAÑAMIENTO NO DIRECTIVO]\n- Escucha sin juicio.",
-        prevencion:
-          "\n\n[DOMINIO 7: PREVENCIÓN]\n- Prevención es un dominio autónomo. NO queda dentro de RRDD.\n- Relación no significa equivalencia.\n- No activar prevención automáticamente porque aparezca sexo.",
-      };
-      if (contextMap[detectedContext.type]) {
-        systemInstruction += contextMap[detectedContext.type];
-      }
-    }
-
     let text = "";
     if (process.env.GEMINI_API_KEY) {
       const ai = getGeminiClient();
