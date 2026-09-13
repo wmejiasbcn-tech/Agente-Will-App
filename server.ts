@@ -2,11 +2,21 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
+import rateLimit from "express-rate-limit";
 import app from "./api/app";
 
 dotenv.config();
 
 const PORT = Number(process.env.PORT) || 8080;
+
+const frontendLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
+
+app.use(frontendLimiter);
 
 async function startServer() {
   // Vite middleware for development
