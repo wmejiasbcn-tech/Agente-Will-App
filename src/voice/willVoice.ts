@@ -64,16 +64,38 @@ export function splitWillSpeech(text: string): string[] {
     if (piece) pieces.push(piece);
     rest = rest.slice(end);
   }
-  const merged: string[] = [];
-  for (const piece of pieces) {
-    const last = merged[merged.length - 1];
-    if (last && `${last} ${piece}`.length <= 900) {
-      merged[merged.length - 1] = `${last} ${piece}`;
+  if (!pieces.length) return [clean];
+  // Primera cláusula sola: baja TTFA. El resto se agrupa para no disparar
+  // una petición por cada punto.
+  const restMerged: string[] = [];
+  for (const piece of pieces.slice(1)) {
+    const last = restMerged[restMerged.length - 1];
+    if (last && `${last} ${piece}`.length <= 420) {
+      restMerged[restMerged.length - 1] = `${last} ${piece}`;
     } else {
-      merged.push(piece);
+      restMerged.push(piece);
     }
   }
-  return merged.length ? merged : [clean];
+  return [pieces[0], ...restMerged];
+}
+
+export function speakErrorCopy(reason: string) {
+  if (reason === 'quota') {
+    return 'La voz de Will no está disponible ahora por límite de uso. El texto sigue visible.';
+  }
+  if (reason === 'auth') {
+    return 'La voz de Will no está disponible ahora. El texto sigue visible.';
+  }
+  if (reason === 'voice') {
+    return 'La voz de Will no está accesible ahora. El texto sigue visible.';
+  }
+  if (reason === 'no_tts_key') {
+    return 'La voz de Will no está disponible ahora. El texto sigue visible.';
+  }
+  if (reason === 'network') {
+    return 'La voz de Will no se ha podido generar ahora. El texto sigue visible.';
+  }
+  return 'La voz de Will no se ha podido reproducir ahora. El texto sigue visible.';
 }
 
 export function readVoiceMuted(): boolean {

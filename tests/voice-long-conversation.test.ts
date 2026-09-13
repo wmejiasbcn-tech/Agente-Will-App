@@ -10,7 +10,7 @@ const voice = readFileSync(join(root, 'api/voice.ts'), 'utf8');
 const BASE = process.env.WILL_BASE || 'http://127.0.0.1:8080';
 
 assert.equal(ui.includes('pending ='), false);
-assert.match(ui, /const blob = await fetchWillSpeech\(parts\[i\]\)/);
+assert.match(ui, /const blob = await fetchWillSpeech\(parts\[i\]/);
 assert.match(ui, /for \(let attempt = 0; attempt < 2/);
 assert.match(ui, /classifiedReason/);
 assert.match(voice, /reason: 'quota'|reason: kind/);
@@ -26,7 +26,9 @@ const long = Array.from({ length: 12 }, (_, i) =>
 ).join(' ');
 const parts = splitWillSpeech(long);
 assert.ok(parts.length >= 2, `chunks ${parts.length}`);
-assert.ok(parts.every((p) => p.length <= 900), JSON.stringify(parts.map((p) => p.length)));
+assert.ok(parts[0].includes('número 1'));
+assert.equal(parts[0].includes('número 2'), false);
+assert.ok(parts.every((p) => p.length <= 420 || p === parts[0]), JSON.stringify(parts.map((p) => p.length)));
 
 const turns = [
   'Hola, buenos días. Aquí estoy.',

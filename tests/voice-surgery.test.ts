@@ -40,7 +40,7 @@ assert.equal(ui.includes('speechSynthesis'), false);
 assert.match(core, /DrwFQsjvHFpLcKyvtbE3/);
 assert.equal(core.includes('WILL_VOICE_LAB'), false);
 assert.equal(core.includes('readVoiceLab'), false);
-assert.match(ui, /const blob = await fetchWillSpeech\(parts\[i\]\)/);
+assert.match(ui, /const blob = await fetchWillSpeech\(parts\[i\]/);
 assert.equal(ui.includes('pending ='), false);
 assert.match(ui, /for \(let attempt = 0; attempt < 2/);
 assert.match(ui, /audio\.pause\(\)/);
