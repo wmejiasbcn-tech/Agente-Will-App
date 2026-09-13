@@ -871,3 +871,13 @@ html[data-will-type='a-plus-plus-plus'] {
     transition: none !important;
   }
 }
+
+
+/* Global proportional reading scale A/A+/A++/A+++. */
+html[data-will-type='a'] { --will-type: 1; --will-leading: 1.55; }
+html[data-will-type='a-plus'] { --will-type: 1.12; --will-leading: 1.62; }
+html[data-will-type='a-plus-plus'] { --will-type: 1.24; --will-leading: 1.68; }
+html[data-will-type='a-plus-plus-plus'] { --will-type: 1.36; --will-leading: 1.74; }
+html[data-will-type] { font-size: calc(16px * var(--will-type, 1)); }
+html[data-will-type] .will-app-shell { line-height: var(--will-leading, 1.55); }
+.will-nav-more { display:inline-flex; align-items:center; justify-content:center; color:#e8c37a; background:linear-gradient(90deg,rgba(7,8,10,0),rgba(7,8,10,.94) 42%); border:0; font-family:var(--font-serif); font-size:28px; line-height:1; }

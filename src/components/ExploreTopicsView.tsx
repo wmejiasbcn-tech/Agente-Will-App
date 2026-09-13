@@ -24,7 +24,7 @@ import {
   HUMAN_EPISTEMIC_LABELS,
   CanonicalDomainDetail,
 } from '../data/canonicalArchitectureData';
-import { RRDD_CLASSIFICATION } from '../data/knowledgeLayerData';
+import { RRRR_RRDD_CLASSIFICATION } from '../data/knowledgeLayerData';
 import { SUBSTANCES_DATA, substanceMatchesQuery } from '../data/substancesData';
 import { CanonicalDomainId, SubstanceInfo } from '../types';
 import { ExplorationEntry } from './ExplorationEntry';
@@ -146,39 +146,15 @@ export const ExploreTopicsView: React.FC<ExploreTopicsViewProps> = ({
         })}
       </div>
 
-      <div className="glass-panel rounded-2xl p-4 sm:p-5 space-y-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xs font-mono uppercase tracking-[0.16em] text-[#e8c37a]">
-            {RRDD_CLASSIFICATION.title}
-          </h2>
-          <span className="text-[10px] text-[#ead6b4]/45">
-            Clasificación obligatoria. No fusiona Chemsex ni SLAM.
-          </span>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-0 sm:gap-0">
-          <div className="hidden sm:flex flex-col items-center px-2 pt-2">
-            <span className="w-px flex-1 bg-[rgba(232,195,122,0.2)]" />
-          </div>
-          <div className="grid sm:grid-cols-2 gap-2.5 flex-1">
-            {RRDD_CLASSIFICATION.branches.map((branch) => (
-              <div
-                key={branch.id}
-                className="glass-panel-strong rounded-xl px-4 py-3"
-              >
-                <p className="text-sm font-serif text-[#e8c37a] tracking-wide">{branch.label}</p>
-                <p className="text-[11px] text-[#ead6b4]/50 mt-1">
-                  {branch.id === 'rrdd-sexual'
-                    ? 'Clasificación. Relación no significa equivalencia con Prevención ni con un dominio único.'
-                    : 'Clasificación. Chemsex y SLAM conservan identidad propia. Relación no significa equivalencia.'}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <p className="text-[11px] text-[#ead6b4]/45 leading-relaxed">{RRDD_CLASSIFICATION.rule}</p>
+      <div className="glass-panel rounded-2xl p-4 sm:p-5 space-y-4">
+        <div className="space-y-1"><h2 className="text-xs font-mono uppercase tracking-[0.16em] text-[#e8c37a]">{RRRR_RRDD_CLASSIFICATION.title}</h2><p className="text-sm font-serif text-[#ead6b4]">{RRRR_RRDD_CLASSIFICATION.subtitle}</p><p className="text-[11px] text-[#ead6b4]/55 leading-relaxed">Clasificación obligatoria. RRRR y RRDD no son lo mismo: se relacionan, se complementan y se adaptan a lo que la persona necesita comprender. Chemsex y SLAM conservan identidad propia.</p></div>
+        <div className="grid sm:grid-cols-2 gap-2.5">{RRRR_RRDD_CLASSIFICATION.dimensions.map((dimension) => <div key={dimension.id} className="glass-panel-strong rounded-xl px-4 py-3"><p className="text-sm font-serif text-[#e8c37a] tracking-wide">{dimension.label}</p><p className="text-[11px] text-[#ead6b4]/55 mt-1 leading-relaxed">{dimension.description}</p></div>)}</div>
+        <div className="space-y-2"><p className="text-[10px] uppercase tracking-[0.14em] text-[#ead6b4]/45">Clasificación de RRDD</p><div className="grid sm:grid-cols-2 gap-2.5">{RRRR_RRDD_CLASSIFICATION.branches.map((branch) => <div key={branch.id} className="glass-panel-strong rounded-xl px-4 py-3"><p className="text-sm font-serif text-[#e8c37a] tracking-wide">{branch.label}</p><p className="text-[11px] text-[#ead6b4]/50 mt-1">{branch.id === 'rrdd-sexual' ? 'Dimensión sexual de reducción de daños. Relación no significa equivalencia con Prevención.' : 'Dimensión de sustancias de reducción de daños. Chemsex y SLAM conservan identidad propia.'}</p></div>)}</div></div>
+        <p className="text-[11px] text-[#ead6b4]/45 leading-relaxed">{RRRR_RRDD_CLASSIFICATION.rule}</p>
       </div>
 
       {!activeDomain && (
+
         <ExplorationEntry
           pattern="B"
           title="Explorar temas"

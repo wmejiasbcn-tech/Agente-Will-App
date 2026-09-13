@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { PhoneCall } from 'lucide-react';
 import { OfficialBlason } from './OfficialBlason';
 import {
@@ -20,6 +20,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   onOpenEmergency,
 }) => {
+  const mobileNavRef = useRef<HTMLElement | null>(null);
   const navItems = [
     { id: 'chat', label: 'Hablar con Will' },
     { id: 'topics', label: 'Explorar Temas' },
@@ -83,10 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        <nav
-          className="flex md:hidden items-center gap-4 py-1 overflow-x-auto no-scrollbar overscroll-x-contain"
-          aria-label="Principal"
-        >
+        <div className="relative md:hidden"><nav ref={mobileNavRef} className="flex items-center gap-4 py-1 pr-10 overflow-x-auto no-scrollbar overscroll-x-contain" aria-label="Principal">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -104,7 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             );
           })}
-        </nav>
+          </nav><button type="button" aria-label="Mostrar más opciones de navegación" title="Más opciones" className="will-nav-more absolute right-0 top-0 bottom-0 w-10 md:hidden" onClick={() => mobileNavRef.current?.scrollBy({ left: 180, behavior: 'smooth' })}><span aria-hidden="true">›</span></button></div>
       </div>
     </header>
   );
