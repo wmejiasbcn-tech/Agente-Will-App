@@ -133,6 +133,16 @@ function mimeToName(mime: string) {
   return 'will.webm';
 }
 
+function cleanSttMime(mime: string) {
+  const base = String(mime || 'audio/webm').split(';')[0].trim().toLowerCase();
+  if (base.includes('wav')) return 'audio/wav';
+  if (base.includes('mpeg') || base.includes('mp3')) return 'audio/mpeg';
+  if (base.includes('mp4') || base.includes('m4a') || base.includes('aac')) return 'audio/mp4';
+  if (base.includes('ogg')) return 'audio/ogg';
+  if (base.includes('webm')) return 'audio/webm';
+  return 'audio/webm';
+}
+
 export function registerVoiceRoutes(app: Express) {
   app.get('/api/voice/config', (_req, res) => {
     res.json({
@@ -165,38 +175,43 @@ export function registerVoiceRoutes(app: Express) {
         if (buf.length < 200) {
           return res.status(400).json({ error: 'No ha llegado audio.' });
         }
-        const mime = typeof req.body?.mime === 'string' && req.body.mime ? req.body.mime : 'audio/webm';
-        const form = new FormData();
-        form.append('model_id', 'scribe_v2');
-        form.append('language_code', 'es');
-        form.append('tag_audio_events', 'false');
-        form.append('file', new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
+        const mime = cleanSttMime(typeof req.body?.mime === 'string' ? req.body.mime : '');
+        const fileBytes = new Uint8Array(buf);
 
-        let r = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
-          method: 'POST',
-          headers: { 'xi-api-key': apiKey },
-          body: form,
-        });
-        if (!r.ok) {
-          const retry = new FormData();
-          retry.append('model_id', 'scribe_v1');
-          retry.append('language_code', 'es');
-          retry.append('tag_audio_events', 'false');
-          retry.append('file', new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
-          r = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+        async function transcribe(model: string, language?: string) {
+          const form = new FormData();
+          form.append('model_id', model);
+          if (language) form.append('language_code', language);
+          form.append('tag_audio_events', 'false');
+          form.append('file', new Blob([fileBytes], { type: mime }), mimeToName(mime));
+          return fetch('https://api.elevenlabs.io/v1/speech-to-text', {
             method: 'POST',
-            headers: { 'xi-api-key': apiKey },
-            body: retry,
+            headers: { 'xi-api-key': apiKey as string },
+            body: form,
+            signal: AbortSignal.timeout(25000),
           });
         }
-        if (!r.ok) {
-          const detail = await r.text().catch(() => '');
-          console.error('STT error', r.status, detail.slice(0, 300));
-          return res.status(502).json({ error: 'No he podido pasar a escrito lo que has dicho ahora.' });
+
+        const attempts: Array<{ model: string; language?: string }> = [
+          { model: 'scribe_v2' },
+          { model: 'scribe_v2', language: 'es' },
+          { model: 'scribe_v1' },
+        ];
+        let emptyOk = false;
+        for (const attempt of attempts) {
+          const r = await transcribe(attempt.model, attempt.language);
+          if (!r.ok) {
+            const detail = await r.text().catch(() => '');
+            console.error('STT error', r.status, attempt.model, detail.slice(0, 300));
+            continue;
+          }
+          const data: any = await r.json();
+          const text = String(data?.text || '').replace(/\s+/g, ' ').trim();
+          if (text) return res.json({ text, storesAudio: false });
+          emptyOk = true;
         }
-        const data: any = await r.json();
-        const text = String(data?.text || '').replace(/\s+/g, ' ').trim();
-        return res.json({ text, storesAudio: false });
+        if (emptyOk) return res.json({ text: '', storesAudio: false });
+        return res.status(502).json({ error: 'No he podido pasar a escrito lo que has dicho ahora.' });
       } catch (error: any) {
         console.error('Error in /api/voice/listen', error?.message || error);
         return res.status(502).json({ error: 'No he podido pasar a escrito lo que has dicho ahora.' });

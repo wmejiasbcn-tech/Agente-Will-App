@@ -240,12 +240,14 @@ export const WillChat: React.FC<WillChatProps> = ({
   const fitComposer = () => {
     const el = textareaRef.current;
     if (!el) return;
-    el.style.height = 'auto';
     const mobile = window.innerWidth < 768;
-    const max = mobile
-      ? Math.min(Math.round(window.innerHeight * 0.42), 280)
-      : 220;
-    const min = mobile ? 72 : 52;
+    const max = mobile ? 120 : 220;
+    const min = mobile ? 44 : 52;
+    el.style.height = 'auto';
+    if (!el.value) {
+      el.style.height = `${min}px`;
+      return;
+    }
     el.style.height = `${Math.max(min, Math.min(el.scrollHeight, max))}px`;
   };
 
@@ -529,17 +531,18 @@ export const WillChat: React.FC<WillChatProps> = ({
             state={voiceState}
             setState={setVoiceState}
           />
-          <div className="will-composer px-2 py-1.5 flex items-end gap-1">
+          <div className="will-composer">
             <textarea
               ref={textareaRef}
               id="chat-user-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Escribe o habla sobre lo que quieras contar, preguntar o explorar..."
-              rows={2}
-              className="will-composer-input flex-1 min-w-0 bg-transparent will-copy placeholder:text-[#ead6b4]/55 text-[15px] sm:text-sm leading-relaxed focus:outline-none px-3 py-2.5"
+              placeholder="Escribe o habla..."
+              rows={1}
+              className="will-composer-input flex-1 min-w-0 bg-transparent will-copy placeholder:text-[#ead6b4]/55 text-[15px] sm:text-sm leading-snug focus:outline-none px-3 py-2"
             />
+            <div className="will-composer-tools">
             <WillMuteButton speak={speak} />
             <WillMicButton
               onTranscript={(text) => setInput(text)}
@@ -577,6 +580,7 @@ export const WillChat: React.FC<WillChatProps> = ({
             >
               <Send className="w-4 h-4" />
             </button>
+            </div>
           </div>
         </div>
       </div>

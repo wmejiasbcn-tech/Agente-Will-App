@@ -68,6 +68,9 @@ export function micErrorCopy(reason: string) {
   if (reason === 'empty') {
     return 'No he recogido audio. Pulsa el micrófono, habla un momento y pulsa otra vez cuando termines.';
   }
+  if (reason === 'unheard') {
+    return 'Te he oído, pero no he entendido las palabras. Acércate un poco, habla un momento y pulsa el micrófono otra vez.';
+  }
   if (reason === 'stt') {
     return 'Te he oído, pero no he podido pasar a escrito lo que has dicho. Pulsa el micrófono otra vez.';
   }

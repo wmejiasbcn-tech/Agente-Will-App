@@ -34,6 +34,7 @@ __export(app_exports, {
 });
 module.exports = __toCommonJS(app_exports);
 var import_express = __toESM(require("express"), 1);
+var import_express_rate_limit = require("express-rate-limit");
 var import_genai = require("@google/genai");
 var import_dotenv = __toESM(require("dotenv"), 1);
 
@@ -410,6 +411,8 @@ function rejectSite(tags, name) {
   if (["pharmacy", "dentist", "veterinary", "community_centre", "arts_centre", "library", "theatre", "townhall"].includes(a)) {
     return true;
   }
+  const relevanceText = `${name} ${tags.description || ""} ${tags["healthcare:speciality"] || ""} ${tags.healthcare || ""}`.toLowerCase();
+  if (/podiatr|podolog|foot care|dental|dentist|veterin|maternity|obstetric|orthop|optom|ophthalm|physiotherap|physio/.test(relevanceText) && !isWillThemeName(name)) return true;
   if (isCivicOrCulturalName(name)) return true;
   if ((a === "ngo" || a === "association" || a === "charity" || tags.office === "ngo") && !isWillThemeName(name)) {
     const spec = `${tags.healthcare || ""} ${tags.social_facility || ""} ${tags["healthcare:speciality"] || ""}`.toLowerCase();
@@ -428,53 +431,48 @@ function addressFrom(tags) {
   return parts.length ? parts.join(", ") : void 0;
 }
 async function nominatimSearch(q, acceptLang) {
-  const url = `${NOMINATIM}/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(q)}`;
-  const r = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": acceptLang } });
-  if (!r.ok) return null;
-  const data = await r.json();
-  const hit = data?.[0];
-  if (!hit) return null;
-  return {
-    lat: Number(hit.lat),
-    lng: Number(hit.lon),
-    label: hit.display_name,
-    address: hit.address || {}
-  };
+  try {
+    const url = `${NOMINATIM}/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(q)}`;
+    const r = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": acceptLang }, signal: AbortSignal.timeout(8e3) });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const hit = data?.[0];
+    if (!hit) return null;
+    return { lat: Number(hit.lat), lng: Number(hit.lon), label: hit.display_name, address: hit.address || {} };
+  } catch {
+    return null;
+  }
 }
 var PHOTON = "https://photon.komoot.io";
 async function photonSearch(q) {
-  const url = `${PHOTON}/api/?limit=1&q=${encodeURIComponent(q)}`;
-  const r = await fetch(url, { headers: { "User-Agent": UA } });
-  if (!r.ok) return null;
-  const data = await r.json();
-  const hit = data?.features?.[0];
-  if (!hit?.geometry?.coordinates) return null;
-  const [lng, lat] = hit.geometry.coordinates;
-  const props = hit.properties || {};
-  return {
-    lat: Number(lat),
-    lng: Number(lng),
-    label: [props.name, props.city, props.country].filter(Boolean).join(", ") || q,
-    address: {
-      country: props.country,
-      country_code: props.countrycode,
-      city: props.city || props.name
-    }
-  };
+  try {
+    const url = `${PHOTON}/api/?limit=1&q=${encodeURIComponent(q)}`;
+    const r = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(8e3) });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const hit = data?.features?.[0];
+    if (!hit?.geometry?.coordinates) return null;
+    const [lng, lat] = hit.geometry.coordinates;
+    const props = hit.properties || {};
+    return { lat: Number(lat), lng: Number(lng), label: [props.name, props.city, props.country].filter(Boolean).join(", ") || q, address: { country: props.country, country_code: props.countrycode, city: props.city || props.name } };
+  } catch {
+    return null;
+  }
 }
 async function geocodeSearch(q, acceptLang) {
   return await nominatimSearch(q, acceptLang) || photonSearch(q);
 }
 async function nominatimReverse(lat, lng, acceptLang) {
-  const url = `${NOMINATIM}/reverse?format=jsonv2&zoom=12&addressdetails=1&lat=${lat}&lon=${lng}`;
-  const r = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": acceptLang } });
-  if (!r.ok) return null;
-  const hit = await r.json();
-  if (!hit || hit.error) return null;
-  return {
-    label: hit.display_name,
-    address: hit.address || {}
-  };
+  try {
+    const url = `${NOMINATIM}/reverse?format=jsonv2&zoom=12&addressdetails=1&lat=${lat}&lon=${lng}`;
+    const r = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": acceptLang }, signal: AbortSignal.timeout(8e3) });
+    if (!r.ok) return null;
+    const hit = await r.json();
+    if (!hit || hit.error) return null;
+    return { label: hit.display_name, address: hit.address || {} };
+  } catch {
+    return null;
+  }
 }
 function toSite(tags, plat, plng, origin, preferred, checkedAt) {
   const name = nameInLanguages(tags, preferred);
@@ -529,37 +527,17 @@ function parseSites(data, lat, lng, preferred) {
   return { sites: mixSites(sites.filter((s) => s.kind !== "Farmacia")), checkedAt };
 }
 function rankSite(site) {
-  if (isWillThemeName(site.name) || /ONG|salud sexual|sociosanitario|reducción de riesgos|apoyo comunitario/i.test(site.kind)) {
-    return 0;
-  }
-  if (site.category === "community") return 1;
-  if (site.maternity || site.privateCare) return 5;
-  if (site.category === "health") return 2;
-  if (site.category === "emergency") return 3;
+  if (site.kind.includes("ONG") || site.kind.includes("comunitario")) return 0;
+  if (site.kind.includes("sociosanitario")) return 1;
+  if (site.kind.includes("sanitario")) return 2;
+  if (site.kind.includes("hospitalario") || site.category === "emergency") return 3;
   return 4;
 }
 function mixSites(sites) {
-  const theme = sites.filter((s) => rankSite(s) <= 1);
-  const health = sites.filter((s) => s.category === "health" && rankSite(s) > 1);
-  const publicH = sites.filter((s) => s.category === "emergency" && !s.privateCare && !s.maternity);
-  const rest = sites.filter((s) => !theme.includes(s) && !health.includes(s) && !publicH.includes(s));
-  const out = [];
-  const push = (list, n) => {
-    for (const s of list) {
-      if (out.length >= 24) break;
-      if (out.includes(s)) continue;
-      if (n-- <= 0) break;
-      out.push(s);
-    }
-  };
-  push(theme, 12);
-  push(health, 6);
-  push(publicH, 4);
-  push(rest, 2);
-  return out.slice(0, 24);
+  return [...sites].sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km).slice(0, 100);
 }
 async function overpassNearby(lat, lng, preferred) {
-  const query = `[out:json][timeout:22];
+  const query = `[out:json][timeout:8];
 (
   nwr["office"="ngo"](around:15000,${lat},${lng});
   nwr["office"="association"](around:15000,${lat},${lng});
@@ -576,7 +554,7 @@ async function overpassNearby(lat, lng, preferred) {
   nwr["healthcare:speciality"~"infect|hiv|sexual|addict|psychiatr|dermatol",i](around:15000,${lat},${lng});
   nwr["name"~"checkpoint|salud sexual|sexual health|ITS|VIH|HIV|SIDA|LGBT|LGTB|PrEP|chemsex|harm reduction|reducci\xF3n de da\xF1os|solidaria|positivo|diversa|CJAS|Drassanes|Sandoval",i](around:15000,${lat},${lng});
 );
-out center 100;`;
+out center 500;`;
   let data = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
@@ -584,7 +562,7 @@ out center 100;`;
         method: "POST",
         headers: { "User-Agent": UA, "Content-Type": "application/x-www-form-urlencoded" },
         body: `data=${encodeURIComponent(query)}`,
-        signal: AbortSignal.timeout(14e3)
+        signal: AbortSignal.timeout(8e3)
       });
       if (!r.ok) continue;
       data = await r.json();
@@ -600,7 +578,7 @@ out center 100;`;
 async function nominatimHealthcare(lat, lng, preferred) {
   const delta = 0.08;
   const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
-  const queries = ["ONG VIH", "HIV NGO", "sexual health", "LGBT health", "hospital", "clinic"];
+  const queries = ["ONG VIH", "HIV NGO", "sexual health", "LGBT health", "LGBT community", "STI clinic", "sexual medicine", "PrEP", "harm reduction", "drug addiction", "chemsex", "SLAM", "hospital", "clinic", "community health"];
   const seen = /* @__PURE__ */ new Set();
   const sites = [];
   const accept = preferred.length ? preferred.join(",") : "es,en";
@@ -917,6 +895,15 @@ function mimeToName(mime) {
   if (mime.includes("wav")) return "will.wav";
   return "will.webm";
 }
+function cleanSttMime(mime) {
+  const base = String(mime || "audio/webm").split(";")[0].trim().toLowerCase();
+  if (base.includes("wav")) return "audio/wav";
+  if (base.includes("mpeg") || base.includes("mp3")) return "audio/mpeg";
+  if (base.includes("mp4") || base.includes("m4a") || base.includes("aac")) return "audio/mp4";
+  if (base.includes("ogg")) return "audio/ogg";
+  if (base.includes("webm")) return "audio/webm";
+  return "audio/webm";
+}
 function registerVoiceRoutes(app2) {
   app2.get("/api/voice/config", (_req, res) => {
     res.json({
@@ -946,37 +933,41 @@ function registerVoiceRoutes(app2) {
       if (buf.length < 200) {
         return res.status(400).json({ error: "No ha llegado audio." });
       }
-      const mime = typeof req.body?.mime === "string" && req.body.mime ? req.body.mime : "audio/webm";
-      const form = new FormData();
-      form.append("model_id", "scribe_v2");
-      form.append("language_code", "es");
-      form.append("tag_audio_events", "false");
-      form.append("file", new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
-      let r = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
-        method: "POST",
-        headers: { "xi-api-key": apiKey },
-        body: form
-      });
-      if (!r.ok) {
-        const retry = new FormData();
-        retry.append("model_id", "scribe_v1");
-        retry.append("language_code", "es");
-        retry.append("tag_audio_events", "false");
-        retry.append("file", new Blob([new Uint8Array(buf)], { type: mime }), mimeToName(mime));
-        r = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
+      const mime = cleanSttMime(typeof req.body?.mime === "string" ? req.body.mime : "");
+      const fileBytes = new Uint8Array(buf);
+      async function transcribe(model, language) {
+        const form = new FormData();
+        form.append("model_id", model);
+        if (language) form.append("language_code", language);
+        form.append("tag_audio_events", "false");
+        form.append("file", new Blob([fileBytes], { type: mime }), mimeToName(mime));
+        return fetch("https://api.elevenlabs.io/v1/speech-to-text", {
           method: "POST",
           headers: { "xi-api-key": apiKey },
-          body: retry
+          body: form,
+          signal: AbortSignal.timeout(25e3)
         });
       }
-      if (!r.ok) {
-        const detail = await r.text().catch(() => "");
-        console.error("STT error", r.status, detail.slice(0, 300));
-        return res.status(502).json({ error: "No he podido pasar a escrito lo que has dicho ahora." });
+      const attempts = [
+        { model: "scribe_v2" },
+        { model: "scribe_v2", language: "es" },
+        { model: "scribe_v1" }
+      ];
+      let emptyOk = false;
+      for (const attempt of attempts) {
+        const r = await transcribe(attempt.model, attempt.language);
+        if (!r.ok) {
+          const detail = await r.text().catch(() => "");
+          console.error("STT error", r.status, attempt.model, detail.slice(0, 300));
+          continue;
+        }
+        const data = await r.json();
+        const text = String(data?.text || "").replace(/\s+/g, " ").trim();
+        if (text) return res.json({ text, storesAudio: false });
+        emptyOk = true;
       }
-      const data = await r.json();
-      const text = String(data?.text || "").replace(/\s+/g, " ").trim();
-      return res.json({ text, storesAudio: false });
+      if (emptyOk) return res.json({ text: "", storesAudio: false });
+      return res.status(502).json({ error: "No he podido pasar a escrito lo que has dicho ahora." });
     } catch (error) {
       console.error("Error in /api/voice/listen", error?.message || error);
       return res.status(502).json({ error: "No he podido pasar a escrito lo que has dicho ahora." });
@@ -1129,6 +1120,14 @@ async function speakWill(req, res) {
 // api/app.ts
 import_dotenv.default.config();
 var app = (0, import_express.default)();
+var apiLimiter = (0, import_express_rate_limit.rateLimit)({
+  windowMs: 15 * 60 * 1e3,
+  limit: 120,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please try again later." }
+});
+app.use(apiLimiter);
 app.use(import_express.default.json({ limit: "12mb" }));
 registerGeoRoutes(app);
 registerVoiceRoutes(app);
@@ -1279,7 +1278,7 @@ app.get("/api/health", (_req, res) => {
 });
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages, contextDimension, detectedContext } = req.body;
+    const { messages, detectedContext } = req.body;
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "messages array is required" });
     }
@@ -1303,24 +1302,6 @@ app.post("/api/chat", async (req, res) => {
       parts: [{ text: m.content }]
     }));
     let systemInstruction = WAIPL_SYSTEM_INSTRUCTION;
-    if (detectedContext?.type) {
-      const contextMap = {
-        slam: "\n\n[DOMINIO 6: AUTOGESTI\xD3N EN LA REDUCCI\xD3N DE RIESGOS Y DA\xD1OS DEL SLAM]\n- SLAM: uso intravenoso. REDUCCI\xD3N DE DA\xD1OS \u2260 INSTRUCCI\xD3N OPERACIONAL.",
-        chemsex: "\n\n[DOMINIO 5: AUTOGESTI\xD3N EN LA REDUCCI\xD3N DE RIESGOS Y DA\xD1OS DEL CHEMSEX]\n- Chemsex: sexo + sustancias. Farmacolog\xEDa, riesgos, consentimiento.",
-        "consumo-psicotropicas": "\n\n[DOMINIO 4: AUTOGESTI\xD3N EN EL CONSUMO NO PROBLEM\xC1TICO]\n- Consumo recreativo vs problem\xE1tico.",
-        "placer-sexual": "\n\n[DOMINIO 3: AUTOGESTI\xD3N DEL PLACER SEXUAL]\n- Derecho al placer sin moralizaci\xF3n.",
-        "salud-sexual": "\n\n[DOMINIO 2: AUTOGESTI\xD3N DE LA SALUD SEXUAL]\n- ITS, PrEP, PEP, I=I.",
-        acompanamiento: "\n\n[DOMINIO 1: ACOMPA\xD1AMIENTO NO DIRECTIVO]\n- Escucha sin juicio.",
-        prevencion: "\n\n[DOMINIO 7: PREVENCI\xD3N]\n- Prevenci\xF3n es un dominio aut\xF3nomo. NO queda dentro de RRDD.\n- Relaci\xF3n no significa equivalencia.\n- No activar prevenci\xF3n autom\xE1ticamente porque aparezca sexo."
-      };
-      if (contextMap[detectedContext.type]) {
-        systemInstruction += contextMap[detectedContext.type];
-      }
-    }
-    if (contextDimension && contextDimension !== "all") {
-      systemInstruction += `
-[Nota: Dimensi\xF3n P.R.E.S.E.N.T.E. activa: ${contextDimension}. No fuerces al usuario.]`;
-    }
     let text = "";
     if (process.env.GEMINI_API_KEY) {
       const ai = getGeminiClient();

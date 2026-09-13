@@ -22,6 +22,7 @@ import {
   stopWillMic,
   subscribeWillMic,
 } from '../voice/micCapture';
+import { cleanSttMime, prepareSttBlob } from '../voice/sttPrepare';
 interface WillSpeakApi {
   speakingId: string | null;
   loadingId: string | null;
@@ -350,23 +351,33 @@ function blobToDataUrl(blob: Blob) {
 }
 
 async function transcribeBlob(blob: Blob): Promise<string> {
-  const dataUrl = await blobToDataUrl(blob);
-  const payload = JSON.stringify({ audio: dataUrl, mime: blob.type || 'audio/webm' });
-  for (const url of listenUrls()) {
-    try {
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload,
-      });
-      const data = await r.json().catch(() => ({} as { text?: string }));
-      const spoken = String(data?.text || '').trim();
-      if (r.ok && spoken) return spoken;
-    } catch {
-      /* prueba la siguiente ruta */
+  const wav = await prepareSttBlob(blob);
+  const parts = wav === blob ? [blob] : [wav, blob];
+  let emptyOk = false;
+  for (const part of parts) {
+    const dataUrl = await blobToDataUrl(part);
+    const audio = dataUrl.includes(',') ? dataUrl.slice(dataUrl.indexOf(',') + 1) : dataUrl;
+    const mime = cleanSttMime(part.type || blob.type);
+    const payload = JSON.stringify({ audio, mime });
+    for (const url of listenUrls()) {
+      try {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+        });
+        const data = await r.json().catch(() => ({} as { text?: string }));
+        const spoken = String(data?.text || '').trim();
+        if (r.ok && spoken) return spoken;
+        if (r.ok) emptyOk = true;
+      } catch {
+        /* prueba la siguiente ruta */
+      }
     }
   }
-  throw Object.assign(new Error('stt'), { willReason: 'stt' });
+  throw Object.assign(new Error(emptyOk ? 'unheard' : 'stt'), {
+    willReason: emptyOk ? 'unheard' : 'stt',
+  });
 }
 
 interface MicProps {
@@ -406,9 +417,9 @@ export const WillMicButton: React.FC<MicProps> = ({
       onTranscript(seed ? `${seed} ${spoken}` : spoken, true);
       writeMicBreak('');
       setState('ready_review');
-    } catch {
+    } catch (err) {
       recordMicDiag({ type: 'stt_fail', detail: 'exception' });
-      writeMicBreak('stt');
+      writeMicBreak((err as { willReason?: string })?.willReason === 'unheard' ? 'unheard' : 'stt');
       setState('error');
     }
   };
@@ -516,9 +527,9 @@ export const WillFinishTalkButton: React.FC<{
       onTranscript(seed ? `${seed} ${spoken}` : spoken, true);
       writeMicBreak('');
       setState('ready_review');
-    } catch {
+    } catch (err) {
       recordMicDiag({ type: 'stt_fail', detail: 'hud exception' });
-      writeMicBreak('stt');
+      writeMicBreak((err as { willReason?: string })?.willReason === 'unheard' ? 'unheard' : 'stt');
       setState('error');
     } finally {
       setBusy(false);

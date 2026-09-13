@@ -33,5 +33,7 @@ assert.match(app, /applyWillTypeScale/);
 assert.match(nav, /SOS/);
 assert.match(css, /will-composer-input/);
 assert.match(css, /overflow-x: hidden/);
+assert.equal(css.includes('42vh'), false);
+assert.equal(css.includes('field-sizing'), false);
 
 console.log('ok type scale A/A+/A++/A+++');

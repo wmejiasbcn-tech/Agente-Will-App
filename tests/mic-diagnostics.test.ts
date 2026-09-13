@@ -100,6 +100,7 @@ await test('Clasifica NotAllowedError como permiso denegado, no como fallo gené
 await test('El copy de error de micrófono distingue audio vacío y STT', () => {
   assert.match(micErrorCopy('denied'), /micrófono/);
   assert.match(micErrorCopy('empty'), /No he recogido audio/);
+  assert.match(micErrorCopy('unheard'), /no he entendido/);
   assert.match(micErrorCopy('stt'), /pasar a escrito/);
   assert.equal(micErrorCopy('denied').includes('Ajustes'), false);
 });
