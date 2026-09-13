@@ -26,7 +26,7 @@ async function timed(fn: () => Promise<unknown>) {
   return { ms: Date.now() - t0, value };
 }
 
-await test('Rendimiento de la app: portada y config no se miden en un solo motor', async () => {
+await test('Rendimiento de la app: portada y config', async () => {
   const home = await timed(async () => {
     const r = await fetch(BASE, { redirect: 'follow' });
     const html = await r.text();
@@ -46,7 +46,9 @@ await test('Rendimiento de la app: portada y config no se miden en un solo motor
   const config = await timed(async () => {
     const r = await fetch(`${BASE}/api/voice/config`);
     const data = await r.json();
-    assert.equal(data.provider, 'Kokoro');
+    assert.equal(data.provider, 'ElevenLabs');
+    assert.equal(data.voiceId, 'DrwFQsjvHFpLcKyvtbE3');
+    assert.equal(data.model, 'eleven_multilingual_v2');
     return data;
   });
   rows.push({
@@ -54,7 +56,7 @@ await test('Rendimiento de la app: portada y config no se miden en un solo motor
     probe: 'voice/config',
     ms: config.ms,
     ok: config.ms < BUDGET_MS.config,
-    note: 'sin generar audio',
+    note: 'ElevenLabs; sin síntesis del navegador ni Kokoro',
   });
   assert.ok(config.ms < BUDGET_MS.config, `config lenta: ${config.ms}ms`);
 });
