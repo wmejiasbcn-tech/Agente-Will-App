@@ -382,6 +382,7 @@ async function transcribeBlob(blob: Blob): Promise<string> {
 
 interface MicProps {
   onTranscript: (text: string, final: boolean) => void;
+  onStartListening?: () => void;
   currentText?: string;
   disabled?: boolean;
   state: VoiceUiState;
@@ -390,6 +391,7 @@ interface MicProps {
 
 export const WillMicButton: React.FC<MicProps> = ({
   onTranscript,
+  onStartListening,
   currentText = '',
   disabled,
   state,
@@ -434,6 +436,7 @@ export const WillMicButton: React.FC<MicProps> = ({
       await finish();
       return;
     }
+    onStartListening?.();
     await beginListen();
   };
 
