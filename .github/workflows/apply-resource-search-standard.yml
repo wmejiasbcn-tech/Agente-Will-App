@@ -1,0 +1,41 @@
+name: Apply clean resource search standard
+on:
+  push:
+    branches: [fix/resources-lookup-resilience]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply standard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('api/geo.ts'); s=p.read_text()
+          s=s.replace('out center 100;', 'out center 500;')
+          s=s.replace("const queries = ['ONG VIH', 'HIV NGO', 'sexual health', 'LGBT health', 'hospital', 'clinic'];", "const queries = ['ONG VIH', 'HIV NGO', 'sexual health', 'LGBT health', 'LGBT community', 'STI clinic', 'sexual medicine', 'PrEP', 'harm reduction', 'drug addiction', 'chemsex', 'SLAM', 'hospital', 'clinic', 'community health'];")
+          anchor="  if (['pharmacy', 'dentist', 'veterinary', 'community_centre', 'arts_centre', 'library', 'theatre', 'townhall'].includes(a)) {\n    return true;\n  }"
+          extra=anchor+"\n  const relevanceText = `${name} ${tags.description || ''} ${tags['healthcare:speciality'] || ''} ${tags.healthcare || ''}`.toLowerCase();\n  if (/podiatr|podolog|foot care|dental|dentist|veterin|maternity|obstetric|orthop|optom|ophthalm|physiotherap|physio/.test(relevanceText) && !isWillThemeName(name)) return true;"
+          if anchor not in s: raise SystemExit('anchor not found')
+          s=s.replace(anchor,extra,1)
+          start=s.index('function rankSite('); end=s.index('\nfunction mixSites',start)
+          s=s[:start]+'''function rankSite(site: Site) {\n  if (site.kind.includes('ONG') || site.kind.includes('comunitario')) return 0;\n  if (site.kind.includes('sociosanitario')) return 1;\n  if (site.kind.includes('sanitario')) return 2;\n  if (site.kind.includes('hospitalario') || site.category === 'emergency') return 3;\n  return 4;\n}\n'''+s[end:]
+          start=s.index('function mixSites('); end=s.index('\nasync function overpassNearby',start)
+          s=s[:start]+'''function mixSites(sites: Site[]) {\n  return [...sites].sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km).slice(0, 100);\n}\n'''+s[end:]
+          p.write_text(s)
+          p=Path('src/components/OtherResourcesView.tsx'); s=p.read_text(); s=s.replace('Buscar ciudad, región, país o un lugar concreto','Buscar recursos por ciudad, región, país o lugar'); marker='''        <div className="flex flex-wrap gap-2">'''; text='''        <p className="text-[11px] will-copy-muted leading-relaxed">\n          Orden: centros comunitarios y ONG especializadas → centros sociosanitarios especializados → centros sanitarios especializados → centros hospitalarios. La proximidad por sí sola no convierte un lugar en recurso de Will.\n        </p>\n\n'''; s=s.replace(marker,text+marker,1); p.write_text(s)
+          Path('docs/RESOURCE_SEARCH_STANDARD_WILL_v1.0.md').write_text('''# ESTÁNDAR DE BÚSQUEDA DE RECURSOS WILL v1.0\n\n## Orden obligatorio\n1. Centros comunitarios y ONG especializadas.\n2. Centros sociosanitarios especializados.\n3. Centros sanitarios especializados.\n4. Centros hospitalarios.\n\nDentro de cada nivel: pertinencia temática/especificidad → proximidad.\n\n## Pertinencia\nSolo se presentan recursos con indicios en nombre, descripción, especialidad o clasificación de relación con salud sexual, VIH/ITS, PrEP/PEP, sexualidad, LGBT/LGBTI, sustancias, adicciones, Chemsex, SLAM, reducción de riesgos/daños o apoyo comunitario relacionado.\n\n## Exclusiones\nFarmacias, odontología, veterinaria, podología, maternidad, ortopedia, optometría, oftalmología, fisioterapia y otros servicios sin relación con los temas de Will.\n\n## Cobertura\nLa búsqueda acepta ciudad, región, país o lugar y es independiente del país. Las fuentes abiertas no permiten afirmar que se hayan encontrado literalmente todos los recursos existentes; Will no inventará resultados ni confundirá ausencia de datos con inexistencia.\n''')
+          PY
+      - name: Validate
+        run: npm install && npm run lint && npm run build
+      - name: Commit and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add api/geo.ts src/components/OtherResourcesView.tsx docs/RESOURCE_SEARCH_STANDARD_WILL_v1.0.md .github/workflows/apply-resource-search-standard.yml
+          git commit -m "feat: standardize Will resource search and ranking"
+          git rm .github/workflows/apply-resource-search-standard.yml
+          git commit -m "chore: remove temporary resource search workflow"
+          git push
