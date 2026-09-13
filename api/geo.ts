@@ -79,62 +79,30 @@ function distanceKm(
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
 }
 
-function classify(tags: Record<string, string> | undefined): {
-  kind: string;
-  category: ResourceCategory;
-} {
+function classify(tags: Record<string, string> | undefined): { kind: string; category: ResourceCategory } {
   const a = (tags?.amenity || tags?.healthcare || tags?.office || '').toLowerCase();
-  const spec = (tags?.['healthcare:speciality'] || tags?.social_facility || '').toLowerCase();
-  const name = tags?.name || '';
-  if (a === 'community_centre' || a === 'arts_centre' || a === 'library' || a === 'theatre') {
-    return { kind: 'Fuera de ámbito', category: 'other' };
-  }
-  if (isWillThemeName(name) || /infect|hiv|sexual|addict|psychiatr/.test(spec)) {
-    if (a === 'hospital') return { kind: 'Urgencias / Hospital', category: 'emergency' };
-    if (/drug|addict|chemsex|dañ|harm/.test(spec + name.toLowerCase())) {
-      return { kind: 'Reducción de riesgos y daños', category: 'community' };
-    }
-    return { kind: 'Salud sexual / sociosanitario', category: 'health' };
-  }
-  if (a === 'hospital' || tags?.emergency === 'yes' || tags?.healthcare === 'hospital') {
-    return { kind: 'Urgencias / Hospital', category: 'emergency' };
-  }
-  if (
-    a === 'clinic' ||
-    a === 'doctors' ||
-    a === 'doctor' ||
-    a === 'health_centre' ||
-    tags?.healthcare === 'clinic' ||
-    tags?.healthcare === 'centre' ||
-    tags?.healthcare === 'center'
-  ) {
-    return { kind: 'Centro sanitario', category: 'health' };
-  }
-  if (a === 'pharmacy' || a === 'dentist' || a === 'veterinary') {
-    return { kind: 'Farmacia', category: 'other' };
-  }
-  if (spec === 'drug_addiction' || spec === 'mental_health') {
-    return { kind: 'Centro sociosanitario', category: 'community' };
-  }
-  if (a === 'ngo' || a === 'association' || a === 'charity' || tags?.office === 'ngo') {
-    return { kind: 'ONG / recurso comunitario', category: 'community' };
-  }
+  const spec = `${tags?.['healthcare:speciality'] || ''} ${tags?.healthcare || ''} ${tags?.social_facility || ''}`.toLowerCase();
+  const text = `${tags?.name || ''} ${tags?.description || ''} ${tags?.['healthcare:speciality'] || ''} ${tags?.social_facility || ''}`.toLowerCase();
+  const theme = isWillThemeName(tags?.name || '') || /hiv|vih|sida|sexual|sexolog|its|sti|prep|pep|lgbt|lgbti|gay|trans|chemsex|slam|drug|addict|substance|harm reduction|reducción de riesgos|reducción de daños|salud sexual|sexual health/.test(text);
+  if (/podiatr|podolog|foot care|dental|dentist|veterin|maternity|obstetric|orthop|optom|ophthalm|physiotherap|physio/.test(text) && !theme) return { kind: 'Fuera de ámbito', category: 'other' };
+  if (a === 'hospital' || tags?.healthcare === 'hospital') return { kind: 'Centro hospitalario', category: 'emergency' };
+  if (a === 'ngo' || a === 'association' || a === 'charity' || tags?.office === 'ngo') return { kind: 'ONG / recurso comunitario', category: 'community' };
+  if (a === 'community_centre' || a === 'social_centre') return { kind: 'Centro comunitario / sociosanitario', category: 'community' };
+  if (/drug_addiction|mental_health/.test(spec)) return { kind: 'Centro sociosanitario', category: 'community' };
+  if (a === 'clinic' || a === 'doctors' || a === 'doctor' || a === 'health_centre' || tags?.healthcare === 'clinic' || tags?.healthcare === 'centre' || tags?.healthcare === 'center') return { kind: 'Centro sanitario', category: 'health' };
   return { kind: 'Otro recurso', category: 'other' };
 }
-
 function rejectSite(tags: Record<string, string>, name: string) {
+  const text = `${name} ${tags.description || ''} ${tags['healthcare:speciality'] || ''} ${tags.healthcare || ''} ${tags.social_facility || ''}`.toLowerCase();
   const a = (tags.amenity || tags.healthcare || tags.office || '').toLowerCase();
-  if (['pharmacy', 'dentist', 'veterinary', 'community_centre', 'arts_centre', 'library', 'theatre', 'townhall'].includes(a)) {
-    return true;
-  }
+  if (['pharmacy','dentist','veterinary','library','theatre','townhall'].includes(a)) return true;
   if (isCivicOrCulturalName(name)) return true;
+  if (/podiatr|podolog|foot care|dental|dentist|veterin|maternity|obstetric|orthop|optom|ophthalm|physiotherap|physio/.test(text) && !isWillThemeName(name)) return true;
   if ((a === 'ngo' || a === 'association' || a === 'charity' || tags.office === 'ngo') && !isWillThemeName(name)) {
-    const spec = `${tags.healthcare || ''} ${tags.social_facility || ''} ${tags['healthcare:speciality'] || ''}`.toLowerCase();
-    if (!/infect|hiv|sexual|addict|psychiatr|health/.test(spec)) return true;
+    if (!/hiv|vih|sida|sexual|sexolog|its|sti|prep|pep|lgbt|lgbti|chemsex|slam|drug|addict|substance|harm|salud sexual|sexual health|health/.test(text)) return true;
   }
   return false;
 }
-
 function phoneFrom(tags: Record<string, string>) {
   return tags.phone || tags['contact:phone'] || tags['contact:mobile'] || undefined;
 }
@@ -263,35 +231,14 @@ function parseSites(
 }
 
 function rankSite(site: Site) {
-  if (isWillThemeName(site.name) || /ONG|salud sexual|sociosanitario|reducción de riesgos|apoyo comunitario/i.test(site.kind)) {
-    return 0;
-  }
-  if (site.category === 'community') return 1;
-  if (site.maternity || site.privateCare) return 5;
-  if (site.category === 'health') return 2;
-  if (site.category === 'emergency') return 3;
+  if (site.kind.includes('ONG') || site.kind.includes('comunitario')) return 0;
+  if (site.kind.includes('sociosanitario')) return 1;
+  if (site.kind.includes('sanitario')) return 2;
+  if (site.kind.includes('hospitalario')) return 3;
   return 4;
 }
-
 function mixSites(sites: Site[]) {
-  const theme = sites.filter((s) => rankSite(s) <= 1);
-  const health = sites.filter((s) => s.category === 'health' && rankSite(s) > 1);
-  const publicH = sites.filter((s) => s.category === 'emergency' && !s.privateCare && !s.maternity);
-  const rest = sites.filter((s) => !theme.includes(s) && !health.includes(s) && !publicH.includes(s));
-  const out: Site[] = [];
-  const push = (list: Site[], n: number) => {
-    for (const s of list) {
-      if (out.length >= 24) break;
-      if (out.includes(s)) continue;
-      if (n-- <= 0) break;
-      out.push(s);
-    }
-  };
-  push(theme, 12);
-  push(health, 6);
-  push(publicH, 4);
-  push(rest, 2);
-  return out.slice(0, 24);
+  return [...sites].sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km).slice(0, 100);
 }
 
 async function overpassNearby(lat: number, lng: number, preferred: string[]) {
@@ -312,7 +259,7 @@ async function overpassNearby(lat: number, lng: number, preferred: string[]) {
   nwr["healthcare:speciality"~"infect|hiv|sexual|addict|psychiatr|dermatol",i](around:15000,${lat},${lng});
   nwr["name"~"checkpoint|salud sexual|sexual health|ITS|VIH|HIV|SIDA|LGBT|LGTB|PrEP|chemsex|harm reduction|reducción de daños|solidaria|positivo|diversa|CJAS|Drassanes|Sandoval",i](around:15000,${lat},${lng});
 );
-out center 100;`;
+out center 500;`;
   let data: any = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
@@ -341,7 +288,7 @@ async function nominatimHealthcare(
 ): Promise<{ sites: Site[]; checkedAt?: string }> {
   const delta = 0.08;
   const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
-  const queries = ['ONG VIH', 'HIV NGO', 'sexual health', 'LGBT health', 'hospital', 'clinic'];
+  const queries = ['ONG VIH', 'HIV NGO', 'sexual health', 'LGBT health', 'LGBT community', 'STI clinic', 'sexual medicine', 'PrEP', 'harm reduction', 'drug addiction', 'chemsex', 'SLAM', 'hospital', 'clinic', 'community health'];
   const seen = new Set<string>();
   const sites: Site[] = [];
   const accept = preferred.length ? preferred.join(',') : 'es,en';

@@ -135,7 +135,7 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
       <div className="arch-glass p-4 sm:p-5 space-y-3">
         <form onSubmit={searchPlace} className="flex flex-col sm:flex-row gap-2">
           <label className="sr-only" htmlFor="other-resources-search">
-            Buscar ciudad, región, país o un lugar concreto
+            Buscar recursos por ciudad, región, país o lugar
           </label>
           <input
             id="other-resources-search"
@@ -154,6 +154,10 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
             Buscar
           </button>
         </form>
+
+        <p className="text-[11px] will-copy-muted leading-relaxed">
+          Orden de búsqueda: centros comunitarios y ONG especializadas → centros sociosanitarios especializados → centros sanitarios especializados → centros hospitalarios. Se excluyen servicios sin relación con los temas de Will.
+        </p>
 
         <div className="flex flex-wrap gap-2">
           <button
@@ -241,7 +245,7 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
       )}
       {geoStatus === 'place_not_found' && (
         <p className="text-sm will-copy-muted" role="status">
-          No hemos encontrado resultados para esta búsqueda.
+          No hemos encontrado recursos relacionados con los temas de Will en esta búsqueda. Puedes probar con otra ciudad o una búsqueda más concreta.
         </p>
       )}
       {geoStatus === 'map_error' && (
@@ -273,7 +277,7 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
 
           {place.absence === 'no_map_hits' && (
             <p className="text-sm will-copy-muted" role="status">
-              No hemos encontrado resultados para esta búsqueda.
+              No hemos encontrado recursos relacionados con los temas de Will en esta búsqueda. Puedes probar con otra ciudad o una búsqueda más concreta.
             </p>
           )}
           {place.absence === 'filter_empty' && (
