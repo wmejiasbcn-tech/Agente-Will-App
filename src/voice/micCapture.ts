@@ -58,9 +58,25 @@ function startRecorder(rec: MediaRecorder) {
   }
 }
 
-function attachRecorder(media: MediaStream) {
+function makeRecorder(media: MediaStream): MediaRecorder {
   const mime = pickMime();
-  const rec = mime ? new MediaRecorder(media, { mimeType: mime }) : new MediaRecorder(media);
+  const attempts: Array<() => MediaRecorder> = [
+    () => new MediaRecorder(media),
+    ...(mime ? [() => new MediaRecorder(media, { mimeType: mime })] : []),
+  ];
+  let last: unknown;
+  for (const make of attempts) {
+    try {
+      return make();
+    } catch (err) {
+      last = err;
+    }
+  }
+  throw last || Object.assign(new Error('mic'), { name: 'NotSupportedError' });
+}
+
+function attachRecorder(media: MediaStream) {
+  const rec = makeRecorder(media);
   recorder = rec;
   rec.ondataavailable = (ev) => {
     if (ev.data && ev.data.size > 0) {
@@ -137,6 +153,7 @@ export async function startWillMic() {
   const media = await navigator.mediaDevices.getUserMedia({ audio: true });
   stream = media;
   media.getAudioTracks().forEach((track) => {
+    track.enabled = true;
     track.addEventListener('ended', () => {
       if (wantStop) return;
       recordMicDiag({ type: 'track_ended', detail: track.readyState });
@@ -144,6 +161,13 @@ export async function startWillMic() {
   });
   const rec = attachRecorder(media);
   startRecorder(rec);
+  if (rec.state === 'inactive') {
+    try {
+      rec.start();
+    } catch {
+      /* el onerror/onstop reintenta sobre el mismo stream */
+    }
+  }
   listening = true;
   startedAt = Date.now();
   recordMicDiag({
