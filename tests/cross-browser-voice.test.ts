@@ -61,7 +61,8 @@ await test('Captura independiente de transcripción: ni SpeechRecognition ni Scr
   assert.equal(flags.chromeOnly, false);
   assert.equal(capture.includes('createScriptProcessor'), false);
   assert.equal(capture.includes('start(1000)'), true);
-  assert.equal(ui.includes('probeWillCompat'), true);
+  assert.match(ui, /getUserMedia\(\{\s*audio:\s*true\s*\}\)/);
+  assert.equal(ui.includes('probeWillCompat'), false);
 });
 
 await test('No hay if Chrome como arquitectura', () => {

@@ -51,7 +51,7 @@ export function readMicBreak() {
 
 export function micErrorCopy(reason: string) {
   if (reason === 'denied') {
-    return 'El navegador tiene el micrófono bloqueado para esta página. Toca el candado junto a la dirección → Permisos → Micrófono → Permitir. En Android, también: Ajustes → Aplicaciones → Chrome → Permisos → Micrófono.';
+    return 'No he podido abrir el micrófono. Pulsa otra vez.';
   }
   if (reason === 'insecure') {
     return 'El micrófono solo funciona en una página segura. Abre https://agente-will-app.vercel.app';

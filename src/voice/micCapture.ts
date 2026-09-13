@@ -77,8 +77,8 @@ function startRecorder(rec: MediaRecorder) {
 function makeRecorder(media: MediaStream): MediaRecorder {
   const mime = pickMime();
   const attempts: Array<() => MediaRecorder> = [
-    ...(mime ? [() => new MediaRecorder(media, { mimeType: mime })] : []),
     () => new MediaRecorder(media),
+    ...(mime ? [() => new MediaRecorder(media, { mimeType: mime })] : []),
   ];
   let last: unknown;
   for (const make of attempts) {
@@ -182,27 +182,7 @@ async function acquireStream(): Promise<MediaStream> {
   if (!gum) {
     throw Object.assign(new Error('mic'), { name: 'NotFoundError' });
   }
-  const attempts: MediaStreamConstraints[] = [
-    { audio: true },
-    { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } },
-  ];
-  let last: unknown;
-  for (const constraints of attempts) {
-    try {
-      return await gum(constraints);
-    } catch (err) {
-      last = err;
-      const name = (err as { name?: string })?.name || '';
-      if (
-        name === 'NotAllowedError' ||
-        name === 'SecurityError' ||
-        name === 'PermissionDeniedError'
-      ) {
-        throw err;
-      }
-    }
-  }
-  throw last || Object.assign(new Error('mic'), { name: 'NotReadableError' });
+  return gum({ audio: true });
 }
 
 export function classifyMicFailure(err: unknown): MicFailReason {
@@ -232,7 +212,7 @@ export function subscribeWillMic(fn: Listener) {
   };
 }
 
-export async function startWillMic() {
+export async function startWillMic(existing?: MediaStream) {
   if (listening && stream?.getAudioTracks().some((t) => t.readyState === 'live')) return;
   if (listening) {
     listening = false;
@@ -243,19 +223,24 @@ export async function startWillMic() {
   resetMicDiag();
   wantStop = false;
   blobs = [];
-  if (!getUserMediaFn()) {
-    recordMicDiag({ type: 'error', detail: 'no getUserMedia' });
-    throw Object.assign(new Error('mic'), { name: 'NotFoundError' });
-  }
   let media: MediaStream;
-  try {
-    media = await acquireStream();
-  } catch (err) {
-    recordMicDiag({
-      type: 'error',
-      detail: classifyMicFailure(err),
-    });
-    throw err;
+  const live = existing?.getAudioTracks().some((t) => t.readyState === 'live');
+  if (existing && live) {
+    media = existing;
+  } else {
+    if (!getUserMediaFn()) {
+      recordMicDiag({ type: 'error', detail: 'no getUserMedia' });
+      throw Object.assign(new Error('mic'), { name: 'NotFoundError' });
+    }
+    try {
+      media = await acquireStream();
+    } catch (err) {
+      recordMicDiag({
+        type: 'error',
+        detail: classifyMicFailure(err),
+      });
+      throw err;
+    }
   }
   stream = media;
   media.getAudioTracks().forEach((track) => {

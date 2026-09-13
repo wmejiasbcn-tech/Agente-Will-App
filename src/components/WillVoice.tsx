@@ -22,7 +22,6 @@ import {
   stopWillMic,
   subscribeWillMic,
 } from '../voice/micCapture';
-import { probeWillCompat } from '../utils/browserCompat';
 interface WillSpeakApi {
   speakingId: string | null;
   loadingId: string | null;
@@ -433,10 +432,13 @@ export const WillMicButton: React.FC<MicProps> = ({
     startingRef.current = true;
     lockUntil.current = Date.now() + 3500;
     writeMicBreak('');
-    probeWillCompat();
     try {
-      await startWillMic();
-      unlockWillAudio();
+      const devices = navigator.mediaDevices;
+      if (!devices || typeof devices.getUserMedia !== 'function') {
+        throw Object.assign(new Error('mic'), { name: 'NotFoundError' });
+      }
+      const media = await devices.getUserMedia({ audio: true });
+      await startWillMic(media);
       lockUntil.current = Date.now() + 1800;
       setState('listening');
     } catch (err) {

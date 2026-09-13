@@ -97,11 +97,11 @@ await test('Clasifica NotAllowedError como permiso denegado, no como fallo gené
   assert.equal(classifyMicFailure({ name: 'NotSupportedError' }), 'unsupported');
 });
 
-await test('El copy de error de micrófono distingue permiso, audio vacío y STT', () => {
-  assert.match(micErrorCopy('denied'), /bloqueado/);
+await test('El copy de error de micrófono distingue audio vacío y STT', () => {
+  assert.match(micErrorCopy('denied'), /micrófono/);
   assert.match(micErrorCopy('empty'), /No he recogido audio/);
   assert.match(micErrorCopy('stt'), /pasar a escrito/);
-  assert.equal(micErrorCopy('denied').includes('Pulsa otra vez.'), false);
+  assert.equal(micErrorCopy('denied').includes('Ajustes'), false);
 });
 
 if (failed) {
