@@ -69,17 +69,13 @@ export const WAIPL_KNOWLEDGE_LAYER = {
   epistemic: ['VERIFICADO', 'INFERIDO', 'DESCONOCIDO'],
 };
 
-export const RRDD_CLASSIFICATION = {
-  title: 'REDUCCIÓN DE RIESGOS Y DAÑOS',
-  branches: [
-    {
-      id: 'rrdd-sexual' as const,
-      label: 'RRDD SEXUAL',
-    },
-    {
-      id: 'rrdd-sustancias' as const,
-      label: 'RRDD SUSTANCIAS',
-    },
+export const RRRR_RRDD_CLASSIFICATION = {
+  title: 'RRRR + RRDD',
+  subtitle: 'REDUCCIÓN DE RIESGOS + REDUCCIÓN DE DAÑOS',
+  dimensions: [
+    { id: 'rrrr' as const, label: 'RRRR — REDUCCIÓN DE RIESGOS', description: 'Reconocer, identificar, comprender y valorar los riesgos relevantes para la situación de la persona.' },
+    { id: 'rrdd' as const, label: 'RRDD — REDUCCIÓN DE DAÑOS', description: 'Comprender posibles daños y factores que pueden reducir su impacto. No convierte una conducta en segura.' },
   ],
-  rule: 'Esta clasificación es obligatoria. No fusionar ambas. No convertirlas en un único bloque indiferenciado. Chemsex y SLAM conservan identidad propia. Relación no significa equivalencia.',
+  branches: [{ id: 'rrdd-sexual' as const, label: 'RRDD SEXUAL' }, { id: 'rrdd-sustancias' as const, label: 'RRDD SUSTANCIAS' }],
+  rule: 'La fórmula es siempre RRRR + RRDD. Son dimensiones distintas, complementarias y relacionadas. Chemsex y SLAM conservan identidad propia. Relación no significa equivalencia.',
 };
