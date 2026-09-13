@@ -139,6 +139,39 @@ jobs:
           path.write_text(updated, encoding='utf-8')
           PY
 
+      - name: Make voice interaction interruptible
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/components/WillVoice.tsx')
+          text = path.read_text(encoding='utf-8')
+          old = """interface MicProps {\n  onTranscript: (text: string, final: boolean) => void;\n  currentText?: string;\n  disabled?: boolean;\n  state: VoiceUiState;\n  setState: (s: VoiceUiState) => void;\n}"""
+          new = """interface MicProps {\n  onTranscript: (text: string, final: boolean) => void;\n  onStartListening?: () => void;\n  currentText?: string;\n  disabled?: boolean;\n  state: VoiceUiState;\n  setState: (s: VoiceUiState) => void;\n}"""
+          if old not in text:
+              raise SystemExit('MicProps block not found')
+          text = text.replace(old, new, 1)
+          old = """export const WillMicButton: React.FC<MicProps> = ({\n  onTranscript,\n  currentText = '',"""
+          new = """export const WillMicButton: React.FC<MicProps> = ({\n  onTranscript,\n  onStartListening,\n  currentText = '',"""
+          if old not in text:
+              raise SystemExit('WillMicButton signature not found')
+          text = text.replace(old, new, 1)
+          old = """    await beginListen();\n  };\n\n  const beginListen = async () => {"""
+          new = """    // Taking the microphone is an explicit user turn: stop any current TTS\n    // before requesting permission/capture so Will never talks over the user.\n    onStartListening?.();\n    await beginListen();\n  };\n\n  const beginListen = async () => {"""
+          if old not in text:
+              raise SystemExit('mic start block not found')
+          text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+
+          chat = Path('src/components/WillChat.tsx')
+          ctext = chat.read_text(encoding='utf-8')
+          old = """            <WillMicButton\n              onTranscript={(text) => setInput(text)}\n              currentText={input}\n              disabled={isLoading}"""
+          new = """            <WillMicButton\n              onTranscript={(text) => setInput(text)}\n              onStartListening={() => speak.stop()}\n              currentText={input}\n              disabled={isLoading}"""
+          if old not in ctext:
+              raise SystemExit('WillChat mic usage not found')
+          ctext = ctext.replace(old, new, 1)
+          chat.write_text(ctext, encoding='utf-8')
+          PY
+
       - name: Validate and commit
         run: |
           grep -n "PRINCIPIO CONSTITUCIONAL DE SOBERANÍA" api/app.ts
@@ -146,13 +179,14 @@ jobs:
           grep -n "TRANSFERENCIA DE DECISIÓN" api/app.ts
           grep -n "PUENTE HACIA FUENTES ESPECIALIZADAS" api/app.ts
           grep -n "LENGUAJE NO NORMATIVO" api/app.ts
+          grep -n "onStartListening" src/components/WillVoice.tsx src/components/WillChat.tsx
           git diff --check
-          if git diff --quiet -- api/app.ts; then
+          if git diff --quiet -- api/app.ts src/components/WillVoice.tsx src/components/WillChat.tsx; then
             echo "No changes to commit"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add api/app.ts
-          git commit -m "feat: recalibrate Will harm-reduction and conversation guidance"
+          git add api/app.ts src/components/WillVoice.tsx src/components/WillChat.tsx
+          git commit -m "feat: improve Will conversational turn-taking"
           git push
