@@ -37,6 +37,11 @@ const turns = [
   'Esto tiene matices. Déjame analizarlo con cuidado.',
   'El texto sigue visible aunque la voz se recupere.',
   'Tú marcas el ritmo y la dirección.',
+  'No hay una forma segura que elimine todo el riesgo.',
+  'Si quieres, seguimos con lo que más te preocupa ahora.',
+  'Puedes parar cuando quieras. No te empujo.',
+  'Lo importante es que estés acompañado con información clara.',
+  'Sigo aquí. Cuéntame con calma.',
 ];
 
 const results: Array<{ n: number; status: number; type: string; bytes: number; reason: string }> = [];
@@ -66,4 +71,24 @@ for (let n = 0; n < turns.length; n++) {
   assert.equal(r.headers.get('x-will-voice'), 'DrwFQsjvHFpLcKyvtbE3');
 }
 
-console.log('ok voice long conversation', results.map((r) => r.bytes).join(','));
+const empty = await fetch(`${BASE}/api/voice/speak`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ text: '   ' }),
+});
+assert.equal(empty.status, 400);
+const emptyBody = await empty.json();
+assert.equal(emptyBody.reason, 'request');
+
+const recovered = await fetch(`${BASE}/api/voice/speak`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+  body: JSON.stringify({ text: 'Sigo aquí después del fallo.' }),
+});
+assert.equal(recovered.status, 200);
+assert.match(recovered.headers.get('content-type') || '', /audio\/mpeg/);
+const recoveredBuf = Buffer.from(await recovered.arrayBuffer());
+assert.ok(recoveredBuf.length > 1000);
+assert.notEqual(recovered.headers.get('x-will-provider'), null);
+
+console.log('ok voice long conversation', results.map((r) => r.bytes).join(','), 'recover', recoveredBuf.length);
