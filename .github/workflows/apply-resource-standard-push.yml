@@ -1,0 +1,40 @@
+name: Apply resource standard push
+on:
+  push:
+    branches: [fix/resources-lookup-resilience]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply resource standard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('api/geo.ts'); s=p.read_text()
+          s=s.replace('out center 100;', 'out center 500;')
+          s=s.replace("const queries = ['ONG VIH', 'HIV NGO', 'sexual health', 'LGBT health', 'hospital', 'clinic'];", "const queries = ['ONG VIH', 'HIV NGO', 'sexual health', 'LGBT health', 'LGBT community', 'STI clinic', 'sexual medicine', 'PrEP', 'harm reduction', 'drug addiction', 'chemsex', 'SLAM', 'hospital', 'clinic', 'community health'];")
+          needle="  if (['pharmacy', 'dentist', 'veterinary', 'community_centre', 'arts_centre', 'library', 'theatre', 'townhall'].includes(a)) {\n    return true;\n  }"
+          repl=needle+"\n  const relevanceText = `${name} ${tags.description || ''} ${tags['healthcare:speciality'] || ''} ${tags.healthcare || ''}`.toLowerCase();\n  if (/podiatr|podolog|foot care|dental|dentist|veterin|maternity|obstetric|orthop|optom|ophthalm|physiotherap|physio/.test(relevanceText) && !isWillThemeName(name)) return true;"
+          if needle not in s: raise SystemExit('rejectSite anchor not found')
+          s=s.replace(needle,repl,1)
+          old="""function rankSite(site: Site) {\n  if (isWillThemeName(site.name) || /ONG|salud sexual|sociosanitario|reducción de riesgos|apoyo comunitario/i.test(site.kind)) {\n    return 0;\n  }\n  if (site.category === 'community') return 1;\n  if (site.maternity || site.privateCare) return 5;\n  if (site.category === 'health') return 2;\n  if (site.category === 'emergency') return 3;\n  return 4;\n}\n\nfunction mixSites(sites: Site[]) {\n  const theme = sites.filter((s) => rankSite(s) <= 1);\n  const health = sites.filter((s) => s.category === 'health' && rankSite(s) > 1);\n  const publicH = sites.filter((s) => s.category === 'emergency' && !s.privateCare && !s.maternity);\n  const rest = sites.filter((s) => !theme.includes(s) && !health.includes(s) && !publicH.includes(s));\n  const out: Site[] = [];\n  const push = (list: Site[], n: number) => {\n    for (const s of list) {\n      if (out.length >= 24) break;\n      if (out.includes(s)) continue;\n      if (n-- <= 0) break;\n      out.push(s);\n    }\n  };\n  push(theme, 12);\n  push(health, 6);\n  push(publicH, 4);\n  push(rest, 2);\n  return out.slice(0, 24);\n}\n"""
+          new="""function rankSite(site: Site) {\n  if (site.kind.includes('ONG') || site.kind.includes('comunitario')) return 0;\n  if (site.kind.includes('sociosanitario')) return 1;\n  if (site.kind.includes('sanitario')) return 2;\n  if (site.kind.includes('hospitalario') || site.category === 'emergency') return 3;\n  return 4;\n}\n\nfunction mixSites(sites: Site[]) {\n  return [...sites].sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km).slice(0, 100);\n}\n"""
+          if old not in s: raise SystemExit('ranking block not found')
+          s=s.replace(old,new,1); p.write_text(s)
+          p=Path('src/components/OtherResourcesView.tsx'); s=p.read_text(); s=s.replace('Buscar ciudad, región, país o un lugar concreto','Buscar recursos por ciudad, región, país o lugar'); marker='''        <div className="flex flex-wrap gap-2">'''; text='''        <p className="text-[11px] will-copy-muted leading-relaxed">\n          Orden: centros comunitarios y ONG especializadas → centros sociosanitarios especializados → centros sanitarios especializados → centros hospitalarios. La proximidad por sí sola no convierte un lugar en recurso de Will.\n        </p>\n\n'''; s=s.replace(marker,text+marker,1); p.write_text(s)
+          Path('docs/RESOURCE_SEARCH_STANDARD_WILL_v1.0.md').write_text('''# ESTÁNDAR DE BÚSQUEDA DE RECURSOS WILL v1.0\n\n## Orden obligatorio\n1. Centros comunitarios y ONG especializadas.\n2. Centros sociosanitarios especializados.\n3. Centros sanitarios especializados.\n4. Centros hospitalarios.\n\nDentro de cada nivel: pertinencia temática/especificidad → proximidad.\n\n## Pertinencia\nSolo se presentan recursos con indicios en nombre, descripción, especialidad o clasificación de relación con salud sexual, VIH/ITS, PrEP/PEP, sexualidad, LGBT/LGBTI, sustancias, adicciones, Chemsex, SLAM, reducción de riesgos/daños o apoyo comunitario relacionado.\n\n## Exclusiones\nFarmacias, odontología, veterinaria, podología, maternidad, ortopedia, optometría, oftalmología, fisioterapia y otros servicios sin relación con los temas de Will.\n\n## Cobertura y honestidad\nLa búsqueda admite ciudad, región, país o lugar y no depende del país. Las fuentes abiertas no permiten afirmar que se hayan encontrado literalmente todos los recursos existentes; Will no inventará resultados ni confundirá ausencia de datos con inexistencia.\n''')
+          PY
+      - name: Validate
+        run: npm install && npm run lint && npm run build
+      - name: Commit and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add api/geo.ts src/components/OtherResourcesView.tsx docs/RESOURCE_SEARCH_STANDARD_WILL_v1.0.md .github/workflows/apply-resource-standard-push.yml
+          git commit -m "feat: standardize Will resource search and ranking"
+          git rm .github/workflows/apply-resource-standard-push.yml
+          git commit -m "chore: remove temporary resource standard workflow"
+          git push
