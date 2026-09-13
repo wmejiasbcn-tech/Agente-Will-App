@@ -148,41 +148,35 @@ function addressFrom(tags: Record<string, string>) {
 }
 
 async function nominatimSearch(q: string, acceptLang: string) {
-  const url = `${NOMINATIM}/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(q)}`;
-  const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': acceptLang } });
-  if (!r.ok) return null;
-  const data = (await r.json()) as any[];
-  const hit = data?.[0];
-  if (!hit) return null;
-  return {
-    lat: Number(hit.lat),
-    lng: Number(hit.lon),
-    label: hit.display_name as string,
-    address: hit.address || {},
-  };
+  try {
+    const url = `${NOMINATIM}/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(q)}`;
+    const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': acceptLang }, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+    const data = (await r.json()) as any[];
+    const hit = data?.[0];
+    if (!hit) return null;
+    return { lat: Number(hit.lat), lng: Number(hit.lon), label: hit.display_name as string, address: hit.address || {} };
+  } catch {
+    return null;
+  }
 }
 
 const PHOTON = 'https://photon.komoot.io';
 
 async function photonSearch(q: string) {
-  const url = `${PHOTON}/api/?limit=1&q=${encodeURIComponent(q)}`;
-  const r = await fetch(url, { headers: { 'User-Agent': UA } });
-  if (!r.ok) return null;
-  const data = (await r.json()) as any;
-  const hit = data?.features?.[0];
-  if (!hit?.geometry?.coordinates) return null;
-  const [lng, lat] = hit.geometry.coordinates;
-  const props = hit.properties || {};
-  return {
-    lat: Number(lat),
-    lng: Number(lng),
-    label: [props.name, props.city, props.country].filter(Boolean).join(', ') || q,
-    address: {
-      country: props.country,
-      country_code: props.countrycode,
-      city: props.city || props.name,
-    },
-  };
+  try {
+    const url = `${PHOTON}/api/?limit=1&q=${encodeURIComponent(q)}`;
+    const r = await fetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+    const data = (await r.json()) as any;
+    const hit = data?.features?.[0];
+    if (!hit?.geometry?.coordinates) return null;
+    const [lng, lat] = hit.geometry.coordinates;
+    const props = hit.properties || {};
+    return { lat: Number(lat), lng: Number(lng), label: [props.name, props.city, props.country].filter(Boolean).join(', ') || q, address: { country: props.country, country_code: props.countrycode, city: props.city || props.name } };
+  } catch {
+    return null;
+  }
 }
 
 async function geocodeSearch(q: string, acceptLang: string) {
@@ -190,15 +184,16 @@ async function geocodeSearch(q: string, acceptLang: string) {
 }
 
 async function nominatimReverse(lat: number, lng: number, acceptLang: string) {
-  const url = `${NOMINATIM}/reverse?format=jsonv2&zoom=12&addressdetails=1&lat=${lat}&lon=${lng}`;
-  const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': acceptLang } });
-  if (!r.ok) return null;
-  const hit = (await r.json()) as any;
-  if (!hit || hit.error) return null;
-  return {
-    label: hit.display_name as string,
-    address: hit.address || {},
-  };
+  try {
+    const url = `${NOMINATIM}/reverse?format=jsonv2&zoom=12&addressdetails=1&lat=${lat}&lon=${lng}`;
+    const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': acceptLang }, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+    const hit = (await r.json()) as any;
+    if (!hit || hit.error) return null;
+    return { label: hit.display_name as string, address: hit.address || {} };
+  } catch {
+    return null;
+  }
 }
 
 function toSite(
@@ -300,7 +295,7 @@ function mixSites(sites: Site[]) {
 }
 
 async function overpassNearby(lat: number, lng: number, preferred: string[]) {
-  const query = `[out:json][timeout:22];
+  const query = `[out:json][timeout:8];
 (
   nwr["office"="ngo"](around:15000,${lat},${lng});
   nwr["office"="association"](around:15000,${lat},${lng});
@@ -325,7 +320,7 @@ out center 100;`;
         method: 'POST',
         headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `data=${encodeURIComponent(query)}`,
-        signal: AbortSignal.timeout(14000),
+        signal: AbortSignal.timeout(8000),
       });
       if (!r.ok) continue;
       data = await r.json();
