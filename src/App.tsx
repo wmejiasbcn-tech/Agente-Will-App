@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { WillChat } from './components/WillChat';
 import { ExploreTopicsView } from './components/ExploreTopicsView';
@@ -9,6 +9,7 @@ import { EmergencyModal } from './components/EmergencyModal';
 import { SpaceShell, WillScene } from './components/visual/SpaceShell';
 import { PagerArrows } from './components/PagerArrows';
 import { unlockWillAudio } from './voice/willVoice';
+import { applyWillTypeScale, readWillTypeScale } from './ui/typeScale';
 
 const SCENES = ['chat', 'topics', 'resources', 'how-it-works', 'other-resources'] as const;
 
@@ -18,6 +19,24 @@ export default function App() {
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
   const [isEmergencyOpen, setIsEmergencyOpen] = useState<boolean>(false);
   const [topicsDomain, setTopicsDomain] = useState<string | null>(null);
+  const [online, setOnline] = useState(
+    typeof navigator === 'undefined' ? true : navigator.onLine !== false,
+  );
+
+  useEffect(() => {
+    applyWillTypeScale(readWillTypeScale());
+  }, []);
+
+  useEffect(() => {
+    const sync = () => setOnline(navigator.onLine !== false);
+    window.addEventListener('online', sync);
+    window.addEventListener('offline', sync);
+    sync();
+    return () => {
+      window.removeEventListener('online', sync);
+      window.removeEventListener('offline', sync);
+    };
+  }, []);
 
   const handleAskWill = (prompt: string, domainId?: string) => {
     unlockWillAudio();
@@ -62,6 +81,12 @@ export default function App() {
       <a href="#contenido-principal" className="skip-link">
         Saltar al contenido
       </a>
+
+      {!online && (
+        <p className="will-net-line" role="status">
+          Sin conexión. El texto sigue disponible cuando vuelva la red.
+        </p>
+      )}
 
       <Navbar
         activeTab={activeTab}

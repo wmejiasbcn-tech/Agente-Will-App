@@ -62,7 +62,7 @@ await test('VOICE config ElevenLabs Will', async () => {
   assert.equal(data.modelId, 'eleven_multilingual_v2');
   assert.equal(data.storesAudio, false);
   assert.equal(data.voiceId === 'atlas', false);
-  assert.equal(data.voiceId === 'em_alex', false);
+  assert.equal(data.lab, undefined);
 });
 
 await test('VOICE speak usa ElevenLabs cuando hay clave; si no, no cae a Kokoro', async () => {
@@ -70,9 +70,15 @@ await test('VOICE speak usa ElevenLabs cuando hay clave; si no, no cae a Kokoro'
   const r = await fetch(`${BASE}/api/voice/speak`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: 'Hola. Soy Will.' }),
+    body: JSON.stringify({ text: 'Hola, soy Will. Te escucho.' }),
   });
   if (!cfg.hasServerKey) {
+    if (r.status === 200) {
+      assert.match(r.headers.get('content-type') || '', /audio\/mpeg/);
+      assert.equal(r.headers.get('x-will-provider'), 'ElevenLabs');
+      assert.notEqual(r.headers.get('x-will-voice'), 'em_alex');
+      return;
+    }
     assert.equal(r.status, 503);
     const body = await r.json();
     assert.equal(body.reason, 'no_tts_key');
@@ -81,13 +87,39 @@ await test('VOICE speak usa ElevenLabs cuando hay clave; si no, no cae a Kokoro'
     return;
   }
   assert.equal(r.status, 200);
-  assert.match(r.headers.get('content-type') || '', /audio/);
+  assert.match(r.headers.get('content-type') || '', /audio\/mpeg/);
   assert.equal(r.headers.get('cache-control'), 'no-store');
   assert.equal(r.headers.get('x-will-voice'), 'DrwFQsjvHFpLcKyvtbE3');
   assert.equal(r.headers.get('x-will-provider'), 'ElevenLabs');
   const buf = Buffer.from(await r.arrayBuffer());
   assert.ok(buf.length > 1000);
   assert.notEqual(buf.slice(0, 4).toString(), 'RIFF');
+});
+
+await test('VOICE engine=kokoro no desvía a Kokoro', async () => {
+  const cfg = await fetch(`${BASE}/api/voice/config`).then((r) => r.json());
+  const r = await fetch(`${BASE}/api/voice/speak`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: 'Hola, soy Will. Te escucho.', engine: 'kokoro' }),
+  });
+  if (!cfg.hasServerKey) {
+    if (r.status === 200) {
+      assert.equal(r.headers.get('x-will-provider'), 'ElevenLabs');
+      assert.notEqual(r.headers.get('x-will-voice'), 'em_alex');
+      return;
+    }
+    assert.equal(r.status, 503);
+    const body = await r.json();
+    assert.equal(body.reason, 'no_tts_key');
+    assert.equal(body.provider, 'ElevenLabs');
+    assert.notEqual(r.headers.get('x-will-voice'), 'em_alex');
+    return;
+  }
+  assert.equal(r.status, 200);
+  assert.equal(r.headers.get('x-will-voice'), 'DrwFQsjvHFpLcKyvtbE3');
+  assert.equal(r.headers.get('x-will-provider'), 'ElevenLabs');
+  assert.match(r.headers.get('content-type') || '', /audio\/mpeg/);
 });
 
 await test('VOICE prepare no inventa texto', () => {

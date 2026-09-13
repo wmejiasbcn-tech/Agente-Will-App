@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PhoneCall } from 'lucide-react';
 import { OfficialBlason } from './OfficialBlason';
+import {
+  WILL_TYPE_LABEL,
+  applyWillTypeScale,
+  cycleWillTypeScale,
+  readWillTypeScale,
+  type WillTypeStep,
+} from '../ui/typeScale';
 
 interface NavbarProps {
   activeTab: string;
@@ -59,22 +66,26 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          <button
-            type="button"
-            id="emergency-btn-header"
-            onClick={onOpenEmergency}
-            className="flex items-center gap-1.5 min-h-11 px-2.5 py-1.5 text-[11px] tracking-wide text-[#e8c37a] hover:text-[#ead6b4]"
-            title="Atención médica urgente y teléfonos 112 / 061"
-            aria-haspopup="dialog"
-          >
-            <PhoneCall className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">SOS</span>
-          </button>
+          <div className="flex items-center gap-1">
+            <TypeScaleButton />
+            <button
+              type="button"
+              id="emergency-btn-header"
+              onClick={onOpenEmergency}
+              className="flex items-center gap-1.5 min-h-11 px-2.5 py-1.5 text-[11px] tracking-wide text-[#e8c37a]"
+              title="Atención médica urgente y teléfonos 112 / 061"
+              aria-haspopup="dialog"
+              aria-label="SOS, información de urgencias"
+            >
+              <PhoneCall className="w-3.5 h-3.5" />
+              <span>SOS</span>
+            </button>
+          </div>
         </div>
 
         <nav
-          className="md:hidden flex items-center gap-5 py-1 overflow-x-auto no-scrollbar"
-          aria-label="Principal móvil"
+          className="flex md:hidden items-center gap-4 py-1 overflow-x-auto no-scrollbar overscroll-x-contain"
+          aria-label="Principal"
         >
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
@@ -96,5 +107,26 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
       </div>
     </header>
+  );
+};
+
+const TypeScaleButton: React.FC = () => {
+  const [step, setStep] = useState<WillTypeStep>(() => readWillTypeScale());
+  const label = WILL_TYPE_LABEL[step];
+  return (
+    <button
+      type="button"
+      id="will-type-scale"
+      className="will-type-btn"
+      onClick={() => {
+        const next = cycleWillTypeScale(step);
+        applyWillTypeScale(next);
+        setStep(next);
+      }}
+      aria-label={`Tamaño de lectura ${label}`}
+      title={`Lectura ${label}`}
+    >
+      {label}
+    </button>
   );
 };

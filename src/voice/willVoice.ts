@@ -34,7 +34,7 @@ export const VOICE_STATE_LABEL: Record<VoiceUiState, string> = {
   speaking: 'Will hablando',
   paused: 'Pausado',
   muted: 'Silenciado',
-  error: 'No he podido usar el micrófono. El texto sigue disponible.',
+  error: 'No he podido usar el micrófono. Puedes escribir.',
 };
 
 const MUTE_KEY = 'will-voice-muted';
@@ -67,7 +67,7 @@ export function splitWillSpeech(text: string): string[] {
   const merged: string[] = [];
   for (const piece of pieces) {
     const last = merged[merged.length - 1];
-    if (last && piece.length < 24 && `${last} ${piece}`.length < 180) {
+    if (last && `${last} ${piece}`.length <= 900) {
       merged[merged.length - 1] = `${last} ${piece}`;
     } else {
       merged.push(piece);
@@ -101,6 +101,8 @@ export function getSharedWillAudio(): HTMLAudioElement | null {
     el = document.createElement('audio');
     el.id = 'will-voice-el';
     el.setAttribute('playsinline', 'true');
+    el.setAttribute('webkit-playsinline', 'true');
+    (el as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
     el.setAttribute('preload', 'auto');
     el.style.display = 'none';
     document.body.appendChild(el);
@@ -116,15 +118,29 @@ export function unlockWillAudio() {
   if (!el) return;
   try {
     el.setAttribute('playsinline', 'true');
-    el.muted = false;
+    el.setAttribute('webkit-playsinline', 'true');
+    (el as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
     el.loop = true;
-    el.volume = 0;
     const speaking = Boolean(el.src) && el.src.startsWith('blob:') && !el.paused;
     if (speaking) return;
     el.src = SILENT_WAV;
-    el.loop = true;
+    el.muted = true;
     el.volume = 0;
-    void el.play().catch(() => {});
+    const go = el.play();
+    if (go && typeof go.then === 'function') {
+      void go
+        .then(() => {
+          el.muted = false;
+          el.volume = 0;
+        })
+        .catch(() => {
+          try {
+            el.muted = false;
+          } catch {
+            /* ignore */
+          }
+        });
+    }
   } catch {
     try {
       el.muted = false;
