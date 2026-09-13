@@ -34,9 +34,9 @@ La experiencia está diseñada para que la persona pueda entrar directamente por
 
 ---
 
-# 2. Las 6 áreas principales de Will
+# 2. Las 7 áreas principales de Will
 
-Will organiza su contenido en seis áreas independientes:
+Will organiza su contenido en **siete áreas independientes**. Prevención es un dominio autónomo: no está subordinado a salud sexual ni se activa automáticamente al hablar de sexo.
 
 ### 1. Acompañamiento no directivo, no prescriptivo y no diagnóstico
 
@@ -64,7 +64,6 @@ Información para comprender y gestionar autónomamente aspectos relacionados co
 Incluye, entre otros:
 
 - prácticas sexuales;
-- prevención;
 - VIH;
 - VHC;
 - ITS;
@@ -78,7 +77,7 @@ Incluye, entre otros:
 
 **Regla fundamental:**
 
-> Hablar de sexualidad no implica automáticamente Chemsex, SLAM ni consumo de sustancias.
+> Hablar de sexualidad no implica automáticamente Chemsex, SLAM, prevención ni consumo de sustancias.
 
 ---
 
@@ -160,14 +159,7 @@ Incluye información sobre:
 
 SLAM tiene entidad propia dentro de Will y no se considera simplemente una subcategoría de Chemsex.
 
-Incluye:
-
-- salud vascular;
-- asepsia;
-- posibles daños;
-- señales de alarma;
-- reducción de riesgos;
-- recursos sanitarios y comunitarios.
+Incluye información sobre salud vascular, posibles daños, señales de alarma, reducción de riesgos y recursos sanitarios y comunitarios.
 
 **Regla fundamental:**
 
@@ -175,19 +167,27 @@ Incluye:
 
 ---
 
+### 7. Prevención
+
+Dominio autónomo de Will para cuestiones que la propia persona plantea en términos de prevención o de prevenir.
+
+No se activa automáticamente por hablar de sexo, placer, sustancias, Chemsex o SLAM. No dispone de fichas canónicas por defecto: cuando no existe contenido verificado, Will no inventa una ficha y puede remitir a la conversación abierta.
+
+---
+
 # 3. Una regla esencial: diferenciar no significa separar artificialmente
 
-Las seis áreas son independientes, pero pueden relacionarse.
+Las siete áreas son independientes, pero pueden relacionarse.
 
 Por ejemplo:
 
-**sexo + placer + sustancias + Chemsex + SLAM**
+**sexo + placer + sustancias + Chemsex + SLAM + prevención**
 
-pueden coexistir en una misma experiencia.
+pueden coexistir en una misma experiencia cuando la persona los introduce.
 
 Lo que Will no hace es asumir automáticamente que una dimensión implica las demás.
 
-> **Sexo ≠ Placer ≠ Sustancias ≠ Chemsex ≠ SLAM**
+> **Sexo ≠ Placer ≠ Sustancias ≠ Chemsex ≠ SLAM ≠ Prevención**
 
 La contextualización debe partir de lo que la persona expresa, no de presuposiciones.
 
@@ -343,6 +343,8 @@ Ejemplos:
 - recursos especializados en Chemsex y SLAM;
 - acompañamiento entre iguales.
 
+La ausencia de resultados en una búsqueda no significa que un recurso no exista.
+
 ---
 
 # 9. Experiencia de usuario
@@ -363,7 +365,16 @@ También puede acceder mediante puertas de entrada comprensibles:
 - **Sustancias**
 - **Chemsex**
 - **SLAM**
+- **Prevención**
 - **No sé dónde encaja**
+
+### Protocolo universal de entrada
+
+> **NO ELEGIR POR LA PERSONA LO QUE LA PERSONA TODAVÍA NO HA ELEGIDO.**
+
+Si la persona no ha seleccionado un contenido concreto, Will no debe abrir, sugerir como hecho elegido ni presuponer una sustancia, práctica, identidad, contexto o problema específico.
+
+Las entradas de exploración muestran opciones neutrales. Los documentos o fichas concretos se abren cuando la persona los selecciona.
 
 La interfaz debe mostrar la complejidad progresivamente.
 
@@ -372,13 +383,15 @@ La interfaz debe mostrar la complejidad progresivamente.
 
 ---
 
-# 10. Arquitectura técnica
+# 10. Arquitectura técnica actual
 
 El proyecto está construido como una aplicación web basada en:
 
-- React
+- React 19
 - TypeScript
-- Vite
+- Vite 6
+- Tailwind CSS 4
+- Express
 
 La estructura principal se encuentra en `src/`.
 
@@ -389,10 +402,23 @@ Entre sus componentes se incluyen:
 - `ExploreTopicsView.tsx`
 - `ResourcesView.tsx`
 - `HowWillWorksView.tsx`
-- `CanonicalArchitectureView.tsx`
 - `Navbar.tsx`
 
-Los datos y reglas principales se mantienen separados de la presentación para facilitar su mantenimiento y evolución.
+El servidor de desarrollo actual (`server.ts`) utiliza la aplicación Express de `api/app.ts` y escucha por defecto en el puerto **8080**; puede modificarse mediante `PORT`.
+
+La API desplegada en Vercel utiliza `api/index.ts` como entrada del runtime serverless. Esta separación es deliberada y no debe confundirse con el servidor Express de desarrollo.
+
+### Proveedor de conversación
+
+El backend utiliza **Gemini** cuando existe `GEMINI_API_KEY` y dispone de fallback a **xAI/Grok** cuando no existe esa clave. Por tanto, la ausencia de Gemini no implica ausencia de modelo.
+
+Para reproducibilidad de pruebas debe registrarse el proveedor y modelo efectivos del entorno utilizado.
+
+### Voz actual
+
+La voz de producción utiliza **ElevenLabs**, voz `DrwFQsjvHFpLcKyvtbE3`, modelo `eleven_multilingual_v2`. No utiliza `speechSynthesis` del navegador ni Kokoro en el runtime actual.
+
+El reconocimiento de voz del micrófono utiliza la ruta de STT configurada en backend; la configuración efectiva debe registrarse junto con las pruebas.
 
 ---
 
@@ -444,18 +470,27 @@ Se trata de que lo que Will **es**, lo que Will **hace** y la forma en que Will 
 
 Proyecto en desarrollo activo.
 
-La aplicación evoluciona progresivamente en:
+Estado técnico conocido en `main` a septiembre de 2026:
 
-- experiencia de usuario;
-- arquitectura de información;
-- contenidos;
-- comportamiento conversacional;
-- reducción de riesgos y daños;
-- gobernanza;
-- transparencia;
-- accesibilidad.
+- HEAD: `d2cdcdcf17733d30c3353fa8d5d7617a354bab12`;
+- despliegue Vercel asociado: **SUCCESS**;
+- configuración de Vercel restaurada a la arquitectura históricamente conocida como operativa;
+- dependencia `kokoro-js`: ausente de `package.json`;
+- voz de producción: ElevenLabs;
+- dominio de Prevención: presente en código como séptimo dominio autónomo;
+- documentación histórica de D1/D2 recalibrada para distinguir snapshot histórico de estado actual;
+- las pruebas históricas no se consideran evidencia automática del runtime actual.
 
-Este repositorio constituye el espacio técnico de desarrollo de Will dentro del ecosistema WAIPL.
+### Pendientes de verificación actual
+
+El estado de despliegue correcto no sustituye la verificación funcional. Deben reproducirse sobre el `main` actual, registrando proveedor/modelo efectivos:
+
+1. **E** — apertura ambigua;
+2. **G** — dependencia/validación;
+3. **C** — petición de SLAM con contenido procedimental, para comprobar el cumplimiento actual de la prohibición constitucional de instrucciones operativas;
+4. **J** — conversación de tres turnos.
+
+La discrepancia histórica `3000` vs `8080` del harness queda corregida en los runners de pruebas para evitar que una ruta de ejecución dependa de un puerto obsoleto.
 
 ---
 
