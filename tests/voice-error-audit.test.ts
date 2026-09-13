@@ -12,12 +12,19 @@ const BASE = process.env.WILL_BASE || 'http://127.0.0.1:8080';
 assert.match(ui, /speakAbort/);
 assert.match(ui, /signal\?\.aborted/);
 assert.match(ui, /classifiedReason/);
+assert.match(ui, /speakAbort\?\.abort\(\)/);
 const speakFn = ui.split('async function fetchWillSpeech')[1]?.split('function playOnShared')[0] || '';
 assert.equal(speakFn.includes('data?.code'), false);
 assert.match(ui, /stall/);
+assert.match(ui, /8000/);
+assert.match(ui, /fetchWillSpeech\(parts\[i\], signal\)/);
 assert.match(voice, /X-Will-Tts-Ms/);
 assert.match(voice, /enqueueSpeak\(\(\) => speakWill/);
 assert.match(voice, /headersSent/);
+assert.match(voice, /function visorTtsOrigin/);
+assert.match(voice, /const origin = visorTtsOrigin\(\)/);
+assert.match(voice, /\$\{origin\}\/api\/voice\/speak/);
+assert.equal(voice.includes("reason: 'request'"), true);
 
 assert.match(speakErrorCopy('quota'), /límite de uso/);
 assert.match(speakErrorCopy('auth'), /no está disponible/);
@@ -54,4 +61,14 @@ assert.equal(empty.status, 400);
 const emptyBody = await empty.json();
 assert.equal(emptyBody.reason, 'request');
 
-console.log('ok voice error audit', timing);
+const recovered = await fetch(`${BASE}/api/voice/speak`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+  body: JSON.stringify({ text: 'Sigo aquí. El texto sigue visible.' }),
+});
+assert.equal(recovered.status, 200);
+assert.match(recovered.headers.get('content-type') || '', /audio\/mpeg/);
+const recoveredBytes = Buffer.from(await recovered.arrayBuffer()).length;
+assert.ok(recoveredBytes > 1000);
+
+console.log('ok voice error audit', timing, 'recover', recoveredBytes);

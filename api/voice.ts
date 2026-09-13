@@ -63,6 +63,29 @@ function userErrorFor(kind: string) {
   return 'La voz de Will no se ha podido generar ahora.';
 }
 
+function visorTtsOrigin() {
+  if (process.env.VERCEL) return '';
+  return 'https://agente-will-app.vercel.app';
+}
+
+function applyTtsCors(_req: Request, res: Response) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
+  res.setHeader('Access-Control-Max-Age', '86400');
+}
+
+let speakQueue: Promise<void> = Promise.resolve();
+
+function enqueueSpeak<T>(fn: () => Promise<T>): Promise<T> {
+  const run = speakQueue.then(fn, fn);
+  speakQueue = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
 async function requestWillSpeech(apiKey: string, text: string) {
   const url = `${WILL_TTS}/${encodeURIComponent(WILL_VOICE_ID)}?output_format=mp3_44100_128`;
   const headers = {
@@ -119,6 +142,11 @@ export function registerVoiceRoutes(app: Express) {
     });
   });
 
+  app.options('/api/voice/speak', (req: Request, res: Response) => {
+    applyTtsCors(req, res);
+    return res.status(204).end();
+  });
+
   app.post('/api/voice/listen', async (req: Request, res: Response) => {
       try {
         const apiKey = elevenLabsKey();
@@ -169,63 +197,151 @@ export function registerVoiceRoutes(app: Express) {
       }
   });
 
-  app.post('/api/voice/speak', async (req: Request, res: Response) => {
-    try {
-      const raw = typeof req.body?.text === 'string' ? req.body.text : '';
-      const text = prepareWillSpeech(raw);
-      if (!text) return res.status(400).json({ error: 'No hay texto para leer.' });
-
-      const apiKey = elevenLabsKey();
-      if (!apiKey) {
-        console.error('TTS speak', { reason: 'no_tts_key', voiceId: WILL_VOICE_ID });
-        return res.status(503).json({
-          error: 'La voz de Will no está disponible ahora.',
-          code: 'SERVER',
-          reason: 'no_tts_key',
-          voiceId: WILL_VOICE_ID,
-          provider: 'ElevenLabs',
-        });
-      }
-
-      const r = await requestWillSpeech(apiKey, text);
-      if (!r.ok) {
-        const detail = await r.text().catch(() => '');
-        const kind = classifyEleven(r.status, detail);
-        console.error('ElevenLabs TTS error', r.status, kind, detail.slice(0, 300));
-        return res.status(502).json({
-          error: userErrorFor(kind),
-          voiceId: WILL_VOICE_ID,
-          provider: 'ElevenLabs',
-          reason: kind,
-          status: r.status,
-        });
-      }
-
-      const audio = Buffer.from(await r.arrayBuffer());
-      if (audio.length < 200) {
-        return res.status(502).json({
-          error: 'La voz de Will no se ha podido generar ahora.',
-          voiceId: WILL_VOICE_ID,
-          provider: 'ElevenLabs',
-          reason: 'empty',
-        });
-      }
-      res.status(200);
-      res.setHeader('Content-Type', 'audio/mpeg');
-      res.setHeader('Cache-Control', 'no-store');
-      res.setHeader('Content-Length', String(audio.length));
-      res.setHeader('X-Will-Voice', WILL_VOICE_ID);
-      res.setHeader('X-Will-Provider', 'ElevenLabs');
-      return res.end(audio);
-    } catch (error: any) {
-      console.error('Error in /api/voice/speak', error?.message || error);
-      return res.status(502).json({
+  app.post('/api/voice/speak', (req: Request, res: Response) => {
+    applyTtsCors(req, res);
+    void enqueueSpeak(() => speakWill(req, res)).catch((err: any) => {
+      if (res.headersSent) return;
+      res.status(502).json({
         error: 'La voz de Will no está disponible ahora.',
         voiceId: WILL_VOICE_ID,
         provider: 'ElevenLabs',
         reason: 'exception',
-        detail: String(error?.message || error).slice(0, 300),
+        detail: String(err?.message || err).slice(0, 300),
+      });
+    });
+  });
+}
+
+async function speakWill(req: Request, res: Response) {
+  const started = Date.now();
+  try {
+    const raw = typeof req.body?.text === 'string' ? req.body.text : '';
+    const text = prepareWillSpeech(raw);
+    if (!text) {
+      return res.status(400).json({ error: 'No hay texto para leer.', reason: 'request' });
+    }
+
+    const apiKey = elevenLabsKey();
+    const origin = visorTtsOrigin();
+    if (!apiKey) {
+      if (origin) {
+        try {
+          const relayAt = Date.now();
+          const published = await fetch(`${origin}/api/voice/speak`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+            body: JSON.stringify({ text }),
+            signal: AbortSignal.timeout(25000),
+          });
+          if (published.ok) {
+            const audio = Buffer.from(await published.arrayBuffer());
+            if (audio.length > 200) {
+              res.status(200);
+              res.setHeader('Content-Type', published.headers.get('content-type') || 'audio/mpeg');
+              res.setHeader('Cache-Control', 'no-store');
+              res.setHeader('Content-Length', String(audio.length));
+              res.setHeader('X-Will-Voice', published.headers.get('x-will-voice') || WILL_VOICE_ID);
+              res.setHeader(
+                'X-Will-Provider',
+                published.headers.get('x-will-provider') || 'ElevenLabs',
+              );
+              res.setHeader(
+                'X-Will-Tts-Ms',
+                published.headers.get('x-will-tts-ms') ||
+                  `relay=${Date.now() - relayAt};total=${Date.now() - started}`,
+              );
+              return res.end(audio);
+            }
+            return res.status(502).json({
+              error: userErrorFor('empty'),
+              reason: 'empty',
+              voiceId: WILL_VOICE_ID,
+              provider: 'ElevenLabs',
+            });
+          }
+          const detail = await published.text().catch(() => '');
+          let payload: { reason?: string } = {};
+          try {
+            payload = JSON.parse(detail);
+          } catch {
+            payload = {};
+          }
+          const kind = payload.reason || classifyEleven(published.status, detail);
+          return res.status(published.status === 401 ? 401 : 502).json({
+            error: userErrorFor(kind),
+            reason: kind,
+            status: published.status,
+            voiceId: WILL_VOICE_ID,
+            provider: 'ElevenLabs',
+          });
+        } catch (err: any) {
+          const detail = String(err?.message || err);
+          const reason = /timeout|aborted/i.test(detail) ? 'upstream' : 'exception';
+          console.error('TTS speak visor relay', detail);
+          return res.status(502).json({
+            error: userErrorFor(reason),
+            reason,
+            voiceId: WILL_VOICE_ID,
+            provider: 'ElevenLabs',
+            detail: detail.slice(0, 300),
+          });
+        }
+      }
+      console.error('TTS speak', { reason: 'no_tts_key', voiceId: WILL_VOICE_ID });
+      return res.status(503).json({
+        error: 'La voz de Will no está disponible ahora.',
+        code: 'SERVER',
+        reason: 'no_tts_key',
+        voiceId: WILL_VOICE_ID,
+        provider: 'ElevenLabs',
       });
     }
-  });
+
+    const upstreamAt = Date.now();
+    const r = await requestWillSpeech(apiKey, text);
+    const upstreamMs = Date.now() - upstreamAt;
+    if (!r.ok) {
+      const detail = await r.text().catch(() => '');
+      const kind = classifyEleven(r.status, detail);
+      console.error('ElevenLabs TTS error', r.status, kind, detail.slice(0, 300));
+      return res.status(r.status === 401 ? 401 : 502).json({
+        error: userErrorFor(kind),
+        voiceId: WILL_VOICE_ID,
+        provider: 'ElevenLabs',
+        reason: kind,
+        status: r.status,
+      });
+    }
+
+    const audio = Buffer.from(await r.arrayBuffer());
+    if (audio.length < 200) {
+      return res.status(502).json({
+        error: 'La voz de Will no se ha podido generar ahora.',
+        voiceId: WILL_VOICE_ID,
+        provider: 'ElevenLabs',
+        reason: 'empty',
+      });
+    }
+    res.status(200);
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Length', String(audio.length));
+    res.setHeader('X-Will-Voice', WILL_VOICE_ID);
+    res.setHeader('X-Will-Provider', 'ElevenLabs');
+    res.setHeader(
+      'X-Will-Tts-Ms',
+      `upstream=${upstreamMs};bytes=${audio.length};total=${Date.now() - started}`,
+    );
+    return res.end(audio);
+  } catch (error: any) {
+    console.error('Error in /api/voice/speak', error?.message || error);
+    if (res.headersSent) return;
+    return res.status(502).json({
+      error: 'La voz de Will no está disponible ahora.',
+      voiceId: WILL_VOICE_ID,
+      provider: 'ElevenLabs',
+      reason: 'exception',
+      detail: String(error?.message || error).slice(0, 300),
+    });
+  }
 }

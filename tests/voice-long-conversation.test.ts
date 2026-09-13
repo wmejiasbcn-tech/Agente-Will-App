@@ -20,6 +20,7 @@ assert.match(voice, /reason: 'empty'/);
 assert.match(voice, /reason: 'exception'/);
 assert.match(voice, /DrwFQsjvHFpLcKyvtbE3/);
 assert.match(voice, /eleven_multilingual_v2/);
+assert.match(voice, /visorTtsOrigin\(\)/);
 
 const long = Array.from({ length: 12 }, (_, i) =>
   `Esta es la frase número ${i + 1} de una respuesta larga de Will sobre reducción de riesgos.`,

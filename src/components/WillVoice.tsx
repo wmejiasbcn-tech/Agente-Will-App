@@ -6,6 +6,7 @@ import {
   VoiceUiState,
   getSharedWillAudio,
   readVoiceMuted,
+  speakErrorCopy,
   splitWillSpeech,
   unlockWillAudio,
   writeVoiceMuted,
@@ -40,53 +41,101 @@ interface WillSpeakApi {
 
 let playGen = 0;
 let lastSpeakBreak = '';
+let speakAbort: AbortController | null = null;
 
 function writeSpeakBreak(reason: string, http: number) {
   lastSpeakBreak = ['TTS', reason, http ? `http${http}` : ''].filter(Boolean).join(' · ');
 }
 
-async function fetchWillSpeech(text: string): Promise<Blob | null> {
+const PUBLISHED_SPEAK = 'https://agente-will-app.vercel.app/api/voice/speak';
+
+function speakUrls(): string[] {
+  if (typeof location === 'undefined') return ['/api/voice/speak'];
+  if (location.hostname === 'agente-will-app.vercel.app') return ['/api/voice/speak'];
+  return [PUBLISHED_SPEAK, '/api/voice/speak'];
+}
+
+function classifiedReason(status: number, reason: string) {
+  const allowed = new Set([
+    'auth',
+    'quota',
+    'voice',
+    'request',
+    'empty',
+    'exception',
+    'upstream',
+    'network',
+    'no_tts_key',
+  ]);
+  if (allowed.has(reason)) return reason;
+  if (status === 401 || status === 403) return 'auth';
+  if (status === 404) return 'voice';
+  if (status === 402 || status === 429) return 'quota';
+  if (status === 400 || status === 422) return 'request';
+  if (status === 503 && reason === 'no_tts_key') return 'no_tts_key';
+  if (status >= 500) return 'upstream';
+  return 'upstream';
+}
+
+async function fetchWillSpeech(text: string, signal?: AbortSignal): Promise<Blob | null> {
+  const payload = { text };
   let lastStatus = 0;
   let lastReason = '';
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const r = await fetch('/api/voice/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
-        body: JSON.stringify({ text }),
-      });
-      lastStatus = r.status;
-      if (r.ok) {
-        const blob = await r.blob();
-        const type = blob.type || '';
-        const audioLike =
-          blob.size > 200 &&
-          (type.includes('audio') ||
-            type.includes('mpeg') ||
-            type === 'application/octet-stream' ||
-            type === '');
-        if (audioLike) {
-          lastSpeakBreak = '';
-          return blob;
+  const urls = speakUrls();
+  for (const url of urls) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (signal?.aborted) return null;
+      try {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+          body: JSON.stringify(payload),
+          signal,
+        });
+        lastStatus = r.status;
+        if (r.ok) {
+          const blob = await r.blob();
+          const type = blob.type || '';
+          const audioLike =
+            blob.size > 200 &&
+            (type.includes('audio') ||
+              type.includes('mpeg') ||
+              type === 'application/octet-stream' ||
+              type === '');
+          if (audioLike) {
+            lastSpeakBreak = '';
+            return blob;
+          }
+          lastReason = 'empty';
+        } else {
+          const data = await r.json().catch(() => ({} as { reason?: string }));
+          lastReason = classifiedReason(r.status, String(data?.reason || ''));
+          if (lastReason === 'auth' || lastReason === 'voice') {
+            writeSpeakBreak(lastReason, r.status);
+            return null;
+          }
+          if (lastReason === 'quota') {
+            await new Promise((ok) => setTimeout(ok, 1200 * (attempt + 1)));
+            continue;
+          }
+          if (lastReason === 'no_tts_key') break;
         }
-        lastReason = 'empty';
-      } else {
-        const data = await r.json().catch(() => ({} as { reason?: string }));
-        lastReason = String(data?.reason || 'upstream');
-        if (lastReason === 'auth' || r.status === 401 || r.status === 403) {
-          writeSpeakBreak(lastReason, r.status);
-          return null;
-        }
-        if (lastReason === 'quota' || r.status === 429) {
-          await new Promise((ok) => setTimeout(ok, 1200 * (attempt + 1)));
-          continue;
-        }
+      } catch {
+        if (signal?.aborted) return null;
+        lastReason = 'network';
       }
-    } catch {
-      lastReason = 'network';
+      if (attempt === 0) {
+        await new Promise((ok) => setTimeout(ok, 400));
+      }
     }
-    if (attempt === 0) {
-      await new Promise((ok) => setTimeout(ok, 500));
+    if (
+      url === PUBLISHED_SPEAK &&
+      lastReason &&
+      lastReason !== 'no_tts_key' &&
+      lastReason !== 'network'
+    ) {
+      writeSpeakBreak(lastReason, lastStatus);
+      return null;
     }
   }
   writeSpeakBreak(lastReason || 'upstream', lastStatus || 502);
@@ -102,10 +151,14 @@ function playOnShared(blob: Blob, gen: number): Promise<'ended' | 'error' | 'sto
     const tick = window.setInterval(() => {
       if (playGen !== gen) finish('stopped');
     }, 80);
+    const stall = window.setTimeout(() => {
+      if (!settled && audio.paused && audio.currentTime === 0) finish('error');
+    }, 8000);
     const finish = (why: 'ended' | 'error' | 'stopped') => {
       if (settled) return;
       settled = true;
       window.clearInterval(tick);
+      window.clearTimeout(stall);
       audio.onended = null;
       audio.onerror = null;
       URL.revokeObjectURL(url);
@@ -159,6 +212,8 @@ export function useWillSpeak(): WillSpeakApi {
 
   const stopAudio = () => {
     playGen += 1;
+    speakAbort?.abort();
+    speakAbort = null;
     const audio = getSharedWillAudio();
     if (audio) {
       audio.pause();
@@ -181,6 +236,9 @@ export function useWillSpeak(): WillSpeakApi {
 
   const play = async (id: string, text: string) => {
     const gen = ++playGen;
+    speakAbort?.abort();
+    speakAbort = new AbortController();
+    const signal = speakAbort.signal;
     setError(null);
     if (mutedRef.current) {
       setReveal((prev) => ({ ...prev, [id]: text }));
@@ -196,16 +254,13 @@ export function useWillSpeak(): WillSpeakApi {
     let shown = '';
     try {
       for (let i = 0; i < parts.length; i++) {
-        if (gen !== playGen) return;
-        const blob = await fetchWillSpeech(parts[i]);
-        if (gen !== playGen) return;
+        if (gen !== playGen || signal.aborted) return;
+        const blob = await fetchWillSpeech(parts[i], signal);
+        if (gen !== playGen || signal.aborted) return;
         if (!blob) {
           setReveal((prev) => ({ ...prev, [id]: text }));
-          setError(
-            lastSpeakBreak
-              ? `La voz de Will no está disponible ahora. ${lastSpeakBreak}. El texto sigue visible.`
-              : 'La voz de Will no está disponible ahora. El texto sigue visible.',
-          );
+          const reason = lastSpeakBreak.split(' · ')[1] || 'upstream';
+          setError(speakErrorCopy(reason));
           continue;
         }
         shown = shown ? `${shown} ${parts[i]}` : parts[i];
