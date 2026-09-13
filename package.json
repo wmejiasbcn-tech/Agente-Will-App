@@ -1,5 +1,5 @@
 {
-  "name": "react-example",
+  "name": "will-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,9 @@
     "test:geo": "tsx tests/geo-privacy.test.ts && tsx tests/geo-resources-v2.test.ts && tsx tests/will-qa.test.ts",
     "test:compat": "tsx tests/browser-compat.test.ts && tsx tests/browser-perf.test.ts && tsx tests/cross-browser-voice.test.ts && tsx tests/neo-voice.test.ts",
     "test:mic": "tsx tests/mic-diagnostics.test.ts",
-    "test:neo": "tsx tests/neo-voice.test.ts"
+    "test:neo": "tsx tests/neo-voice.test.ts",
+    "test:battery": "node run_tests.mjs",
+    "test:battery:full": "node run_full_battery.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
