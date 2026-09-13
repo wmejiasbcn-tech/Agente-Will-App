@@ -1,5 +1,9 @@
 # AUDITORÍA REAL DE INTERFAZ — WILL APP
 
+> **DOCUMENTO HISTÓRICO — auditoría de 2026-09-07.**
+>
+> El cuerpo principal conserva el estado observado en el commit auditado. No debe leerse como fotografía del `main` actual. Las correcciones posteriores se registran al final para impedir que hechos ya superados contaminen nuevas auditorías.
+
 **Repositorio:** `wmejiasbcn-tech/Agente-Will-App`  
 **Commit auditado:** `56e39fa9153f586c403aebfe5206bfa98eb8313a` (`main`, 2026-09-06)  
 **Auditor:** Aether  
@@ -8,27 +12,27 @@
 
 ---
 
-## 1. Estructura actual
+## 1. Estructura observada en el snapshot
 
-Aplicación Vite + React 19 + Tailwind v4 + Express.
+Aplicación Vite + React + Tailwind + Express.
 
 | Ruta | Función |
 |---|---|
 | `src/App.tsx` | Shell: tab activa + modal SOS |
 | `src/main.tsx` | Mount React |
-| `src/index.css` | Tailwind + 3 familias tipográficas |
+| `src/index.css` | Tailwind + familias tipográficas |
 | `src/components/*` | UI |
-| `src/data/*` | Contenido canónico (no tocado) |
+| `src/data/*` | Contenido canónico |
 | `src/utils/contextDetector.ts` | Detección de dominio en chat |
-| `api/index.ts` | `/api/chat`, `/api/audit`, `/api/explore-topic` (Gemini) |
-| `server.ts` | Dev server en puerto **3000** |
-| `public/` | Vacío en `main` (sin assets gráficos) |
+| `api/index.ts` | Entrada API serverless del snapshot |
+| `server.ts` | Dev server del snapshot |
+| `public/` | Assets gráficos del snapshot |
 
 Navegación por estado React (`activeTab`), no por router. No hay React Router.
 
 ---
 
-## 2. Pantallas existentes (4 áreas públicas)
+## 2. Pantallas existentes en el snapshot
 
 Definidas en `App.tsx`. Default: `chat`.
 
@@ -39,257 +43,158 @@ Definidas en `App.tsx`. Default: `chat`.
 | `resources` | `ResourcesView` | Recursos de Apoyo y Servicios |
 | `how-it-works` | `HowWillWorksView` | Cómo Funciona Will |
 
-`HowWillWorksView` contiene subsecciones: Principios, Constitución (8 arts), P.R.E.S.E.N.T.E., Auditor Constitucional, Riesgo ≠ Daño, Arnés de Evidencia.
+`HowWillWorksView` contiene subsecciones: Principios, Constitución, P.R.E.S.E.N.T.E., Auditor Constitucional, Riesgo ≠ Daño y Arnés de Evidencia.
 
-Modal global: `EmergencyModal` (SOS / 112 / 061 / PLS).
+Modal global: `EmergencyModal` (SOS).
 
 ---
 
 ## 3. Componentes
 
-**En uso por el shell**
+En uso por el shell: `Navbar`, `WillChat`, `ExploreTopicsView`, `ResourcesView`, `HowWillWorksView`, `EmergencyModal` y sus subvistas.
 
-- `Navbar`
-- `WillChat`
-- `ExploreTopicsView`
-- `ResourcesView`
-- `HowWillWorksView`
-- `EmergencyModal`
-- `ConstitutionView` (subvista)
-- `PresenteView` (subvista)
-- `AuditorView` (subvista)
+Presentes en el árbol y no montados en `App.tsx`:
 
-**Presentes en el árbol y no montados en `App.tsx`**
+- `HarmReductionView.tsx`
+- `CanonicalArchitectureView.tsx`
 
-- `HarmReductionView.tsx` — no importado
-- `CanonicalArchitectureView.tsx` — no importado
-
-No se eliminan. Se reportan.
+No se eliminan por esta auditoría; se reportan como deuda conocida.
 
 ---
 
-## 4. Navegación
+## 4. Navegación observada en el snapshot
 
-Jerarquía real hoy:
+Jerarquía real del snapshot:
 
-1. Marca (W + «WILL») → fuerza tab `chat`
-2. 4 ítems de igual peso visual: Hablar / Explorar / Recursos / Cómo funciona
-3. SOS a la derecha (rose)
+1. Marca W + WILL → chat
+2. 4 ítems principales
+3. SOS
 
-Desktop: fila de botones en header (`hidden md:flex`).  
-Móvil: segunda barra horizontal scrollable (`md:hidden`).
-
-No hay `<nav>` semántico, ni `aria-current`, ni skip-link, ni landmark `main`.
-
-Etiquetas actuales (se conservan; no se reescriben):
-
-- Hablar con Will
-- Explorar Temas
-- Recursos de Apoyo
-- Cómo funciona Will
-- SOS / Urgencias
+La auditoría original consignó ausencia de semántica, foco y skip-link. Estos puntos fueron posteriormente corregidos en D1 y no deben marcarse como defectos actuales sin reproducirlos en `main`.
 
 ---
 
-## 5. CSS / tokens
+## 5. CSS / tokens del snapshot
 
-No existe un design system. Solo `src/index.css` (23 líneas): import Tailwind + fuentes + `.no-scrollbar`.
-
-Identidad visual **de facto**, extraída de clases Tailwind en componentes (no inventada):
-
-| Rol | Token Tailwind | Hex extraído |
-|---|---|---|
-| Lienzo | `bg-stone-950` | `#0c0a09` |
-| Superficie | `bg-stone-900` | `#1c1917` |
-| Superficie 2 | `bg-stone-800` | `#292524` |
-| Línea | `border-stone-800` / `stone-700` | `#292524` / `#44403c` |
-| Texto | `text-stone-100` | `#f5f5f4` |
-| Texto secundario | `text-stone-400` | `#a8a29e` |
-| Acento | `amber-500` / `amber-400` / `amber-300` | `#f59e0b` / `#fbbf24` / `#fcd34d` |
-| SOS | `rose-600` / `rose-950` | `#e11d48` / `#4c0519` |
-
-Acentos de dominio (chemsex/slam/salud, etc.): amber, rose, cyan, indigo, red, emerald. Son semántica de **categoría**, no paleta de marca.
-
-Radio habitual: `rounded-xl` / `rounded-2xl` / `rounded-3xl`.
-
-**Desviación respecto al canon del blasón:** el lienzo no es `#0A0A0B`. Es stone-950 (`#0c0a09`).
+La auditoría original identificó la paleta `stone` + ámbar y documentó una desviación respecto al lienzo canónico. D1 posterior estableció `#0A0A0B` como lienzo del producto y dejó constancia de su medición. Este apartado es, por tanto, **histórico**.
 
 ---
 
-## 6. Tipografías (ya en código)
+## 6. Tipografías del snapshot
 
-Cargadas en `index.html` desde Google Fonts:
-
-| Rol | Familia | Uso |
-|---|---|---|
-| Cuerpo | Plus Jakarta Sans | `body`, `.font-sans` |
-| Títulos | Newsreader | `h1–h3`, `.font-serif` |
-| Técnico | JetBrains Mono | `.font-mono`, badges |
-
-No se introduce una cuarta familia.
+Cargadas en `index.html` desde Google Fonts. No se introduce una cuarta familia.
 
 ---
 
 ## 7. Responsive
 
-- Breakpoints Tailwind: `sm` / `md` / `lg`
-- Header móvil: dos filas (marca + SOS, luego tabs en scroll)
-- Chat: `h-[calc(100vh-4.5rem)]` — frágil si el header móvil mide más de 4.5rem
-- Puertas de entrada: 1 / 2 / 3 columnas
-- Dominios: grid 2 / 3 / 6
-- Targets táctiles a menudo < 44px (`text-xs`, `py-1.5`)
-
-No se observó layout por debajo de 390px en runtime en esta auditoría (se verificará en pruebas D1).
+Los hallazgos de esta sección pertenecen al snapshot auditado. Las pruebas posteriores de D1/D2 cubrieron 390×844 y 1280×800. Para el estado actual debe utilizarse una prueba nueva sobre `main`.
 
 ---
 
-## 8. Accesibilidad (estado en `main`)
+## 8. Accesibilidad del snapshot
 
-Hallazgos (código):
-
-- Cero atributos `aria-*` en `src/`
-- Cero `role="dialog"` en el modal SOS
-- `focus:outline-none` en marca, inputs y varios botones — anillo de foco ausente o sustituido solo por cambio de borde
-- Modal SOS: no cierra con Escape; no trampín de foco; overlay clicable no definido
-- Botón hablar: `title` nativo, sin `aria-label`
-- Imágenes: no hay `<img>` de marca (logo es texto «W»)
-
-Contraste ámbar-sobre-stone: razonable en dark. SOS rose sobre stone: razonable.
+Los hallazgos de ausencia de `aria-*`, `role="dialog"`, foco y Escape pertenecen al estado previo a D1. D1 documentó la corrección de estos elementos. No deben reutilizarse como defectos actuales sin reproducción.
 
 ---
 
-## 9. Chat
+## 9. Chat del snapshot
 
-`WillChat.tsx` (~600 líneas).
-
-- Mensaje de bienvenida existente (no se reescribe)
-- 7 puertas de entrada desde `HUMAN_ENTRANCE_DOORS`
-- Composer: textarea + enviar
-- Acciones por mensaje: hablar, copiar, «Verificación ética»
-- Lentes P.R.E.S.E.N.T.E. opcionales
-- Detector de contexto (chemsex ≠ slam, etc.) — no se toca
-- API: `POST /api/chat` con `messages`, `contextDimension`, `detectedContext`
-
-Avatar de Will: recuadro ámbar `rounded-md` con letra **W**. Eso no es el blasón. Meter el blasón en ese recuadro sería infracción de contenedor.
+`WillChat.tsx` contenía las puertas y comportamiento observados en aquella fecha. El comportamiento actual debe contrastarse con el código vigente y con el protocolo universal de entrada.
 
 ---
 
-## 10. Sistema actual de voz
+## 10. Sistema de voz — SNAPSHOT HISTÓRICO
 
-**Existe. Es Web Speech API del navegador. No hay proveedor TTS propio.**
+**En la fecha de esta auditoría se observó Web Speech API del navegador.**
 
-Ubicación: `WillChat.tsx` `handleToggleSpeak` (aprox. líneas 184–201).
+La referencia histórica a `speechSynthesis` queda expresamente cerrada como descripción del snapshot, no del runtime actual.
 
-Comportamiento exacto:
+### Estado posterior
 
-```
-if (!('speechSynthesis' in window)) return;
-window.speechSynthesis.cancel();
-utterance.lang = 'es-ES';
-utterance.rate = 1.0;
-window.speechSynthesis.speak(utterance);
-```
-
-No hay:
-
-- selección de `SpeechSynthesisVoice`
-- pitch
-- rate distinto de 1.0
-- proveedor (ElevenLabs, Azure, Google TTS, etc.)
-- audio pregrabado
-- componente de voz aparte
-
-Campo `audioPlaying?: boolean` en `ChatMessage` — declarado, no usado en el flujo de speak.
-
-La especificación maestra de voz del brief **no está implementada**. D1 no la sustituye ni la inventa. Queda para D6, con autorización.
+El runtime actual utiliza **ElevenLabs**, voz `DrwFQsjvHFpLcKyvtbE3`, modelo `eleven_multilingual_v2`. Las pruebas actuales verifican además que el runtime no utiliza `speechSynthesis` ni Kokoro.
 
 ---
 
-## 11. Recursos gráficos
+## 11. Recursos gráficos del snapshot
 
-En `main`:
-
-- Cero PNG/SVG de marca en el repo de Will App
-- `assets/.aistudio/` solo gitignore
-- Marca = letra W en gradiente `from-amber-500 to-amber-600`, con `shadow-md`
-- Iconos: `lucide-react`
-
-Blasón oficial: **ausente** del repositorio objetivo hasta D1.
+Los estados de marca y blasón aquí descritos pertenecen al momento anterior a D1. D1 incorporó posteriormente el blasón oficial con bytes idénticos al origen.
 
 ---
 
 ## 12. Presencia del blasón
 
-| Dónde | Estado |
-|---|---|
-| `Agente-Will-App` (`main`) | Ausente |
-| Header | Sustituto: recuadro ámbar + «W» |
-| Burbujas de Will | Sustituto: recuadro ámbar + «W» |
-| Favicon | Ausente |
+Esta sección es una fotografía previa a D1. El blasón estaba ausente en el `main` auditado y fue incorporado posteriormente según la especificación soberana.
 
-Dónde debe incorporarse (solo archivo oficial, copy-paste, sin contenedor, sobre `#0A0A0B`):
+SHA256 de origen conservado como referencia:
 
-1. Marca del header (sustituye la W, no se mete dentro del recuadro)
-2. Marca de presencia de Will en el hilo (misma regla)
-
-Orden soberana: usar el PNG entregado. SHA256 origen:
-
-`f9dafd5ff8a4bf52b3fcad7b82a650055a4f562df6514c530ae4191ddfd3eded`
+`f9dafd5dff8a4bf52b3fcad7b82a650055a4f562df6514c530ae4191ddfd3eded`
 
 ---
 
 ## 13. Estados de interacción
 
-| Estado | Dónde | Qué hay |
-|---|---|---|
-| Default / hover / active de nav | Navbar | stone-800 + amber-300 si activo |
-| Loading chat | WillChat | «Will está preparando la respuesta...» + spin |
-| Disabled send | botón ámbar → stone-800 |
-| Copiado | icono check emerald 2s |
-| Speak on | VolumeX + amber |
-| Modal SOS | open/close por estado; sin Escape |
-| Error de chat | mensaje de fallback en el hilo (copy existente) |
-| Contexto en vivo | badge «Tema identificado» al escribir |
-
-No hay empty-state distinto del welcome. No hay skeleton.
+Estados observados en el snapshot. Las correcciones posteriores de D1/D2 deben verificarse mediante pruebas actuales, no por este documento.
 
 ---
 
-## 14. Dependencias relevantes (UI)
+## 14. Dependencias relevantes del snapshot
 
-De `package.json`:
-
-- `react` / `react-dom` 19
-- `vite` 6 + `@vitejs/plugin-react` + `@tailwindcss/vite`
-- `lucide-react`
-- `motion` (dependencia presente; **no se observa uso** en `src/`)
-- `@google/genai` — backend, fuera de D1
-- `express` — server
+La lista refleja el estado auditado en 2026-09-07. Para dependencia y proveedor actuales, consultar `package.json` y `README.md` del `main` actual.
 
 ---
 
-## 15. Diagnóstico (hechos, no rediseño)
+## 15. Diagnóstico histórico
 
-1. La app ya es Will. No hay que reconstruirla.
-2. La identidad visual de producto está a medio camino: paleta stone+ámbar seria, pero la marca es una W genérica, no el blasón.
-3. El lienzo no cumple `#0A0A0B`.
-4. La navegación cubre las 4 áreas correctas; le falta semántica, foco y jerarquía de Will como centro.
-5. Accesibilidad de chrome (nav, modal, foco) está por debajo del umbral de un producto serio.
-6. Voz: hay un interruptor de lectura del navegador. No es la voz del brief.
-7. Contenido canónico y prompts: no se tocan.
-8. Dos vistas huérfanas en disco.
+La auditoría original identificó:
+
+1. identidad visual a medio camino;
+2. lienzo distinto del canon;
+3. carencias de chrome/a11y;
+4. voz de navegador;
+5. vistas huérfanas;
+6. otros puntos de deuda.
+
+Los puntos que D1/D2 corrigieron no deben mantenerse como defectos actuales por inercia documental.
 
 ---
 
-## 16. Perímetro D1 (lo que se implementa a continuación)
+## 16. Perímetro D1 histórico
 
-Autorizado por el brief + orden de ejecución:
+El perímetro autorizado fue:
 
-- Tokens extraídos del sistema actual + lienzo `#0A0A0B`
-- Blasón oficial copy-paste (bytes idénticos), sin contenedor
-- Navegación: landmarks, foco visible, Will como centro visual
-- A11y del chrome (skip link, dialog SOS, aria-current)
-- Tipografías existentes
-- Cero reescritura de copy de pantallas
-- Cero cambio de prompts / API
-- Cero motor de voz nuevo
+- tokens y lienzo `#0A0A0B`;
+- blasón oficial copy-paste;
+- navegación y accesibilidad del chrome;
+- cero reescritura de copy;
+- cero cambio de prompts/API;
+- cero motor de voz nuevo dentro de D1.
+
+---
+
+# RECALIBRACIÓN DOCUMENTAL POSTERIOR
+
+**Fecha de actualización:** septiembre de 2026.  
+**HEAD actual de referencia:** `d2cdcdcf17733d30c3353fa8d5d7617a354bab12`.
+
+Esta auditoría queda clasificada como **EVIDENCIA HISTÓRICA**. Sus observaciones solo certifican el estado del commit `56e39fa`.
+
+### Cambios posteriores ya conocidos
+
+- D1 corrigió navegación, landmarks, foco, SOS y blasón.
+- D1/D2 establecieron el lienzo `#0A0A0B`.
+- Will pasó a disponer de **7 dominios**, incluido Prevención autónoma.
+- La voz actual es ElevenLabs; la referencia a `speechSynthesis` es histórica.
+- El servidor Express actual utiliza `api/app.ts` y puerto **8080** por defecto.
+- La API serverless de Vercel conserva `api/index.ts` como entrada separada.
+- `kokoro-js` no está en `package.json` actual; una expectativa Kokoro residual en `tests/browser-perf.test.ts` fue identificada y corregida posteriormente.
+- La configuración de proveedor de conversación admite Gemini y fallback xAI/Grok; `.env.example` documenta ahora `XAI_API_KEY`.
+- Los runners históricos que apuntaban a `localhost:3000` fueron corregidos para usar `WILL_URL` y, por defecto, el `8080` actual.
+
+### Regla de no contaminación histórica
+
+> **No trasladar un hallazgo histórico al estado actual sin reproducción. No cerrar un hallazgo actual únicamente porque exista una prueba histórica que salió verde.**
+
+Para auditorías nuevas deben registrarse commit/HEAD, timestamp, entorno, proveedor/modelo efectivos, endpoint, respuesta y resultado. 
+
+**Fuente actual de orientación del producto:** `README.md` y código de `main`. Este documento conserva únicamente la trazabilidad de la auditoría de 2026-09-07.
