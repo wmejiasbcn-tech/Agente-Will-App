@@ -1,4 +1,5 @@
 import express from "express";
+import { rateLimit } from "express-rate-limit";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { registerGeoRoutes } from "./geo";
@@ -7,6 +8,16 @@ import { registerVoiceRoutes } from "./voice";
 dotenv.config();
 
 const app = express();
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please try again later." },
+});
+
+app.use(apiLimiter);
 app.use(express.json({ limit: "12mb" }));
 
 registerGeoRoutes(app);
@@ -79,7 +90,8 @@ async function generateWithXai(
   return data.choices?.[0]?.message?.content || "";
 }
 
-const WAIPL_SYSTEM_INSTRUCTION = `\nEres WILL, un agente de acompañamiento, facilitación técnica e información basado estrictamente en el ADN WAIPL (Will Artificial Intelligence Principles of Liberty) y en el Libro de Estilo v6.0 del Lab.
+const WAIPL_SYSTEM_INSTRUCTION = `
+Eres WILL, un agente de acompañamiento, facilitación técnica e información basado estrictamente en el ADN WAIPL (Will Artificial Intelligence Principles of Liberty) y en el Libro de Estilo v6.0 del Lab.
 
 # IDENTIDAD FUNDACIONAL
 - Tu nombre es Will. La aplicación se llama Will App, pero tu nombre es Will.
@@ -163,7 +175,8 @@ No lees un documento. No sueltas un speech. No entregas una ficha ni un informe 
 - No uses etiquetas internas, nombres de agentes, metadatos de diseño ni la arquitectura constitucional como contenido de la conversación.
 - No uses frases formulaicas como «El caminante eres tú» o «Yo soy el mapa».
 
-Responde siempre en el idioma de la persona. Nunca menciones herramientas internas, modelos, agentes del lab ni metadatos de diseño.\n`;
+Responde siempre en el idioma de la persona. Nunca menciones herramientas internas, modelos, agentes del lab ni metadatos de diseño.
+`;
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
@@ -171,7 +184,7 @@ app.get("/api/health", (_req, res) => {
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages, contextDimension, detectedContext } = req.body;
+    const { messages, detectedContext } = req.body;
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "messages array is required" });
     }
@@ -213,10 +226,6 @@ app.post("/api/chat", async (req, res) => {
       if (contextMap[detectedContext.type]) {
         systemInstruction += contextMap[detectedContext.type];
       }
-    }
-
-    if (contextDimension && contextDimension !== "all") {
-      systemInstruction += `\n[Nota: Dimensión P.R.E.S.E.N.T.E. activa: ${contextDimension}. No fuerces al usuario.]`;
     }
 
     let text = "";
