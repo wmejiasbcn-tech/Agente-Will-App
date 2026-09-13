@@ -929,7 +929,12 @@ function registerVoiceRoutes(app2) {
     applyTtsCors(req, res);
     return res.status(204).end();
   });
+  app2.options("/api/voice/listen", (req, res) => {
+    applyTtsCors(req, res);
+    return res.status(204).end();
+  });
   app2.post("/api/voice/listen", async (req, res) => {
+    applyTtsCors(req, res);
     try {
       const apiKey = elevenLabsKey();
       if (!apiKey) {

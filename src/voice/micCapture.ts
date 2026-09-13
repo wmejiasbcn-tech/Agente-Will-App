@@ -12,6 +12,16 @@ export type MicCaptureSnap = {
   seconds: number;
 };
 
+export type MicFailReason =
+  | 'denied'
+  | 'insecure'
+  | 'busy'
+  | 'notfound'
+  | 'unsupported'
+  | 'empty'
+  | 'stt'
+  | 'mic';
+
 type Listener = (snap: MicCaptureSnap) => void;
 
 const listeners = new Set<Listener>();
@@ -46,7 +56,13 @@ function pin() {
 }
 
 function stopTracks() {
-  stream?.getTracks().forEach((t) => t.stop());
+  stream?.getTracks().forEach((t) => {
+    try {
+      t.stop();
+    } catch {
+      /* ignore */
+    }
+  });
   stream = null;
 }
 
@@ -61,8 +77,8 @@ function startRecorder(rec: MediaRecorder) {
 function makeRecorder(media: MediaStream): MediaRecorder {
   const mime = pickMime();
   const attempts: Array<() => MediaRecorder> = [
-    () => new MediaRecorder(media),
     ...(mime ? [() => new MediaRecorder(media, { mimeType: mime })] : []),
+    () => new MediaRecorder(media),
   ];
   let last: unknown;
   for (const make of attempts) {
@@ -128,6 +144,82 @@ function attachRecorder(media: MediaStream) {
   return rec;
 }
 
+type GumFn = (constraints: MediaStreamConstraints) => Promise<MediaStream>;
+
+function getUserMediaFn(): GumFn | null {
+  const md = navigator.mediaDevices;
+  if (md && typeof md.getUserMedia === 'function') {
+    return (constraints) => md.getUserMedia(constraints);
+  }
+  const legacy = (
+    navigator as Navigator & {
+      webkitGetUserMedia?: (
+        c: MediaStreamConstraints,
+        ok: (s: MediaStream) => void,
+        err: (e: unknown) => void,
+      ) => void;
+      getUserMedia?: (
+        c: MediaStreamConstraints,
+        ok: (s: MediaStream) => void,
+        err: (e: unknown) => void,
+      ) => void;
+    }
+  ).webkitGetUserMedia || (navigator as Navigator & { getUserMedia?: GumFn }).getUserMedia;
+  if (typeof legacy === 'function' && legacy.length >= 3) {
+    const fn = legacy as (
+      c: MediaStreamConstraints,
+      ok: (s: MediaStream) => void,
+      err: (e: unknown) => void,
+    ) => void;
+    return (constraints) =>
+      new Promise((resolve, reject) => fn.call(navigator, constraints, resolve, reject));
+  }
+  return null;
+}
+
+async function acquireStream(): Promise<MediaStream> {
+  const gum = getUserMediaFn();
+  if (!gum) {
+    throw Object.assign(new Error('mic'), { name: 'NotFoundError' });
+  }
+  const attempts: MediaStreamConstraints[] = [
+    { audio: true },
+    { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } },
+  ];
+  let last: unknown;
+  for (const constraints of attempts) {
+    try {
+      return await gum(constraints);
+    } catch (err) {
+      last = err;
+      const name = (err as { name?: string })?.name || '';
+      if (
+        name === 'NotAllowedError' ||
+        name === 'SecurityError' ||
+        name === 'PermissionDeniedError'
+      ) {
+        throw err;
+      }
+    }
+  }
+  throw last || Object.assign(new Error('mic'), { name: 'NotReadableError' });
+}
+
+export function classifyMicFailure(err: unknown): MicFailReason {
+  if (typeof window !== 'undefined' && window.isSecureContext === false) return 'insecure';
+  const name = (err as { name?: string })?.name || '';
+  if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
+    return 'denied';
+  }
+  if (name === 'NotFoundError' || name === 'DevicesNotFoundError') return 'notfound';
+  if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') {
+    return 'busy';
+  }
+  if (name === 'OverconstrainedError' || name === 'ConstraintNotSatisfiedError') return 'busy';
+  if (name === 'NotSupportedError' || name === 'TypeError') return 'unsupported';
+  return 'mic';
+}
+
 export function isWillMicListening() {
   return listening;
 }
@@ -141,16 +233,30 @@ export function subscribeWillMic(fn: Listener) {
 }
 
 export async function startWillMic() {
-  if (listening) return;
+  if (listening && stream?.getAudioTracks().some((t) => t.readyState === 'live')) return;
+  if (listening) {
+    listening = false;
+    stopTracks();
+    recorder = null;
+  }
   installMicDiagProbe();
   resetMicDiag();
   wantStop = false;
   blobs = [];
-  if (!navigator.mediaDevices?.getUserMedia) {
+  if (!getUserMediaFn()) {
     recordMicDiag({ type: 'error', detail: 'no getUserMedia' });
-    throw new Error('mic');
+    throw Object.assign(new Error('mic'), { name: 'NotFoundError' });
   }
-  const media = await navigator.mediaDevices.getUserMedia({ audio: true });
+  let media: MediaStream;
+  try {
+    media = await acquireStream();
+  } catch (err) {
+    recordMicDiag({
+      type: 'error',
+      detail: classifyMicFailure(err),
+    });
+    throw err;
+  }
   stream = media;
   media.getAudioTracks().forEach((track) => {
     track.enabled = true;
@@ -159,26 +265,34 @@ export async function startWillMic() {
       recordMicDiag({ type: 'track_ended', detail: track.readyState });
     });
   });
-  const rec = attachRecorder(media);
-  startRecorder(rec);
-  if (rec.state === 'inactive') {
-    try {
-      rec.start();
-    } catch {
-      /* el onerror/onstop reintenta sobre el mismo stream */
+  try {
+    const rec = attachRecorder(media);
+    startRecorder(rec);
+    if (rec.state === 'inactive') {
+      try {
+        rec.start();
+      } catch {
+        /* el onerror/onstop reintenta sobre el mismo stream */
+      }
     }
+    listening = true;
+    startedAt = Date.now();
+    recordMicDiag({
+      type: 'start',
+      recorderState: rec.state,
+      detail: rec.mimeType || 'default',
+    });
+    recordMicDiag({ type: 'lock', detail: '900ms' });
+    if (tick) window.clearInterval(tick);
+    tick = window.setInterval(emit, 250);
+    emit();
+  } catch (err) {
+    listening = false;
+    stopTracks();
+    recorder = null;
+    recordMicDiag({ type: 'error', detail: classifyMicFailure(err) });
+    throw err;
   }
-  listening = true;
-  startedAt = Date.now();
-  recordMicDiag({
-    type: 'start',
-    recorderState: rec.state,
-    detail: rec.mimeType || 'default',
-  });
-  recordMicDiag({ type: 'lock', detail: '900ms' });
-  if (tick) window.clearInterval(tick);
-  tick = window.setInterval(emit, 250);
-  emit();
 }
 
 export async function stopWillMic(): Promise<Blob | null> {
@@ -194,6 +308,11 @@ export async function stopWillMic(): Promise<Blob | null> {
     await new Promise<void>((resolve) => {
       const done = () => resolve();
       rec.addEventListener('stop', done, { once: true });
+      try {
+        if (typeof rec.requestData === 'function') rec.requestData();
+      } catch {
+        /* algunos motores no exponen requestData */
+      }
       try {
         rec.stop();
       } catch {

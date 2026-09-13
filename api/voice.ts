@@ -147,7 +147,13 @@ export function registerVoiceRoutes(app: Express) {
     return res.status(204).end();
   });
 
+  app.options('/api/voice/listen', (req: Request, res: Response) => {
+    applyTtsCors(req, res);
+    return res.status(204).end();
+  });
+
   app.post('/api/voice/listen', async (req: Request, res: Response) => {
+      applyTtsCors(req, res);
       try {
         const apiKey = elevenLabsKey();
         if (!apiKey) {

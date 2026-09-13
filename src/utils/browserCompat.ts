@@ -33,6 +33,7 @@ const RECORDER_MIMES = [
   'audio/webm;codecs=opus',
   'audio/webm',
   'audio/mp4',
+  'audio/mp4;codecs=mp4a.40.2',
   'audio/ogg;codecs=opus',
   'audio/ogg',
 ];

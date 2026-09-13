@@ -5,20 +5,24 @@ import {
   VOICE_STATE_LABEL,
   VoiceUiState,
   getSharedWillAudio,
+  micErrorCopy,
+  readMicBreak,
   readVoiceMuted,
   speakErrorCopy,
   splitWillSpeech,
   unlockWillAudio,
+  writeMicBreak,
   writeVoiceMuted,
 } from '../voice/willVoice';
 import { recordMicDiag } from '../voice/micDiagnostics';
 import {
+  classifyMicFailure,
   isWillMicListening,
   startWillMic,
   stopWillMic,
   subscribeWillMic,
 } from '../voice/micCapture';
-
+import { probeWillCompat } from '../utils/browserCompat';
 interface WillSpeakApi {
   speakingId: string | null;
   loadingId: string | null;
@@ -47,11 +51,18 @@ function writeSpeakBreak(reason: string, http: number) {
 }
 
 const PUBLISHED_SPEAK = 'https://agente-will-app.vercel.app/api/voice/speak';
+const PUBLISHED_LISTEN = 'https://agente-will-app.vercel.app/api/voice/listen';
 
 function speakUrls(): string[] {
   if (typeof location === 'undefined') return ['/api/voice/speak'];
   if (location.hostname === 'agente-will-app.vercel.app') return ['/api/voice/speak'];
   return ['/api/voice/speak', PUBLISHED_SPEAK];
+}
+
+function listenUrls(): string[] {
+  if (typeof location === 'undefined') return ['/api/voice/listen'];
+  if (location.hostname === 'agente-will-app.vercel.app') return ['/api/voice/listen'];
+  return ['/api/voice/listen', PUBLISHED_LISTEN];
 }
 
 function classifiedReason(status: number, reason: string) {
@@ -339,6 +350,26 @@ function blobToDataUrl(blob: Blob) {
   });
 }
 
+async function transcribeBlob(blob: Blob): Promise<string> {
+  const dataUrl = await blobToDataUrl(blob);
+  const payload = JSON.stringify({ audio: dataUrl, mime: blob.type || 'audio/webm' });
+  for (const url of listenUrls()) {
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      });
+      const data = await r.json().catch(() => ({} as { text?: string }));
+      const spoken = String(data?.text || '').trim();
+      if (r.ok && spoken) return spoken;
+    } catch {
+      /* prueba la siguiente ruta */
+    }
+  }
+  throw Object.assign(new Error('stt'), { willReason: 'stt' });
+}
+
 interface MicProps {
   onTranscript: (text: string, final: boolean) => void;
   currentText?: string;
@@ -366,28 +397,19 @@ export const WillMicButton: React.FC<MicProps> = ({
       const blob = await stopWillMic();
       if (!blob) {
         recordMicDiag({ type: 'stt_fail', bytes: 0, detail: 'empty blob' });
+        writeMicBreak('empty');
         setState('error');
         return;
       }
-      const dataUrl = await blobToDataUrl(blob);
-      const r = await fetch('/api/voice/listen', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audio: dataUrl, mime: blob.type || 'audio/webm' }),
-      });
-      const data = await r.json().catch(() => ({}));
-      const spoken = String(data?.text || '').trim();
-      if (!r.ok || !spoken) {
-        recordMicDiag({ type: 'stt_fail', bytes: blob.size, detail: String(r.status) });
-        setState('error');
-        return;
-      }
+      const spoken = await transcribeBlob(blob);
       recordMicDiag({ type: 'stt_ok', bytes: blob.size, detail: String(spoken.length) });
       const seed = seedRef.current.trim();
       onTranscript(seed ? `${seed} ${spoken}` : spoken, true);
+      writeMicBreak('');
       setState('ready_review');
     } catch {
       recordMicDiag({ type: 'stt_fail', detail: 'exception' });
+      writeMicBreak('stt');
       setState('error');
     }
   };
@@ -409,13 +431,16 @@ export const WillMicButton: React.FC<MicProps> = ({
     if (disabled || startingRef.current || state === 'transcribing') return;
     if (isWillMicListening() || state === 'listening') return;
     startingRef.current = true;
-    lockUntil.current = Date.now() + 2500;
+    lockUntil.current = Date.now() + 3500;
+    writeMicBreak('');
+    probeWillCompat();
     try {
       await startWillMic();
       unlockWillAudio();
-      lockUntil.current = Date.now() + 1200;
+      lockUntil.current = Date.now() + 1800;
       setState('listening');
-    } catch {
+    } catch (err) {
+      writeMicBreak(classifyMicFailure(err));
       setState('error');
     } finally {
       startingRef.current = false;
@@ -430,7 +455,7 @@ export const WillMicButton: React.FC<MicProps> = ({
       id="will-mic-btn"
       disabled={disabled || state === 'transcribing'}
       onClick={() => void onClick()}
-      className={`p-2.5 min-h-11 min-w-11 shrink-0 flex items-center justify-center ${
+      className={`p-2.5 min-h-11 min-w-11 shrink-0 flex items-center justify-center touch-manipulation ${
         active ? 'text-[#e8c37a] will-mic-live' : 'text-[#ead6b4]/35 hover:text-[#e8c37a]'
       }`}
       aria-pressed={active}
@@ -479,28 +504,19 @@ export const WillFinishTalkButton: React.FC<{
       const blob = await stopWillMic();
       if (!blob) {
         recordMicDiag({ type: 'stt_fail', bytes: 0, detail: 'empty blob hud' });
+        writeMicBreak('empty');
         setState('error');
         return;
       }
-      const dataUrl = await blobToDataUrl(blob);
-      const r = await fetch('/api/voice/listen', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audio: dataUrl, mime: blob.type || 'audio/webm' }),
-      });
-      const data = await r.json().catch(() => ({}));
-      const spoken = String(data?.text || '').trim();
-      if (!r.ok || !spoken) {
-        recordMicDiag({ type: 'stt_fail', bytes: blob.size, detail: 'hud ' + String(r.status) });
-        setState('error');
-        return;
-      }
+      const spoken = await transcribeBlob(blob);
       recordMicDiag({ type: 'stt_ok', bytes: blob.size, detail: String(spoken.length) });
       const seed = seedRef.current.trim();
       onTranscript(seed ? `${seed} ${spoken}` : spoken, true);
+      writeMicBreak('');
       setState('ready_review');
     } catch {
       recordMicDiag({ type: 'stt_fail', detail: 'hud exception' });
+      writeMicBreak('stt');
       setState('error');
     } finally {
       setBusy(false);
@@ -511,7 +527,7 @@ export const WillFinishTalkButton: React.FC<{
     <div className="will-mic-dock">
       <p className="will-copy text-[15px]">
         {state === 'error'
-          ? 'No he podido usar el micrófono. Pulsa el micrófono otra vez.'
+          ? micErrorCopy(readMicBreak())
           : busy || state === 'transcribing'
             ? 'Procesando lo que has dicho'
             : state === 'preparing_listen'
@@ -541,9 +557,11 @@ export const VoiceStateLine: React.FC<{
 }> = ({ state, error }) => {
   if (state === 'listening' || isWillMicListening()) return null;
   if (state === 'idle' && !error) return null;
+  const line =
+    state === 'error' ? micErrorCopy(readMicBreak()) : error || VOICE_STATE_LABEL[state];
   return (
     <p className="text-[12px] will-copy px-1 pb-2" role="status" aria-live="polite">
-      {error || VOICE_STATE_LABEL[state]}
+      {line}
       {error && lastSpeakBreak ? (
         <span className="block font-mono text-[11px] will-copy-muted mt-1">{lastSpeakBreak}</span>
       ) : null}

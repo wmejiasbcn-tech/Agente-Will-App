@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { classifyMicFailure } from '../src/voice/micCapture';
+import { micErrorCopy } from '../src/voice/willVoice';
 import {
   isolateMicCause,
   resetMicDiag,
@@ -86,6 +88,20 @@ await test('El código de captura de Will no arrastra las causas ya cerradas', (
   assert.equal(flags.chromeOnly, false);
   assert.equal(flags.silenceTimeout, false);
   assert.equal(flags.audioContextRequired, false);
+});
+
+await test('Clasifica NotAllowedError como permiso denegado, no como fallo genérico', () => {
+  assert.equal(classifyMicFailure({ name: 'NotAllowedError' }), 'denied');
+  assert.equal(classifyMicFailure({ name: 'NotFoundError' }), 'notfound');
+  assert.equal(classifyMicFailure({ name: 'NotReadableError' }), 'busy');
+  assert.equal(classifyMicFailure({ name: 'NotSupportedError' }), 'unsupported');
+});
+
+await test('El copy de error de micrófono distingue permiso, audio vacío y STT', () => {
+  assert.match(micErrorCopy('denied'), /bloqueado/);
+  assert.match(micErrorCopy('empty'), /No he recogido audio/);
+  assert.match(micErrorCopy('stt'), /pasar a escrito/);
+  assert.equal(micErrorCopy('denied').includes('Pulsa otra vez.'), false);
 });
 
 if (failed) {

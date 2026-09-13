@@ -39,6 +39,41 @@ export const VOICE_STATE_LABEL: Record<VoiceUiState, string> = {
 
 const MUTE_KEY = 'will-voice-muted';
 
+let lastMicBreak = '';
+
+export function writeMicBreak(reason: string) {
+  lastMicBreak = reason;
+}
+
+export function readMicBreak() {
+  return lastMicBreak;
+}
+
+export function micErrorCopy(reason: string) {
+  if (reason === 'denied') {
+    return 'El navegador tiene el micrófono bloqueado para esta página. Toca el candado junto a la dirección → Permisos → Micrófono → Permitir. En Android, también: Ajustes → Aplicaciones → Chrome → Permisos → Micrófono.';
+  }
+  if (reason === 'insecure') {
+    return 'El micrófono solo funciona en una página segura. Abre https://agente-will-app.vercel.app';
+  }
+  if (reason === 'busy') {
+    return 'El micrófono está ocupado por otra app. Ciérrala y pulsa el micrófono otra vez.';
+  }
+  if (reason === 'notfound') {
+    return 'No encuentro un micrófono en este dispositivo.';
+  }
+  if (reason === 'unsupported') {
+    return 'Este navegador no puede grabar audio aquí. Prueba Chrome o Firefox, o escribe.';
+  }
+  if (reason === 'empty') {
+    return 'No he recogido audio. Pulsa el micrófono, habla un momento y pulsa otra vez cuando termines.';
+  }
+  if (reason === 'stt') {
+    return 'Te he oído, pero no he podido pasar a escrito lo que has dicho. Pulsa el micrófono otra vez.';
+  }
+  return 'No he podido usar el micrófono. Pulsa otra vez.';
+}
+
 export function prepareWillSpeech(text: string) {
   return text
     .replace(/\*\*/g, '')
@@ -171,4 +206,3 @@ export function unlockWillAudio() {
     }
   }
 }
-
