@@ -1,0 +1,79 @@
+name: Patch mobile UI observations
+on:
+  pull_request:
+    types: [opened, synchronize]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  patch:
+    if: github.event.pull_request.head.ref == 'fix/mobile-ui-observations'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/mobile-ui-observations
+          fetch-depth: 0
+      - name: Apply requested UI fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          # Canon: RRRR + RRDD, never RRDD as umbrella.
+          p=Path('src/data/knowledgeLayerData.ts'); s=p.read_text()
+          old=re.search(r"export const RRDD_CLASSIFICATION = \{.*?\n\};\n?$",s,re.S)
+          if not old: raise SystemExit('RRDD_CLASSIFICATION block not found')
+          new='''export const RRRR_RRDD_CLASSIFICATION = {\n  title: 'RRRR + RRDD',\n  subtitle: 'REDUCCIÓN DE RIESGOS + REDUCCIÓN DE DAÑOS',\n  dimensions: [\n    { id: 'rrrr' as const, label: 'RRRR — REDUCCIÓN DE RIESGOS', description: 'Reconocer, identificar, comprender y valorar los riesgos relevantes para la situación de la persona.' },\n    { id: 'rrdd' as const, label: 'RRDD — REDUCCIÓN DE DAÑOS', description: 'Comprender posibles daños y factores que pueden reducir su impacto. No convierte una conducta en segura.' },\n  ],\n  branches: [\n    { id: 'rrdd-sexual' as const, label: 'RRDD SEXUAL' },\n    { id: 'rrdd-sustancias' as const, label: 'RRDD SUSTANCIAS' },\n  ],\n  rule: 'La fórmula es siempre RRRR + RRDD. Son dimensiones distintas, complementarias y relacionadas. Chemsex y SLAM conservan identidad propia. Relación no significa equivalencia.',\n};\n'''
+          p.write_text(s[:old.start()]+new)
+
+          p=Path('src/components/ExploreTopicsView.tsx'); s=p.read_text()
+          s=s.replace("import { RRDD_CLASSIFICATION } from '../data/knowledgeLayerData';","import { RRRR_RRDD_CLASSIFICATION } from '../data/knowledgeLayerData';")
+          pattern=r"      <div className=\"glass-panel rounded-2xl p-4 sm:p-5 space-y-3\">.*?      </div>\n\n      \{!activeDomain && \("
+          replacement='''      <div className="glass-panel rounded-2xl p-4 sm:p-5 space-y-4">\n        <div className="space-y-1">\n          <h2 className="text-xs font-mono uppercase tracking-[0.16em] text-[#e8c37a]">{RRRR_RRDD_CLASSIFICATION.title}</h2>\n          <p className="text-sm font-serif text-[#ead6b4]">{RRRR_RRDD_CLASSIFICATION.subtitle}</p>\n          <p className="text-[11px] text-[#ead6b4]/55 leading-relaxed">Clasificación obligatoria. RRRR y RRDD no son lo mismo: se relacionan, se complementan y se adaptan a lo que la persona necesita comprender. Chemsex y SLAM conservan identidad propia.</p>\n        </div>\n        <div className="grid sm:grid-cols-2 gap-2.5">\n          {RRRR_RRDD_CLASSIFICATION.dimensions.map((dimension) => (\n            <div key={dimension.id} className="glass-panel-strong rounded-xl px-4 py-3">\n              <p className="text-sm font-serif text-[#e8c37a] tracking-wide">{dimension.label}</p>\n              <p className="text-[11px] text-[#ead6b4]/55 mt-1 leading-relaxed">{dimension.description}</p>\n            </div>\n          ))}\n        </div>\n        <div className="space-y-2">\n          <p className="text-[10px] uppercase tracking-[0.14em] text-[#ead6b4]/45">Clasificación de RRDD</p>\n          <div className="grid sm:grid-cols-2 gap-2.5">\n            {RRRR_RRDD_CLASSIFICATION.branches.map((branch) => (\n              <div key={branch.id} className="glass-panel-strong rounded-xl px-4 py-3">\n                <p className="text-sm font-serif text-[#e8c37a] tracking-wide">{branch.label}</p>\n                <p className="text-[11px] text-[#ead6b4]/50 mt-1">{branch.id === 'rrdd-sexual' ? 'Dimensión sexual de reducción de daños. Relación no significa equivalencia con Prevención.' : 'Dimensión de sustancias de reducción de daños. Chemsex y SLAM conservan identidad propia.'}</p>\n              </div>\n            ))}\n          </div>\n        </div>\n        <p className="text-[11px] text-[#ead6b4]/45 leading-relaxed">{RRRR_RRDD_CLASSIFICATION.rule}</p>\n      </div>\n\n      {!activeDomain && (\n'''
+          s,n=re.subn(pattern,replacement,s,count=1,flags=re.S)
+          if n!=1: raise SystemExit('Explore classification block not found')
+          p.write_text(s)
+
+          # Mobile navigation continuation affordance.
+          p=Path('src/components/Navbar.tsx'); s=p.read_text()
+          s=s.replace("import React, { useState } from 'react';","import React, { useRef, useState } from 'react';")
+          s=s.replace("  onOpenEmergency,\n}) => {","  onOpenEmergency,\n}) => {\n  const mobileNavRef = useRef<HTMLElement | null>(null);")
+          old='''        <nav\n          className="flex md:hidden items-center gap-4 py-1 overflow-x-auto no-scrollbar overscroll-x-contain"\n          aria-label="Principal"\n        >'''
+          new='''        <div className="relative md:hidden">\n          <nav ref={mobileNavRef} className="flex items-center gap-4 py-1 pr-10 overflow-x-auto no-scrollbar overscroll-x-contain" aria-label="Principal">'''
+          if old not in s: raise SystemExit('mobile nav start not found')
+          s=s.replace(old,new,1)
+          old='''        </nav>\n      </div>\n    </header>'''
+          new='''          </nav>\n          <button type="button" aria-label="Mostrar más opciones de navegación" title="Más opciones" className="will-nav-more absolute right-0 top-0 bottom-0 w-10 md:hidden" onClick={() => mobileNavRef.current?.scrollBy({ left: 180, behavior: 'smooth' })}><span aria-hidden="true">›</span></button>\n        </div>\n      </div>\n    </header>'''
+          if old not in s: raise SystemExit('mobile nav end not found')
+          s=s.replace(old,new,1); p.write_text(s)
+
+          # Global proportional reading scale.
+          p=Path('src/index.css'); s=p.read_text()
+          if 'html[data-will-type=' not in s:
+              s += '''\n\n/* Global proportional reading scale A/A+/A++/A+++. */\nhtml[data-will-type='a'] { --will-type: 1; --will-leading: 1.55; }\nhtml[data-will-type='a-plus'] { --will-type: 1.12; --will-leading: 1.62; }\nhtml[data-will-type='a-plus-plus'] { --will-type: 1.24; --will-leading: 1.68; }\nhtml[data-will-type='a-plus-plus-plus'] { --will-type: 1.36; --will-leading: 1.74; }\nhtml[data-will-type] { font-size: calc(16px * var(--will-type, 1)); }\nhtml[data-will-type] .will-app-shell { line-height: var(--will-leading, 1.55); }\n.will-nav-more { display:inline-flex; align-items:center; justify-content:center; color:#e8c37a; background:linear-gradient(90deg,rgba(7,8,10,0),rgba(7,8,10,.94) 42%); border:0; font-family:var(--font-serif); font-size:28px; line-height:1; }\n'''
+          p.write_text(s)
+
+          # Resource failure message: no false implication of absence; expose retry via the existing search controls.
+          for name in ['src/components/NearbyResources.tsx','src/components/OtherResourcesView.tsx']:
+              p=Path(name); s=p.read_text()
+              s=s.replace('No se ha podido consultar el lugar ahora. El fallo es técnico, no una prueba de que no\\n          haya recursos.','No he podido obtener los recursos en este momento. Puedes volver a intentarlo; este fallo no indica que no existan recursos.')
+              s=s.replace('No se ha podido consultar el mapa ahora. El fallo es técnico, no una prueba de que no\\n          haya recursos.','No he podido obtener los recursos en este momento. Puedes volver a intentarlo; este fallo no indica que no existan recursos.')
+              p.write_text(s)
+          assert 'RRRR_RRDD_CLASSIFICATION' in Path('src/components/ExploreTopicsView.tsx').read_text()
+          assert 'RRDD_CLASSIFICATION' not in Path('src/components/ExploreTopicsView.tsx').read_text()
+          PY
+      - name: Validate
+        run: |
+          npm install
+          npm run lint
+          npm run build
+      - name: Commit patch and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/knowledgeLayerData.ts src/components/ExploreTopicsView.tsx src/components/Navbar.tsx src/index.css src/components/NearbyResources.tsx src/components/OtherResourcesView.tsx .github/workflows/patch-mobile-ui-branch.yml
+          git commit -m "fix: align mobile navigation, taxonomy and reading scale"
+          git rm .github/workflows/patch-mobile-ui-branch.yml
+          git commit -m "chore: remove temporary branch patch workflow"
+          git push
