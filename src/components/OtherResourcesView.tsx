@@ -135,7 +135,7 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
       <div className="arch-glass p-4 sm:p-5 space-y-3">
         <form onSubmit={searchPlace} className="flex flex-col sm:flex-row gap-2">
           <label className="sr-only" htmlFor="other-resources-search">
-            Buscar ciudad, región, país o un lugar concreto
+            Buscar recursos por ciudad, región, país o lugar
           </label>
           <input
             id="other-resources-search"
@@ -154,6 +154,10 @@ export const OtherResourcesView: React.FC<OtherResourcesViewProps> = ({
             Buscar
           </button>
         </form>
+
+        <p className="text-[11px] will-copy-muted leading-relaxed">
+          Orden: centros comunitarios y ONG especializadas → centros sociosanitarios especializados → centros sanitarios especializados → centros hospitalarios. La proximidad por sí sola no convierte un lugar en recurso de Will.
+        </p>
 
         <div className="flex flex-wrap gap-2">
           <button
