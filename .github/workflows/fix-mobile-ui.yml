@@ -1,0 +1,205 @@
+name: Apply mobile UI fixes
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch UI
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          # 1) Canon: RRRR + RRDD, with RRDD sexual/substances as sub-classification.
+          p = Path('src/data/knowledgeLayerData.ts')
+          s = p.read_text()
+          old = re.search(r"export const RRDD_CLASSIFICATION = \{.*?\n\};\n?$", s, re.S)
+          if not old:
+              raise SystemExit('RRDD_CLASSIFICATION block not found')
+          new = '''export const RRRR_RRDD_CLASSIFICATION = {
+            title: 'RRRR + RRDD',
+            subtitle: 'REDUCCIÓN DE RIESGOS + REDUCCIÓN DE DAÑOS',
+            dimensions: [
+              {
+                id: 'rrrr' as const,
+                label: 'RRRR — REDUCCIÓN DE RIESGOS',
+                description: 'Reconocer, identificar, comprender y valorar los riesgos relevantes para la situación de la persona.',
+              },
+              {
+                id: 'rrdd' as const,
+                label: 'RRDD — REDUCCIÓN DE DAÑOS',
+                description: 'Comprender posibles daños y factores que pueden reducir su impacto. No convierte una conducta en segura.',
+              },
+            ],
+            branches: [
+              { id: 'rrdd-sexual' as const, label: 'RRDD SEXUAL' },
+              { id: 'rrdd-sustancias' as const, label: 'RRDD SUSTANCIAS' },
+            ],
+            rule: 'La fórmula es siempre RRRR + RRDD. Son dimensiones distintas, complementarias y relacionadas. Chemsex y SLAM conservan identidad propia. Relación no significa equivalencia.',
+          };
+          '''
+          p.write_text(s[:old.start()] + new)
+
+          # 2) Explore Topics: never use RRDD as umbrella.
+          p = Path('src/components/ExploreTopicsView.tsx')
+          s = p.read_text()
+          s = s.replace("import { RRDD_CLASSIFICATION } from '../data/knowledgeLayerData';", "import { RRRR_RRDD_CLASSIFICATION } from '../data/knowledgeLayerData';")
+          pattern = r"      <div className=\"glass-panel rounded-2xl p-4 sm:p-5 space-y-3\">.*?      </div>\n\n      \{!activeDomain && \("
+          replacement = '''      <div className="glass-panel rounded-2xl p-4 sm:p-5 space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-xs font-mono uppercase tracking-[0.16em] text-[#e8c37a]">
+            {RRRR_RRDD_CLASSIFICATION.title}
+          </h2>
+          <p className="text-sm font-serif text-[#ead6b4]">{RRRR_RRDD_CLASSIFICATION.subtitle}</p>
+          <p className="text-[11px] text-[#ead6b4]/55 leading-relaxed">
+            Clasificación obligatoria. RRRR y RRDD no son lo mismo: se relacionan, se complementan y se adaptan a lo que la persona necesita comprender. Chemsex y SLAM conservan identidad propia.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-2.5">
+          {RRRR_RRDD_CLASSIFICATION.dimensions.map((dimension) => (
+            <div key={dimension.id} className="glass-panel-strong rounded-xl px-4 py-3">
+              <p className="text-sm font-serif text-[#e8c37a] tracking-wide">{dimension.label}</p>
+              <p className="text-[11px] text-[#ead6b4]/55 mt-1 leading-relaxed">{dimension.description}</p>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-[#ead6b4]/45">Clasificación de RRDD</p>
+          <div className="grid sm:grid-cols-2 gap-2.5">
+            {RRRR_RRDD_CLASSIFICATION.branches.map((branch) => (
+              <div key={branch.id} className="glass-panel-strong rounded-xl px-4 py-3">
+                <p className="text-sm font-serif text-[#e8c37a] tracking-wide">{branch.label}</p>
+                <p className="text-[11px] text-[#ead6b4]/50 mt-1">
+                  {branch.id === 'rrdd-sexual'
+                    ? 'Dimensión sexual de reducción de daños. Relación no significa equivalencia con Prevención.'
+                    : 'Dimensión de sustancias de reducción de daños. Chemsex y SLAM conservan identidad propia.'}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="text-[11px] text-[#ead6b4]/45 leading-relaxed">{RRRR_RRDD_CLASSIFICATION.rule}</p>
+      </div>
+
+      {!activeDomain && ('''
+          ns, count = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('Explore classification block not found')
+          p.write_text(ns)
+
+          # 3) Mobile top navigation: make hidden continuation discoverable and tappable.
+          p = Path('src/components/Navbar.tsx')
+          s = p.read_text()
+          s = s.replace("import React, { useState } from 'react';", "import React, { useRef, useState } from 'react';")
+          s = s.replace("  onOpenEmergency,\n}) => {", "  onOpenEmergency,\n}) => {\n  const mobileNavRef = useRef<HTMLElement | null>(null);")
+          old_nav = '''        <nav
+          className="flex md:hidden items-center gap-4 py-1 overflow-x-auto no-scrollbar overscroll-x-contain"
+          aria-label="Principal"
+        >'''
+          new_nav = '''        <div className="relative md:hidden">
+          <nav
+            ref={mobileNavRef}
+            className="flex items-center gap-4 py-1 pr-10 overflow-x-auto no-scrollbar overscroll-x-contain"
+            aria-label="Principal"
+          >'''
+          if old_nav not in s:
+              raise SystemExit('mobile nav start not found')
+          s = s.replace(old_nav, new_nav, 1)
+          old_end = '''        </nav>
+      </div>
+    </header>'''
+          new_end = '''          </nav>
+          <button
+            type="button"
+            aria-label="Mostrar más opciones de navegación"
+            title="Más opciones"
+            className="will-nav-more absolute right-0 top-0 bottom-0 w-10 md:hidden"
+            onClick={() => mobileNavRef.current?.scrollBy({ left: 180, behavior: 'smooth' })}
+          >
+            <span aria-hidden="true">›</span>
+          </button>
+        </div>
+      </div>
+    </header>'''
+          if old_end not in s:
+              raise SystemExit('mobile nav end not found')
+          s = s.replace(old_end, new_end, 1)
+          p.write_text(s)
+
+          # 4) Type scale: make A/A+/A++/A+++ affect the whole rem-based UI, not only chat.
+          p = Path('src/index.css')
+          s = p.read_text()
+          marker = '/* Will reading scale: progressive, proportional and global. */'
+          block = '''/* Will reading scale: progressive, proportional and global. */
+html[data-will-type='a'] { --will-type: 1; --will-leading: 1.55; --will-space: 1; }
+html[data-will-type='a-plus'] { --will-type: 1.12; --will-leading: 1.62; --will-space: 1.08; }
+html[data-will-type='a-plus-plus'] { --will-type: 1.24; --will-leading: 1.68; --will-space: 1.16; }
+html[data-will-type='a-plus-plus-plus'] { --will-type: 1.36; --will-leading: 1.74; --will-space: 1.24; }
+html[data-will-type] { font-size: calc(16px * var(--will-type, 1)); }
+html[data-will-type] .will-app-shell { line-height: var(--will-leading, 1.55); }
+'''
+          if marker in s:
+              s = s.split(marker)[0].rstrip() + '\n\n' + block + '\n' + s.split(marker,1)[1].split('\n',1)[1]
+          else:
+              s += '\n\n' + block
+          s += '''\n/* Discoverability affordance for horizontally continued mobile navigation. */
+.will-nav-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #e8c37a;
+  background: linear-gradient(90deg, rgba(7,8,10,0), rgba(7,8,10,0.94) 42%);
+  border: 0;
+  font-family: var(--font-serif);
+  font-size: 28px;
+  line-height: 1;
+}
+.will-nav-more:focus-visible { outline: 2px solid rgba(232,195,122,0.7); outline-offset: -2px; }
+'''
+          p.write_text(s)
+
+          # 5) Microphone: preserve real browser error instead of collapsing everything into a vague retry.
+          p = Path('src/voice/micCapture.ts')
+          s = p.read_text()
+          s = s.replace("  const media = await navigator.mediaDevices.getUserMedia({ audio: true });", "  let media: MediaStream;\n  try {\n    media = await navigator.mediaDevices.getUserMedia({ audio: true });\n  } catch (error) {\n    const name = error instanceof DOMException ? error.name : 'UnknownError';\n    recordMicDiag({ type: 'error', detail: `getUserMedia:${name}` });\n    throw new Error(`MIC_${name}`);\n  }")
+          p.write_text(s)
+
+          p = Path('src/components/WillVoice.tsx')
+          s = p.read_text()
+          s = s.replace("  const beginListen = async () => {", "  const beginListen = async () => {")
+          s = s.replace("    } catch {\n      setState('error');\n    } finally {", "    } catch (error) {\n      recordMicDiag({ type: 'error', detail: error instanceof Error ? error.message : 'MIC_UNKNOWN' });\n      setState('error');\n    } finally {")
+          s = s.replace("        {state === 'error'\n          ? 'No he podido usar el micrófono. Pulsa el micrófono otra vez.'", "        {state === 'error'\n          ? 'No he podido acceder al micrófono. Comprueba el permiso del navegador y vuelve a intentarlo.'")
+          p.write_text(s)
+
+          # 6) Resource error copy: distinguish service failure from absence and give a direct retry affordance.
+          for name in ['src/components/NearbyResources.tsx','src/components/OtherResourcesView.tsx']:
+              p = Path(name)
+              s = p.read_text()
+              s = s.replace('No se ha podido consultar el lugar ahora. El fallo es técnico, no una prueba de que no\\n          haya recursos.', 'No he podido obtener los recursos en este momento. Puedes volver a intentarlo; este fallo no indica que no existan recursos.')
+              s = s.replace('No se ha podido consultar el mapa ahora. El fallo es técnico, no una prueba de que no\\n          haya recursos.', 'No he podido obtener los recursos en este momento. Puedes volver a intentarlo; este fallo no indica que no existan recursos.')
+              p.write_text(s)
+
+          # Ensure the intended files changed and no old umbrella remains in the visible taxonomy.
+          assert 'RRRR_RRDD_CLASSIFICATION' in Path('src/components/ExploreTopicsView.tsx').read_text()
+          assert 'RRDD_CLASSIFICATION' not in Path('src/components/ExploreTopicsView.tsx').read_text()
+          assert "RRRR + RRDD" in Path('src/data/knowledgeLayerData.ts').read_text()
+          PY
+      - name: Typecheck and build
+        run: |
+          npm install
+          npm run lint
+          npm run build
+      - name: Commit and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/knowledgeLayerData.ts src/components/ExploreTopicsView.tsx src/components/Navbar.tsx src/index.css src/voice/micCapture.ts src/components/WillVoice.tsx src/components/NearbyResources.tsx src/components/OtherResourcesView.tsx .github/workflows/fix-mobile-ui.yml
+          git commit -m "fix: align mobile UI and accessibility behavior"
+          git rm .github/workflows/fix-mobile-ui.yml
+          git commit -m "chore: remove temporary UI patch workflow"
+          git push
