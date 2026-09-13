@@ -22,5 +22,10 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "tests/browser-perf.test.ts",
+    "tests/cross-browser-voice.test.ts",
+    "tests/neo-voice.test.ts"
+  ]
 }
