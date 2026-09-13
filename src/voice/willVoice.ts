@@ -34,7 +34,7 @@ export const VOICE_STATE_LABEL: Record<VoiceUiState, string> = {
   speaking: 'Will hablando',
   paused: 'Pausado',
   muted: 'Silenciado',
-  error: 'No he podido usar el micrófono. Puedes escribir.',
+  error: 'No he podido usar el micrófono. Pulsa otra vez.',
 };
 
 const MUTE_KEY = 'will-voice-muted';

@@ -36,6 +36,10 @@
     },
     {
       "src": "/(.*)",
+      "headers": {
+        "Permissions-Policy": "microphone=(self), geolocation=(self)",
+        "Feature-Policy": "microphone 'self'; geolocation 'self'"
+      },
       "dest": "/index.html"
     }
   ]

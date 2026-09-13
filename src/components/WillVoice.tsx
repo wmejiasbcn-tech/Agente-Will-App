@@ -12,7 +12,6 @@ import {
   writeVoiceMuted,
 } from '../voice/willVoice';
 import { recordMicDiag } from '../voice/micDiagnostics';
-import { probeWillCompat } from '../utils/browserCompat';
 import {
   isWillMicListening,
   startWillMic,
@@ -403,12 +402,14 @@ export const WillMicButton: React.FC<MicProps> = ({
       await finish();
       return;
     }
-    if (!probeWillCompat().mic.canCapture) {
-      setState('error');
-      return;
-    }
+    await beginListen();
+  };
+
+  const beginListen = async () => {
+    if (disabled || startingRef.current || state === 'transcribing') return;
+    if (isWillMicListening() || state === 'listening') return;
     startingRef.current = true;
-    setState('preparing_listen');
+    lockUntil.current = Date.now() + 2500;
     try {
       unlockWillAudio();
       await startWillMic();
@@ -428,6 +429,11 @@ export const WillMicButton: React.FC<MicProps> = ({
       type="button"
       id="will-mic-btn"
       disabled={disabled || state === 'transcribing'}
+      onPointerDown={(ev) => {
+        if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+        if (isWillMicListening() || state === 'listening' || state === 'transcribing') return;
+        void beginListen();
+      }}
       onClick={() => void onClick()}
       className={`p-2.5 min-h-11 min-w-11 shrink-0 flex items-center justify-center ${
         active ? 'text-[#e8c37a] will-mic-live' : 'text-[#ead6b4]/35 hover:text-[#e8c37a]'
