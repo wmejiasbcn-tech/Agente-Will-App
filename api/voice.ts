@@ -143,6 +143,26 @@ function cleanSttMime(mime: string) {
   return 'audio/webm';
 }
 
+/**
+ * Canonicalizes high-value voice terms after STT. This is deliberately a
+ * small contextual lexicon, not a general spell-corrector: it fixes known
+ * phonetic STT variants without rewriting ordinary user language.
+ */
+export function normalizeVoiceTranscript(text: string) {
+  let normalized = text.replace(/\s+/g, ' ').trim();
+
+  normalized = normalized.replace(
+    /\b(?:doxy\s*pep|doxi\s*pep|doxy\s*pap|doxi\s*pap|dosi\s*pep|dosi\s*pap|doxypep|doxipep|dosipep)\b/gi,
+    'DoxyPEP',
+  );
+
+  // PEP is a canonical acronym in Will's supported health/sexual-health
+  // vocabulary. Keep this narrow to the standalone spoken token.
+  normalized = normalized.replace(/\bpep\b/gi, 'PEP');
+
+  return normalized;
+}
+
 export function registerVoiceRoutes(app: Express) {
   app.get('/api/voice/config', (_req, res) => {
     res.json({
@@ -206,7 +226,7 @@ export function registerVoiceRoutes(app: Express) {
             continue;
           }
           const data: any = await r.json();
-          const text = String(data?.text || '').replace(/\s+/g, ' ').trim();
+          const text = normalizeVoiceTranscript(String(data?.text || ''));
           if (text) return res.json({ text, storesAudio: false });
           emptyOk = true;
         }
