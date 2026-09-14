@@ -57,6 +57,16 @@ export default function App() {
     setActiveTab('chat');
   };
 
+  const openResources = () => {
+    unlockWillAudio();
+    setActiveTab('resources');
+  };
+
+  const openOtherResources = () => {
+    unlockWillAudio();
+    setActiveTab('other-resources');
+  };
+
   const scene: WillScene =
     activeTab === 'topics'
       ? 'topics'
@@ -113,6 +123,8 @@ export default function App() {
             onClearInitialPrompt={() => setChatInitialPrompt('')}
             onGoNextScene={goNextScene}
             onOpenExploration={openExploration}
+            onOpenResources={openResources}
+            onOpenOtherResources={openOtherResources}
           />
         </div>
 

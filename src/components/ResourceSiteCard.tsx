@@ -2,6 +2,7 @@ import React from 'react';
 import { ExternalLink, PhoneCall } from 'lucide-react';
 import { NearbySite } from '../utils/geolocation';
 import { labelForLang } from '../data/spokenLanguages';
+import { isVetoedResource } from '../utils/resourceVeto';
 
 interface ResourceSiteCardProps {
   site: NearbySite;
@@ -14,6 +15,7 @@ export const ResourceSiteCard: React.FC<ResourceSiteCardProps> = ({
   requested,
   onAskWill,
 }) => {
+  if (isVetoedResource(site.name, site.website)) return null;
   const careHit = requested.filter((l) => site.careLanguages.includes(l));
   return (
     <article className="arch-glass p-4 space-y-2">

@@ -31,6 +31,12 @@ import {
   useWillSpeak,
 } from './WillVoice';
 import { VoiceUiState } from '../voice/willVoice';
+import { WillConversationResources } from './WillConversationResources';
+import {
+  isVerifiedResourceUrl,
+  labelForVerifiedUrl,
+} from '../data/conversationResources';
+import { isVetoedUrl, scrubVetoedText } from '../utils/resourceVeto';
 
 interface WillChatProps {
   onSelectDimension?: (code: PresenteCode) => void;
@@ -40,6 +46,8 @@ interface WillChatProps {
   onClearInitialPrompt?: () => void;
   onGoNextScene?: () => void;
   onOpenExploration?: (domainId: string) => void;
+  onOpenResources?: () => void;
+  onOpenOtherResources?: () => void;
 }
 
 const WELCOME_TEXT =
@@ -52,7 +60,7 @@ const CONVERSATION_LANGUAGE_GUARD =
   '[Continuidad de idioma: esta conversación está en castellano. Mantén el castellano aunque una transcripción aislada parezca pertenecer a otro idioma. Solo cambia de idioma si la persona lo solicita explícitamente o empieza a comunicarse de forma inequívoca y sostenida en otro idioma.]';
 
 function WillSpoken({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+?\*\*)/g);
+  const parts = scrubVetoedText(text).split(/(\*\*[^*]+?\*\*|https?:\/\/[^\s<>"'）)\]]+)/g);
   return (
     <>
       {parts.map((part, i) => {
@@ -62,6 +70,22 @@ function WillSpoken({ text }: { text: string }) {
             <strong key={i} className="font-semibold">
               {bold[1]}
             </strong>
+          );
+        }
+        if (/^https?:\/\//.test(part)) {
+          if (isVetoedUrl(part) || !isVerifiedResourceUrl(part)) {
+            return <React.Fragment key={i}>{part}</React.Fragment>;
+          }
+          return (
+            <a
+              key={i}
+              href={part}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[#e8c37a] underline underline-offset-4"
+            >
+              {labelForVerifiedUrl(part) || part}
+            </a>
           );
         }
         return <React.Fragment key={i}>{part}</React.Fragment>;
@@ -77,6 +101,8 @@ export const WillChat: React.FC<WillChatProps> = ({
   onClearInitialPrompt,
   onGoNextScene,
   onOpenExploration,
+  onOpenResources,
+  onOpenOtherResources,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -419,6 +445,14 @@ export const WillChat: React.FC<WillChatProps> = ({
                         <WillSpoken text={isUser ? msg.content : speak.visibleText(msg.id, msg.content)} />
                       )}
                     </div>
+
+                    {!isUser && !msg.id.startsWith('invite-') && (
+                      <WillConversationResources
+                        contextType={msg.detectedContext?.type}
+                        onOpenResources={onOpenResources}
+                        onOpenOtherResources={onOpenOtherResources}
+                      />
+                    )}
 
                     {!isUser && (
                       <div className="flex flex-wrap items-center gap-1 text-[#ead6b4]/35">

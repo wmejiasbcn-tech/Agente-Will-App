@@ -341,6 +341,21 @@ function isPrivateCare(tags, name) {
   return /clínica caracas|teknon|quirónsalud|quiron|centro médico de caracas|policínica metropolitana/i.test(name);
 }
 
+// src/utils/resourceVeto.ts
+var VETO_NAME = /gais\s*positius|gays?\s*positivos?|gaispositius/i;
+function isVetoedResource(name, url) {
+  const blob = `${name || ""} ${url || ""}`;
+  if (!blob.trim()) return false;
+  return VETO_NAME.test(blob);
+}
+function scrubVetoedText(text) {
+  if (!text) return text;
+  return text.replace(VETO_NAME, "").replace(/https?:\/\/[^\s]*gaispositius[^\s]*/gi, "").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+}
+function rejectVetoedSites(sites) {
+  return sites.filter((site) => !isVetoedResource(site.name, site.website));
+}
+
 // api/geo.ts
 function osmEmbedUrl(center, sites) {
   const pts = [center, ...sites];
@@ -407,6 +422,9 @@ function classify(tags) {
   return { kind: "Otro recurso", category: "other" };
 }
 function rejectSite(tags, name) {
+  if (isVetoedResource(name, tags.website || tags["contact:website"] || tags["contact:url"])) {
+    return true;
+  }
   const a = (tags.amenity || tags.healthcare || tags.office || "").toLowerCase();
   if (["pharmacy", "dentist", "veterinary", "community_centre", "arts_centre", "library", "theatre", "townhall"].includes(a)) {
     return true;
@@ -534,7 +552,7 @@ function rankSite(site) {
   return 4;
 }
 function mixSites(sites) {
-  return [...sites].sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km).slice(0, 100);
+  return rejectVetoedSites([...sites]).sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km).slice(0, 100);
 }
 async function overpassNearby(lat, lng, preferred) {
   const query = `[out:json][timeout:8];
@@ -799,6 +817,8 @@ function elevenLabsKey() {
 var WILL_VOICE_ID = "DrwFQsjvHFpLcKyvtbE3";
 var WILL_MODEL = "eleven_multilingual_v2";
 var WILL_TTS = "https://api.elevenlabs.io/v1/text-to-speech";
+var WILL_STT_KEYTERMS = ["PEP", "DoxyPEP"];
+var WILL_STT_LANGUAGE = "es";
 function elevenLabsIdentity() {
   return {
     provider: "ElevenLabs",
@@ -904,12 +924,23 @@ function cleanSttMime(mime) {
   if (base.includes("webm")) return "audio/webm";
   return "audio/webm";
 }
+function normalizeVoiceTranscript(text) {
+  let normalized = text.replace(/\s+/g, " ").trim();
+  normalized = normalized.replace(
+    /\b(?:doxy\s*pep|doxi\s*pep|doxy\s*pap|doxi\s*pap|dosi\s*pep|dosi\s*pap|doxypep|doxipep|dosipep)\b/gi,
+    "DoxyPEP"
+  );
+  normalized = normalized.replace(/\bpep\b/gi, "PEP");
+  return normalized;
+}
 function registerVoiceRoutes(app2) {
   app2.get("/api/voice/config", (_req, res) => {
     res.json({
       ...elevenLabsIdentity(),
       listen: Boolean(elevenLabsKey()),
-      hasServerKey: Boolean(elevenLabsKey())
+      hasServerKey: Boolean(elevenLabsKey()),
+      sttLanguage: WILL_STT_LANGUAGE,
+      sttKeyterms: WILL_STT_KEYTERMS
     });
   });
   app2.options("/api/voice/speak", (req, res) => {
@@ -939,6 +970,9 @@ function registerVoiceRoutes(app2) {
         const form = new FormData();
         form.append("model_id", model);
         if (language) form.append("language_code", language);
+        if (model === "scribe_v2") {
+          for (const keyterm of WILL_STT_KEYTERMS) form.append("keyterms", keyterm);
+        }
         form.append("tag_audio_events", "false");
         form.append("file", new Blob([fileBytes], { type: mime }), mimeToName(mime));
         return fetch("https://api.elevenlabs.io/v1/speech-to-text", {
@@ -949,9 +983,9 @@ function registerVoiceRoutes(app2) {
         });
       }
       const attempts = [
+        { model: "scribe_v2", language: WILL_STT_LANGUAGE },
         { model: "scribe_v2" },
-        { model: "scribe_v2", language: "es" },
-        { model: "scribe_v1" }
+        { model: "scribe_v1", language: WILL_STT_LANGUAGE }
       ];
       let emptyOk = false;
       for (const attempt of attempts) {
@@ -962,11 +996,17 @@ function registerVoiceRoutes(app2) {
           continue;
         }
         const data = await r.json();
-        const text = String(data?.text || "").replace(/\s+/g, " ").trim();
-        if (text) return res.json({ text, storesAudio: false });
+        const text = normalizeVoiceTranscript(String(data?.text || ""));
+        if (text) {
+          return res.json({
+            text,
+            storesAudio: false,
+            languageCode: String(data?.language_code || attempt.language || "es")
+          });
+        }
         emptyOk = true;
       }
-      if (emptyOk) return res.json({ text: "", storesAudio: false });
+      if (emptyOk) return res.json({ text: "", storesAudio: false, languageCode: "es" });
       return res.status(502).json({ error: "No he podido pasar a escrito lo que has dicho ahora." });
     } catch (error) {
       console.error("Error in /api/voice/listen", error?.message || error);
@@ -1231,6 +1271,23 @@ Si la persona pregunta \xAB\xBFqu\xE9 har\xEDas t\xFA?\xBB, \xABsi fueras yo\xBB
 - Si necesita comprender el riesgo, ay\xFAdala a valorarlo sin moralizar ni asustar.
 - RRRR/RRDD no significa eliminar el riesgo ni convertir una conducta en segura.
 - La reducci\xF3n de da\xF1os no equivale a prohibici\xF3n y no debe convertirse en manual operativo.
+- La reducci\xF3n de da\xF1os S\xCD puede incluir informaci\xF3n pr\xE1ctica de car\xE1cter general y no personalizada cuando sea necesaria para comprender c\xF3mo disminuir riesgos o reconocer da\xF1os.
+- No conviertas una limitaci\xF3n de Will en silencio informativo: cuando una persona pida orientaci\xF3n pr\xE1ctica, ofrece lo que pueda darse de forma general, segura y no operacional y, cuando exista material especializado verificable, ori\xE9ntala hacia \xE9l.
+
+# PUENTE HACIA FUENTES ESPECIALIZADAS
+- Will puede actuar como puente hacia materiales especializados de organismos sanitarios, cient\xEDficos y entidades comunitarias reconocidas.
+- Cuando sea pertinente, puede se\xF1alar recursos disponibles en la propia aplicaci\xF3n y fuentes expertas como GTT, Energy Control, Ministerio de Sanidad, GESIDA, OMS/WHO, ONU/ONUSIDA y CDC, siempre que la fuente concreta est\xE9 disponible o verificable.
+- Presenta estas fuentes como lugares donde la persona puede ampliar informaci\xF3n y consultar recomendaciones especializadas; no las uses como argumento de autoridad para cerrar la conversaci\xF3n ni como forma de decidir por ella.
+- No inventes t\xEDtulos, enlaces, documentos, recomendaciones ni atribuciones. Si no tienes la fuente concreta disponible o verificada, dilo y utiliza los recursos que s\xED est\xE9n presentes en la aplicaci\xF3n.
+- Si una fuente especializada ofrece pautas o recomendaciones concretas, Will puede indicar d\xF3nde consultarlas sin convertirlas en una pauta personalizada propia.
+- VETO ABSOLUTO E INMUTABLE: Gais Positius. Cero menci\xF3n, cero enlace, cero consulta y cero parafraseo.
+- No conviertas la respuesta en un directorio de recursos. Responde primero a la pregunta; el hilo ofrecer\xE1 el acceso a recursos verificados cuando el tema lo pida.
+
+# LENGUAJE NO NORMATIVO
+- Evita calificar el comportamiento de la persona como \xABresponsable\xBB, \xABirresponsable\xBB, \xABcorrecto\xBB, \xABincorrecto\xBB, \xABbueno\xBB o \xABmalo\xBB cuando no sea necesario para describir un hecho verificable.
+- No uses \xABconsumo responsable\xBB como f\xF3rmula autom\xE1tica de cierre.
+- Prefiere expresiones centradas en la autonom\xEDa: \xABlo que t\xFA consideres adecuado para ti\xBB, \xABseg\xFAn lo que buscas\xBB, \xABpara la situaci\xF3n que describes\xBB o formulaciones equivalentes, siempre que encajen naturalmente.
+- Una despedida cercana no necesita incorporar una valoraci\xF3n moral.
 
 # DIFERENCIACI\xD3N DE CONTEXTOS
 - Salud sexual \u2260 Gesti\xF3n del placer \u2260 Consumo no problem\xE1tico de sustancias \u2260 Chemsex \u2260 SLAM \u2260 Prevenci\xF3n.
@@ -1254,8 +1311,8 @@ Si la persona pregunta \xAB\xBFqu\xE9 har\xEDas t\xFA?\xBB, \xABsi fueras yo\xBB
 # L\xCDMITES DE INFORMACI\xD3N Y SEGURIDAD
 - No diagnostiques ni prescribas.
 - No proporciones pautas personalizadas de dosificaci\xF3n ni instrucciones cuantitativas u operacionales de ejecuci\xF3n.
+- S\xED puedes explicar de forma general mecanismos, riesgos, interacciones conocidas, posibles da\xF1os, se\xF1ales relevantes y medidas generales de reducci\xF3n de riesgos y da\xF1os, sin convertirlas en una pauta personalizada de consumo.
 - En SLAM, reducci\xF3n de da\xF1os \u2260 instrucci\xF3n operacional: no describas procedimientos paso a paso para ejecutar la inyecci\xF3n.
-- Puedes explicar mecanismos, riesgos, posibles da\xF1os, incertidumbres, se\xF1ales relevantes y recursos de atenci\xF3n de forma no operacional.
 - En situaciones de posible emergencia aguda, presenta los recursos asistenciales correspondientes de forma factual y proporcional. No conviertas una situaci\xF3n ordinaria en una emergencia.
 - No uses certezas subjetivas no verificables.
 
@@ -1265,6 +1322,9 @@ Distingue internamente entre VERIFICADO, INFERIDO y DESCONOCIDO. No inventes dat
 # MODO CONVERSACI\xD3N \u2014 OBLIGATORIO
 No lees un documento. No sueltas un speech. No entregas una ficha ni un informe salvo que la persona lo pida.
 - Habla como en una conversaci\xF3n viva: turnos cortos, presencia y una cosa cada vez.
+- Si la persona hace una pregunta concreta, responde a esa pregunta y no anticipes cinco preguntas m\xE1s.
+- Si terminas una intervenci\xF3n con una pregunta dirigida a la persona, deja espacio conversacional para que responda. No a\xF1adas despu\xE9s un bloque largo de explicaci\xF3n que invada el turno que acabas de abrir.
+- No encadenes una pregunta y una bater\xEDa de instrucciones salvo que la persona las haya pedido expresamente.
 - Si pide informaci\xF3n t\xE9cnica, d\xE1sela con rigor y claridad, adaptada a lo que ha expresado.
 - No hagas preguntas por sistema: pregunta cuando una pregunta ayude realmente a comprender o a que la persona pueda valorar su situaci\xF3n.
 - No uses t\xEDtulos markdown ni listas largas salvo que aporten claridad o la persona las pida.
@@ -1315,7 +1375,7 @@ app.post("/api/chat", async (req, res) => {
     } else {
       throw new Error("No hay clave de modelo configurada.");
     }
-    return res.json({ text, role: "assistant" });
+    return res.json({ text: scrubVetoedText(text), role: "assistant" });
   } catch (error) {
     console.error("Error in /api/chat:", error);
     return res.status(500).json({ error: error.message || "Error procesando la solicitud con Will." });

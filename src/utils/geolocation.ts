@@ -1,5 +1,6 @@
 import { emergencyForCountry, EmergencyInfo } from '../data/emergencyNumbers';
 import { LanguageFilterMode, ResourceCategory } from '../data/spokenLanguages';
+import { rejectVetoedSites } from './resourceVeto';
 
 export type GeoStatus =
   | 'idle'
@@ -130,7 +131,11 @@ export async function lookupPlace(body: {
       absence: 'map_error' as const,
     });
   }
-  return r.json();
+  const data = (await r.json()) as GeoLookupResult;
+  if (Array.isArray(data.sites)) {
+    data.sites = rejectVetoedSites(data.sites);
+  }
+  return data;
 }
 
 export async function geocodePlace(body: {

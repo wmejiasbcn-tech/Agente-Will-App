@@ -4,6 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { registerGeoRoutes } from "./geo";
 import { registerVoiceRoutes } from "./voice";
+import { scrubVetoedText } from "../src/utils/resourceVeto";
 
 dotenv.config();
 
@@ -144,6 +145,8 @@ Si la persona pregunta «¿qué harías tú?», «si fueras yo», «tú qué ele
 - Presenta estas fuentes como lugares donde la persona puede ampliar información y consultar recomendaciones especializadas; no las uses como argumento de autoridad para cerrar la conversación ni como forma de decidir por ella.
 - No inventes títulos, enlaces, documentos, recomendaciones ni atribuciones. Si no tienes la fuente concreta disponible o verificada, dilo y utiliza los recursos que sí estén presentes en la aplicación.
 - Si una fuente especializada ofrece pautas o recomendaciones concretas, Will puede indicar dónde consultarlas sin convertirlas en una pauta personalizada propia.
+- VETO ABSOLUTO E INMUTABLE: Gais Positius. Cero mención, cero enlace, cero consulta y cero parafraseo.
+- No conviertas la respuesta en un directorio de recursos. Responde primero a la pregunta; el hilo ofrecerá el acceso a recursos verificados cuando el tema lo pida.
 
 # LENGUAJE NO NORMATIVO
 - Evita calificar el comportamiento de la persona como «responsable», «irresponsable», «correcto», «incorrecto», «bueno» o «malo» cuando no sea necesario para describir un hecho verificable.
@@ -244,7 +247,7 @@ app.post("/api/chat", async (req, res) => {
       throw new Error("No hay clave de modelo configurada.");
     }
 
-    return res.json({ text, role: "assistant" });
+    return res.json({ text: scrubVetoedText(text), role: "assistant" });
   } catch (error: any) {
     console.error("Error in /api/chat:", error);
     return res.status(500).json({ error: error.message || "Error procesando la solicitud con Will." });

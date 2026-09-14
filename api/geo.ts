@@ -14,6 +14,7 @@ import {
   isPrivateCare,
   isWillThemeName,
 } from './willHealthSites';
+import { isVetoedResource, rejectVetoedSites } from '../src/utils/resourceVeto';
 
 function osmEmbedUrl(
   center: { lat: number; lng: number },
@@ -123,6 +124,9 @@ function classify(tags: Record<string, string> | undefined): {
 }
 
 function rejectSite(tags: Record<string, string>, name: string) {
+  if (isVetoedResource(name, tags.website || tags['contact:website'] || tags['contact:url'])) {
+    return true;
+  }
   const a = (tags.amenity || tags.healthcare || tags.office || '').toLowerCase();
   if (['pharmacy', 'dentist', 'veterinary', 'community_centre', 'arts_centre', 'library', 'theatre', 'townhall'].includes(a)) {
     return true;
@@ -273,7 +277,9 @@ function rankSite(site: Site) {
 }
 
 function mixSites(sites: Site[]) {
-  return [...sites].sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km).slice(0, 100);
+  return rejectVetoedSites([...sites])
+    .sort((a, b) => rankSite(a) - rankSite(b) || a.km - b.km)
+    .slice(0, 100);
 }
 
 async function overpassNearby(lat: number, lng: number, preferred: string[]) {
