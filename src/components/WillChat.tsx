@@ -45,10 +45,11 @@ interface WillChatProps {
 const WELCOME_TEXT =
   'Hola. Soy Will.\n\nEste es un espacio confidencial para hablar, preguntar o informarte con rigor y sin que nadie te juzgue ni te diga lo que tienes que hacer.\n\nTú marcas el ritmo y el contenido. Puedes elegir uno de los temas de abajo o simplemente escribir lo que te pasa.';
 
-// Voice/STT can occasionally misclassify a later turn as another language.
-// The conversation language must remain stable unless the person explicitly changes it.
+// La conversación no cambia de idioma por una transcripción aislada o errónea.
+// El cambio solo procede si la persona lo solicita explícitamente o mantiene
+// inequívocamente otro idioma durante la conversación.
 const CONVERSATION_LANGUAGE_GUARD =
-  '[Continuidad de idioma: la conversación actual está en castellano. Mantén el castellano aunque una transcripción aislada parezca pertenecer a otro idioma. Solo cambia de idioma si la persona lo solicita explícitamente o empieza a comunicarse de forma inequívoca y sostenida en otro idioma.]';
+  '[Continuidad de idioma: esta conversación está en castellano. Mantén el castellano aunque una transcripción aislada parezca pertenecer a otro idioma. Solo cambia de idioma si la persona lo solicita explícitamente o empieza a comunicarse de forma inequívoca y sostenida en otro idioma.]';
 
 function WillSpoken({ text }: { text: string }) {
   const parts = text.split(/(\*\*[^*]+?\*\*)/g);
@@ -250,186 +251,341 @@ export const WillChat: React.FC<WillChatProps> = ({
   const fitComposer = () => {
     const el = textareaRef.current;
     if (!el) return;
+    const mobile = window.innerWidth < 768;
+    const max = mobile ? 120 : 220;
+    const min = mobile ? 44 : 52;
     el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
+    if (!el.value) {
+      el.style.height = `${min}px`;
+      return;
+    }
+    el.style.height = `${Math.max(min, Math.min(el.scrollHeight, max))}px`;
   };
 
-  const handleTranscript = (text: string) => {
-    setInput(text);
-    requestAnimationFrame(fitComposer);
+  useEffect(() => {
+    fitComposer();
+  }, [input]);
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleMicStart = () => {
-    speak.stop();
-    setVoiceState('listening');
-  };
-
-  const handleMicState = (next: VoiceUiState) => {
-    setVoiceState(next);
-  };
-
-  const sendCurrentInput = () => {
-    const value = input.trim();
-    if (!value || isLoading) return;
-    handleSend(value);
-  };
-
-  const clearConversation = () => {
+  const handleClearChat = () => {
     speak.clear();
-    setMessages([welcomeMessage()]);
-    setInput('');
     setVoiceState('idle');
-    setExpandedInspectId(null);
     setActiveDoorId(null);
+    setMessages([welcomeMessage()]);
   };
 
-  const chooseDoor = (id: string) => {
-    setActiveDoorId(id);
+  const goToPortada = () => {
+    handleClearChat();
   };
 
-  const submitDoor = () => {
-    const door = activeDoor;
-    if (!door?.quickPrompt) return;
-    setActiveDoorId(null);
-    handleSend(door.quickPrompt);
+  const goNextDoor = () => {
+    if (isLoading) return;
+    const next = activeDoorIndex >= 0 ? doors[activeDoorIndex + 1] : doors[0];
+    if (!next) {
+      onGoNextScene?.();
+      return;
+    }
+    openDoor(next.id);
   };
 
-  const contextLabel = liveContext?.badgeLabel || '';
+  const openDoor = (doorId: string, _prompt?: string) => {
+    speak.unlock();
+    if (isExplorationDomain(doorId)) {
+      onOpenExploration?.(doorId);
+      return;
+    }
+    const welcome = welcomeMessage();
+    const invite: ChatMessage = {
+      id: `invite-${doorId}`,
+      role: 'assistant',
+      content: invitationFor(doorId),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setActiveDoorId(doorId);
+    if (isConversationDoor(doorId) || doorId === 'chat') {
+      setMessages([welcome, invite]);
+      return;
+    }
+    setMessages([welcome, invite]);
+  };
+
+  const getContextVisuals = (contextType?: ContextCategory) => {
+    switch (contextType) {
+      case 'slam':
+        return { icon: Syringe, title: 'SLAM (Uso Intravenoso)' };
+      case 'chemsex':
+        return { icon: Flame, title: 'Chemsex (Sexo y Sustancias)' };
+      case 'consumo-psicotropicas':
+        return { icon: Activity, title: 'Sustancias (Farmacología)' };
+      case 'placer-sexual':
+        return { icon: Heart, title: 'Placer Sexual & Acuerdos' };
+      case 'salud-sexual':
+        return { icon: Stethoscope, title: 'Salud Sexual & PrEP' };
+      case 'prevencion':
+        return { icon: Shield, title: 'Prevención' };
+      case 'acompanamiento':
+      default:
+        return { icon: Compass, title: 'Acompañamiento Libre' };
+    }
+  };
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-32 pt-4 sm:px-6">
-        <div className="mx-auto w-full max-w-4xl space-y-4">
-          {isEntrance && (
-            <div className="mb-6 rounded-3xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.12)]">
-              <div className="space-y-3 text-[15px] leading-7 text-white/85">
-                {welcomeParagraphs.map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
-                ))}
-              </div>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {doors.map((door) => (
-                  <button
-                    key={door.id}
-                    type="button"
-                    onClick={() => chooseDoor(door.id)}
-                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white/85 transition hover:bg-white/[0.08]"
-                  >
-                    {door.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+    <div className="relative flex flex-col flex-1 min-h-0 w-full">
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
+        {isEntrance && (
+          <div className="max-w-6xl mx-auto w-full px-5 sm:px-8 lg:px-12 py-5 lg:py-8">
+            <div className="grid lg:grid-cols-12 gap-8 items-start">
+              <div className="lg:col-span-5 space-y-6 will-read">
+                <div className="space-y-4 max-w-xl">
+                  {welcomeParagraphs.map((para, i) => (
+                    <p
+                      key={i}
+                      className={
+                        i === 0
+                          ? 'font-serif text-3xl sm:text-[2.6rem] tracking-tight will-copy leading-[1.12] font-semibold'
+                          : 'text-[15px] sm:text-[17px] will-copy-muted leading-relaxed'
+                      }
+                    >
+                      {para}
+                    </p>
+                  ))}
+                </div>
 
-          {messages.map((message) => {
-            const isUser = message.role === 'user';
-            const visible = isUser ? message.content : speak.visibleText(message.id, message.content);
-            return (
-              <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[92%] rounded-3xl px-4 py-3 text-[15px] leading-7 sm:max-w-[78%] ${
-                    isUser
-                      ? 'bg-white text-black shadow-sm'
-                      : 'border border-white/10 bg-white/[0.045] text-white/90'
-                  }`}
-                >
-                  <WillSpoken text={visible} />
-                  {!isUser && message.id !== 'welcome-msg' && (
-                    <MessageVoiceControls
-                      messageId={message.id}
-                      text={message.content}
-                      speak={speak}
-                    />
-                  )}
+                <nav aria-label="Puertas de entrada">
+                  {HUMAN_ENTRANCE_DOORS.map((door) => {
+                    const num = door.number ? String(door.number).padStart(2, '0') : '';
+                    return (
+                      <button
+                        key={door.id}
+                        id={`door-btn-${door.id}`}
+                        type="button"
+                        onClick={() => openDoor(door.id, door.quickPrompt)}
+                        className="will-door group w-full text-left py-2.5 px-3 min-h-11"
+                      >
+                        <div className="flex items-baseline gap-4">
+                          <span className="font-mono text-[11px] tracking-[0.18em] text-[#e8c37a] w-7 shrink-0">
+                            {num}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block font-serif text-[17px] will-copy">
+                              {door.doorTitle}
+                            </span>
+                            <span className="block text-[13px] will-copy-muted mt-0.5 leading-relaxed">
+                              {door.humanSubtitle}
+                            </span>
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+              <div className="hidden lg:block lg:col-span-7 min-h-[52vh]" aria-hidden="true" />
+            </div>
+          </div>
+        )}
+
+        {!isEntrance && (
+          <div className="max-w-2xl mx-auto w-full px-5 sm:px-8 py-8 space-y-8 will-thread">
+            {messages
+              .filter((m) => m.id !== 'welcome-msg' && !m.id.startsWith('welcome-'))
+              .map((msg) => {
+                const isUser = msg.role === 'user';
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} space-y-2`}
+                  >
+                    {!isUser && (
+                      <div className="flex items-center gap-2 text-[11px] text-[#ead6b4]/45">
+                        <span className="font-serif text-[14px] text-[#e8c37a]">Will</span>
+                      </div>
+                    )}
+
+                    <div
+                      className={`max-w-[94%] text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap ${
+                        isUser ? 'will-msg-user rounded-sm px-4 py-3' : 'will-msg-will'
+                      }`}
+                    >
+                      {speak.loadingId === msg.id && !speak.visibleText(msg.id, msg.content) ? (
+                        <p className="will-copy">Te he escuchado. Estoy con ello.</p>
+                      ) : (
+                        <WillSpoken text={isUser ? msg.content : speak.visibleText(msg.id, msg.content)} />
+                      )}
+                    </div>
+
+                    {!isUser && (
+                      <div className="flex flex-wrap items-center gap-1 text-[#ead6b4]/35">
+                        <MessageVoiceControls
+                          id={msg.id}
+                          text={msg.content}
+                          speak={speak}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(msg.id, msg.content)}
+                          className="p-1.5 min-h-11 min-w-11 flex items-center justify-center"
+                          title="Copiar texto"
+                        >
+                          {copiedId === msg.id ? (
+                            <Check className="w-3.5 h-3.5 text-[#e8c37a]" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+            {isLoading && (
+              <div className="flex items-start gap-3" role="status" aria-live="polite">
+                <span className="font-serif text-[14px] text-[#e8c37a] pt-0.5">Will</span>
+                <div className="space-y-1">
+                  <p className="text-[15px] will-copy">Te he escuchado. Estoy con ello.</p>
+                  <p className="text-[12px] will-copy-muted flex items-center gap-2">
+                    <span className="will-think-dots" aria-hidden="true">
+                      <i /><i /><i />
+                    </span>
+                    Un momento.
+                  </p>
                 </div>
               </div>
-            );
-          })}
-
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="rounded-3xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white/55">
-                Will está pensando…
-              </div>
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
       </div>
 
-      {activeDoor && (
-        <div className="absolute inset-x-4 bottom-28 z-20 mx-auto max-w-4xl rounded-3xl border border-white/10 bg-black/80 p-4 backdrop-blur-xl">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-sm font-medium text-white">{activeDoor.label}</div>
+      {showDimensionBar && (
+        <div className="relative z-10 mx-4 mb-2 p-2.5 arch-glass shrink-0 space-y-1.5">
+          <span className="text-[10px] uppercase font-mono text-[#ead6b4]/50 block">
+            Lentes opcionales de acompañamiento (no obligatorios):
+          </span>
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             <button
               type="button"
-              onClick={() => setActiveDoorId(null)}
-              className="rounded-full px-2 py-1 text-xs text-white/55 hover:text-white"
+              onClick={() => setCurrentDimension('all')}
+              className={`px-2.5 py-1 text-[11px] font-medium whitespace-nowrap ${
+                currentDimension === 'all' ? 'will-nav-item-active' : 'text-[#ead6b4]/60'
+              }`}
             >
-              Cerrar
+              Libre / Sin lente
             </button>
+            {PRESENTE_DIMENSIONS.map((dim) => {
+              const isActive = currentDimension === dim.name;
+              return (
+                <button
+                  key={dim.code}
+                  type="button"
+                  onClick={() => setCurrentDimension(dim.name)}
+                  className={`px-2.5 py-1 text-[11px] font-medium whitespace-nowrap flex items-center gap-1 ${
+                    isActive ? 'will-nav-item-active' : 'text-[#ead6b4]/60'
+                  }`}
+                >
+                  <span className="font-mono font-bold">{dim.letter}</span>
+                  <span>{dim.name}</span>
+                </button>
+              );
+            })}
           </div>
-          <div className="text-sm leading-6 text-white/70">{invitationFor(activeDoor)}</div>
-          <button
-            type="button"
-            onClick={submitDoor}
-            className="mt-3 rounded-full bg-white px-4 py-2 text-sm font-medium text-black"
-          >
-            Empezar
-          </button>
         </div>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 z-10 border-t border-white/10 bg-black/70 px-4 py-3 backdrop-blur-xl sm:px-6">
-        <div className="mx-auto flex w-full max-w-4xl items-end gap-2">
-          <div className="relative min-w-0 flex-1">
-            {contextLabel && (
-              <div className="absolute -top-7 left-2 text-xs text-white/45">{contextLabel}</div>
-            )}
-            <textarea
-              id="chat-user-input"
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                fitComposer();
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder="Escribe o habla con Will…"
-              rows={1}
-              className="max-h-[180px] min-h-[48px] w-full resize-none rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-[15px] leading-6 text-white outline-none placeholder:text-white/35 focus:border-white/20"
-            />
-          </div>
-
-          <WillMicButton
-            currentText={input}
-            onStartListening={handleMicStart}
-            onTranscript={handleTranscript}
-            state={voiceState}
-            setState={handleMicState}
+      <div className="relative z-10 shrink-0 px-4 sm:px-8 pb-4 pt-2">
+        <div className="max-w-2xl mx-auto lg:ml-12 lg:mr-auto">
+          <PagerArrows
+            onBack={goToPortada}
+            onNext={isEntrance ? () => onGoNextScene?.() : goNextDoor}
+            backDisabled={isEntrance}
+            nextDisabled={false}
+            hereLabel={isEntrance ? undefined : activeDoor?.doorTitle || 'Conversación'}
           />
-
-          <button
-            type="button"
-            onClick={sendCurrentInput}
-            disabled={!input.trim() || isLoading}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-black disabled:cursor-not-allowed disabled:opacity-30"
-            aria-label="Enviar mensaje"
-          >
-            <Send size={18} />
-          </button>
-        </div>
-
-        <div className="mx-auto mt-2 flex max-w-4xl items-center justify-between px-1 text-[11px] text-white/35">
-          <div className="flex items-center gap-2">
-            <VoiceStateLine state={voiceState} />
-            <WillMuteButton speak={speak} />
+          <VoiceStateLine
+            state={
+              speak.muted
+                ? 'muted'
+                : speak.paused
+                  ? 'paused'
+                  : speak.loadingId
+                    ? 'preparing_reply'
+                    : speak.speakingId
+                      ? 'speaking'
+                      : voiceState
+            }
+            error={
+              voiceState === 'listening' ||
+              voiceState === 'transcribing' ||
+              voiceState === 'preparing_listen'
+                ? null
+                : speak.error
+            }
+          />
+          <WillFinishTalkButton
+            onTranscript={(text) => setInput(text)}
+            currentText={input}
+            state={voiceState}
+            setState={setVoiceState}
+          />
+          <div className="will-composer">
+            <textarea
+              ref={textareaRef}
+              id="chat-user-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Escribe o habla..."
+              rows={1}
+              className="will-composer-input flex-1 min-w-0 bg-transparent will-copy placeholder:text-[#ead6b4]/55 text-[15px] sm:text-sm leading-snug focus:outline-none px-3 py-2"
+            />
+            <div className="will-composer-tools">
+              <WillMuteButton speak={speak} />
+              <WillMicButton
+                onStartListening={() => speak.stop()}
+                onTranscript={(text) => setInput(text)}
+                currentText={input}
+                disabled={isLoading}
+                state={voiceState}
+                setState={setVoiceState}
+              />
+              <button
+                type="button"
+                onClick={() => setShowDimensionBar(!showDimensionBar)}
+                className="p-2.5 text-[#ead6b4]/35 hover:text-[#e8c37a] min-h-11 min-w-11 shrink-0 flex items-center justify-center"
+                title="Ajustar lentes de conversación"
+                aria-label="Lentes P.R.E.S.E.N.T.E."
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleClearChat}
+                className="p-2.5 text-[#ead6b4]/35 hover:text-[#e8c37a] min-h-11 min-w-11 shrink-0 flex items-center justify-center"
+                title="Reiniciar conversación"
+                aria-label="Reiniciar conversación"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                id="chat-send-btn"
+                type="button"
+                onClick={() => handleSend()}
+                disabled={!input.trim() || isLoading}
+                className="will-send p-2.5 rounded-full font-bold transition-all shrink-0 min-h-11 min-w-11 flex items-center justify-center disabled:cursor-not-allowed"
+                title="Enviar mensaje"
+                aria-label="Enviar mensaje"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <button type="button" onClick={clearConversation} className="hover:text-white/65">
-            Limpiar conversación
-          </button>
         </div>
       </div>
     </div>
