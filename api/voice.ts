@@ -20,6 +20,8 @@ function elevenLabsKey() {
 const WILL_VOICE_ID = 'DrwFQsjvHFpLcKyvtbE3';
 const WILL_MODEL = 'eleven_multilingual_v2';
 const WILL_TTS = 'https://api.elevenlabs.io/v1/text-to-speech';
+const WILL_STT_KEYTERMS = ['PEP', 'DoxyPEP'];
+const WILL_STT_LANGUAGE = 'es';
 
 function elevenLabsIdentity() {
   return {
@@ -156,8 +158,6 @@ export function normalizeVoiceTranscript(text: string) {
     'DoxyPEP',
   );
 
-  // PEP is a canonical acronym in Will's supported health/sexual-health
-  // vocabulary. Keep this narrow to the standalone spoken token.
   normalized = normalized.replace(/\bpep\b/gi, 'PEP');
 
   return normalized;
@@ -169,6 +169,8 @@ export function registerVoiceRoutes(app: Express) {
       ...elevenLabsIdentity(),
       listen: Boolean(elevenLabsKey()),
       hasServerKey: Boolean(elevenLabsKey()),
+      sttLanguage: WILL_STT_LANGUAGE,
+      sttKeyterms: WILL_STT_KEYTERMS,
     });
   });
 
@@ -202,6 +204,9 @@ export function registerVoiceRoutes(app: Express) {
           const form = new FormData();
           form.append('model_id', model);
           if (language) form.append('language_code', language);
+          if (model === 'scribe_v2') {
+            for (const keyterm of WILL_STT_KEYTERMS) form.append('keyterms', keyterm);
+          }
           form.append('tag_audio_events', 'false');
           form.append('file', new Blob([fileBytes], { type: mime }), mimeToName(mime));
           return fetch('https://api.elevenlabs.io/v1/speech-to-text', {
@@ -213,9 +218,9 @@ export function registerVoiceRoutes(app: Express) {
         }
 
         const attempts: Array<{ model: string; language?: string }> = [
+          { model: 'scribe_v2', language: WILL_STT_LANGUAGE },
           { model: 'scribe_v2' },
-          { model: 'scribe_v2', language: 'es' },
-          { model: 'scribe_v1' },
+          { model: 'scribe_v1', language: WILL_STT_LANGUAGE },
         ];
         let emptyOk = false;
         for (const attempt of attempts) {
@@ -227,10 +232,16 @@ export function registerVoiceRoutes(app: Express) {
           }
           const data: any = await r.json();
           const text = normalizeVoiceTranscript(String(data?.text || ''));
-          if (text) return res.json({ text, storesAudio: false });
+          if (text) {
+            return res.json({
+              text,
+              storesAudio: false,
+              languageCode: String(data?.language_code || attempt.language || 'es'),
+            });
+          }
           emptyOk = true;
         }
-        if (emptyOk) return res.json({ text: '', storesAudio: false });
+        if (emptyOk) return res.json({ text: '', storesAudio: false, languageCode: 'es' });
         return res.status(502).json({ error: 'No he podido pasar a escrito lo que has dicho ahora.' });
       } catch (error: any) {
         console.error('Error in /api/voice/listen', error?.message || error);
