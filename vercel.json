@@ -6,7 +6,7 @@
       "use": "@vercel/python",
       "config": {
         "maxDuration": 60,
-        "includeFiles": ["waipl_verification_gate/**"]
+        "includeFiles": "waipl_verification_gate/**"
       }
     },
     {
@@ -14,7 +14,7 @@
       "use": "@vercel/python",
       "config": {
         "maxDuration": 60,
-        "includeFiles": ["waipl_verification_gate/**"]
+        "includeFiles": "waipl_verification_gate/**"
       }
     },
     {
@@ -71,7 +71,7 @@
     },
     {
       "src": "/(.+\\.[A-Za-z0-9]+)$",
-      "dest": "/$1"
+      "dest": "/"
     },
     {
       "src": "/(.*)",
