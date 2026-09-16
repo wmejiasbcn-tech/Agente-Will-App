@@ -70,8 +70,7 @@
       "dest": "api/vercel.cjs"
     },
     {
-      "src": "/(.+\\.[A-Za-z0-9]+)$",
-      "dest": "/"
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
