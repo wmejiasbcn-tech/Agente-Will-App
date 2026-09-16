@@ -1,0 +1,26 @@
+name: Gate sync anti-divergence
+on:
+  push:
+    paths: ["waipl_verification_gate/**", "scripts/check_gate_manifest.py", ".github/workflows/gate-sync-check.yml"]
+  pull_request:
+    paths: ["waipl_verification_gate/**", "scripts/check_gate_manifest.py"]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify GATE_MANIFEST
+        run: python scripts/check_gate_manifest.py
+      - name: Forbid spawn(python) in api/**
+        run: |
+          if grep -R -n -E 'spawn\([^\)]*python|spawnSync\([^\)]*python|execFile\([^\)]*python|PYTHONSHELL|PythonShell' api/ ; then
+            echo "FORBIDDEN python spawn in api/**"; exit 1
+          fi
+          echo "T-G OK: no spawn python in api/**"
+      - name: Will App Gate integration tests
+        run: |
+          cd waipl_verification_gate
+          python -m unittest test_will_app_integration.py test_adversarial_bypass.py -v

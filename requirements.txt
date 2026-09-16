@@ -1,0 +1,1 @@
+# stdlib-only Gate; keep empty deps for Vercel Python runtime

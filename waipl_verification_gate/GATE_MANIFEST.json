@@ -1,0 +1,9 @@
+{
+  "pinned_commit": "f877f2e20b65de64a68ff98aff752b1bc3c23d2c",
+  "files": {
+    "gate_close.py": "c09ca66381ebf8706ea4df7927575376bbde1e8b5916b9b6c79f597978729ad7",
+    "gate_evaluate.py": "c3f6d063d415036928589dbc2dad2157314d931354f265ab1a0802af4355868e",
+    "final_state.py": "4a79f29b7b43997a76d3c6447c3fc3cc01ce63e5f291d5a3866af6cc2e6321d6",
+    "receipt.py": "e46b3fcb1e1e867eb4abe53ac18f0c010f82d034d6044c016b555abb526f663c"
+  }
+}

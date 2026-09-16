@@ -2,6 +2,22 @@
   "version": 2,
   "builds": [
     {
+      "src": "api/gate/close.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxDuration": 60,
+        "includeFiles": ["waipl_verification_gate/**"]
+      }
+    },
+    {
+      "src": "api/gate/verify.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxDuration": 60,
+        "includeFiles": ["waipl_verification_gate/**"]
+      }
+    },
+    {
       "src": "api/vercel.cjs",
       "use": "@vercel/node",
       "config": {
@@ -17,6 +33,20 @@
     }
   ],
   "routes": [
+    {
+      "src": "/api/gate/close",
+      "dest": "api/gate/close.py",
+      "headers": {
+        "Cache-Control": "no-store"
+      }
+    },
+    {
+      "src": "/api/gate/verify",
+      "dest": "api/gate/verify.py",
+      "headers": {
+        "Cache-Control": "no-store"
+      }
+    },
     {
       "src": "/api/voice/speak",
       "headers": {

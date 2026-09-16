@@ -1,4 +1,4 @@
-﻿{
+{
     "name":  "will-app",
     "private":  true,
     "version":  "0.0.0",
@@ -17,7 +17,7 @@
                     "test:voice-terms":  "tsx tests/voice-language-and-terms.test.ts",
                     "test:battery":  "node run_tests.mjs",
                     "test:battery:full":  "node run_full_battery.mjs",
-                    "test:gate":  "cd waipl_verification_gate \u0026\u0026 python -m unittest test_will_app_integration.py -v"
+                    "test:gate": "cd waipl_verification_gate && python -m unittest test_will_app_integration.py test_adversarial_bypass.py -v",`n    "test:gate:http": "tsx tests/gate-http-client.test.ts",`n    "test:gate:manifest": "python scripts/check_gate_manifest.py"
                 },
     "dependencies":  {
                          "@google/genai":  "^2.4.0",

@@ -1,10 +1,14 @@
-# SOURCE OF TRUTH
+# SOURCE OF TRUTH — WAIPL Verification Gate v1.0
 
-This directory vendors **WAIPL Verification Gate v1.0** Python modules from:
+- **Canonical repo:** `wmejiasbcn-tech/SENTINEL`
+- **Canonical path:** `07_ACCIONES_Y_VERIFICACIONES/GATE/`
+- **Pinned commit:** `f877f2e20b65de64a68ff98aff752b1bc3c23d2c`
+- **Distribution:** vendor sync into Will App (`waipl_verification_gate/`)
+- **Rule:** Do **not** modify Gate logic in Will App. Sync from SENTINEL only.
+- **CI:** `.github/workflows/gate-sync-check.yml` fails if file hashes ≠ `GATE_MANIFEST.json`.
 
-- Repo: `wmejiasbcn-tech/SENTINEL`
-- Path: `07_ACCIONES_Y_VERIFICACIONES/GATE/`
-- Commit: `f877f2e20b65de64a68ff98aff752b1bc3c23d2c`
+Runtime modules (must match SENTINEL pin):
+`gate_close.py`, `gate_evaluate.py`, `final_state.py`, `receipt.py`
 
-**Do not reimplement** evaluate/close/receipt here. Sync from SENTINEL when the Gate changes.
-Will App only adapts *input shaping* and *transport* (see `will_app_adapter.py`, `api/verificationGate.ts`).
+Will App–only adapter (not part of SENTINEL Gate core):
+`will_app_adapter.py`
