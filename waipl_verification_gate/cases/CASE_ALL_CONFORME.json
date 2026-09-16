@@ -1,0 +1,15 @@
+{
+  "id": "CASE_ALL_CONFORME",
+  "resultado": true,
+  "evidencia": true,
+  "verificacion": true,
+  "dictamen": true,
+  "result_ref": "CASE_ALL_CONFORME",
+  "evidence_refs": ["fixture"],
+  "dictamen_ref": "CASE_ALL_CONFORME",
+  "requisitos_obligatorios": [
+    {"id": "req_a", "estado": "CONFORME"},
+    {"id": "req_b", "estado": "VERIFICADO"},
+    {"id": "req_c", "estado": "CONFORME"}
+  ]
+}

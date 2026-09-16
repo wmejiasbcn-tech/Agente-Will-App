@@ -1,0 +1,19 @@
+{
+  "id": "AUD-LAB-CARLA-01",
+  "resultado": true,
+  "evidencia": true,
+  "verificacion": true,
+  "dictamen": true,
+  "result_ref": "AUD-LAB-CARLA-01 §RESULTADO",
+  "evidence_refs": ["Lab tip cee8816", "NEO/IDENTIDAD.md", "NEXUS/IDENTIDAD.md"],
+  "dictamen_ref": "AUD-LAB-CARLA-01",
+  "requisitos_obligatorios": [
+    {"id": "orcid_ausente", "estado": "CONFORME"},
+    {"id": "filtro_fonetico_registrado", "estado": "CONFORME"},
+    {"id": "codex_ley_como_fichero", "estado": "PARCIAL"},
+    {"id": "protocolo_contexto_soberano", "estado": "CONFORME"},
+    {"id": "corpus_audio_este_chat", "estado": "DESCONOCIDO"},
+    {"id": "stop_si_falta_fuente", "estado": "CONFORME"},
+    {"id": "sin_mutacion_tip_lab", "estado": "CONFORME"}
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "WILL_AUDIT_A_INCOMPLETO",
+  "integration_point": "POST /api/audit (AuditorView → AuditResult)",
+  "resultado": true,
+  "evidencia": true,
+  "verificacion": true,
+  "dictamen": true,
+  "result_ref": "AuditResult.isCompliant + verdictTitle",
+  "evidence_refs": [
+    "api/app.ts POST /api/audit",
+    "src/components/AuditorView.tsx",
+    "AuditResult.analysis"
+  ],
+  "dictamen_ref": "AuditResult (constitutional audit)",
+  "requisitos_obligatorios": [
+    {"id": "texto_auditado_presente", "estado": "CONFORME"},
+    {"id": "veredicto_no_directividad", "estado": "CONFORME"},
+    {"id": "fuentes_citadas_verificadas", "estado": "PARCIAL"},
+    {"id": "epistemic_status_completo", "estado": "DESCONOCIDO"}
+  ]
+}

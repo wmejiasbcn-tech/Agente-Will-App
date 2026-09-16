@@ -1,0 +1,18 @@
+{
+  "contract": "WAIPL_VERIFICATION_GATE_v1.0_FINAL_STATE_CONTRACT",
+  "case_id": "CASE_ALL_CONFORME",
+  "case_fingerprint": "53e6d64714e4f53b3d95bc9a7a81cd3d2ac8cd84f812bfd9665238d233b2428d",
+  "state": "VERDE",
+  "closed": true,
+  "open": false,
+  "result_status": "PRESENTE",
+  "evidence_status": "SUFICIENTE",
+  "verification_status": "CONFORME",
+  "dictamen_status": "CERRABLE",
+  "gate_status": "AUTHORIZED",
+  "mandatory_requirements_pending": [],
+  "gate_ref": "gate:v1.0:7ee49f0db04aadeb",
+  "timestamp_utc": "2026-09-16T03:18:06Z",
+  "closure_entry_point": "gate_close.close_case",
+  "seal": "2ca11ffa8c00338d04126a58bfe688df46553e7ad3bb29bd97ac9b608a07f052"
+}

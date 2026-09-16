@@ -1,0 +1,27 @@
+{
+  "contract": "WAIPL_VERIFICATION_GATE_v1.0_FINAL_STATE_CONTRACT",
+  "case_id": "WILL_AUDIT_A_INCOMPLETO",
+  "case_fingerprint": "180514357e5821d808cf872c7fc5a9d911e8931093bcf5bc529ff47c31b5e4d3",
+  "state": "AMARILLO",
+  "closed": false,
+  "open": true,
+  "result_status": "PRESENTE",
+  "evidence_status": "SUFICIENTE",
+  "verification_status": "PARCIAL",
+  "dictamen_status": "CERRABLE",
+  "gate_status": "BLOCKED",
+  "mandatory_requirements_pending": [
+    {
+      "id": "fuentes_citadas_verificadas",
+      "estado": "PARCIAL"
+    },
+    {
+      "id": "epistemic_status_completo",
+      "estado": "DESCONOCIDO"
+    }
+  ],
+  "gate_ref": "gate:v1.0:9f4dc22cdc51f249",
+  "timestamp_utc": "2026-09-16T03:38:56Z",
+  "closure_entry_point": "gate_close.close_case",
+  "seal": "de288ac5ec33a7ded4b94a37e7786a92cac7a0d1a9e8a5e198d20c7ba7d6d8aa"
+}

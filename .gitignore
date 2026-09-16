@@ -10,3 +10,6 @@ coverage/
 # Raster working copies of The Architecture of Sovereignty (extracted assets live in public/visual-system)
 assets/sovereignty-pages/
 assets/visual-previews/
+
+__pycache__/
+
