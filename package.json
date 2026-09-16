@@ -1,51 +1,56 @@
 {
-    "name":  "will-app",
-    "private":  true,
-    "version":  "0.0.0",
-    "type":  "module",
-    "scripts":  {
-                    "dev":  "tsx server.ts",
-                    "build":  "vite build \u0026\u0026 esbuild api/app.ts --bundle --platform=node --format=cjs --packages=external --outfile=api/vercel.cjs --footer:js=\"module.exports = app;\" \u0026\u0026 esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-                    "start":  "node dist/server.cjs",
-                    "preview":  "vite preview",
-                    "clean":  "rm -rf dist server.js",
-                    "lint":  "tsc --noEmit",
-                    "test:geo":  "tsx tests/geo-privacy.test.ts \u0026\u0026 tsx tests/geo-resources-v2.test.ts \u0026\u0026 tsx tests/will-qa.test.ts",
-                    "test:compat":  "tsx tests/browser-compat.test.ts \u0026\u0026 tsx tests/browser-perf.test.ts \u0026\u0026 tsx tests/cross-browser-voice.test.ts \u0026\u0026 tsx tests/neo-voice.test.ts",
-                    "test:mic":  "tsx tests/mic-diagnostics.test.ts",
-                    "test:neo":  "tsx tests/neo-voice.test.ts",
-                    "test:voice-terms":  "tsx tests/voice-language-and-terms.test.ts",
-                    "test:battery":  "node run_tests.mjs",
-                    "test:battery:full":  "node run_full_battery.mjs",
-                    "test:gate": "cd waipl_verification_gate && python -m unittest test_will_app_integration.py test_adversarial_bypass.py -v",`n    "test:gate:http": "tsx tests/gate-http-client.test.ts",`n    "test:gate:manifest": "python scripts/check_gate_manifest.py"
-                },
-    "dependencies":  {
-                         "@google/genai":  "^2.4.0",
-                         "@tailwindcss/vite":  "^4.1.14",
-                         "@vercel/node":  "^3.0.0",
-                         "@vitejs/plugin-react":  "^5.0.4",
-                         "dotenv":  "^17.2.3",
-                         "express":  "^4.21.2",
-                         "express-rate-limit":  "^8.7.0",
-                         "leaflet":  "^1.9.4",
-                         "lucide-react":  "^0.546.0",
-                         "motion":  "^12.23.24",
-                         "react":  "^19.0.1",
-                         "react-dom":  "^19.0.1",
-                         "vite":  "^6.2.3"
-                     },
-    "devDependencies":  {
-                            "@types/express":  "^4.17.21",
-                            "@types/leaflet":  "^1.9.22",
-                            "autoprefixer":  "^10.4.21",
-                            "esbuild":  "^0.28.2",
-                            "tailwindcss":  "^4.1.14",
-                            "tsx":  "^4.21.0",
-                            "typescript":  "~5.8.2",
-                            "vite":  "^6.2.3"
-                        },
-    "overrides":  {
-                      "protobufjs":  "^7.6.5",
-                      "ws":  "^8.20.1"
-                  }
+  "name": "will-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx server.ts",
+    "build": "vite build && esbuild api/app.ts --bundle --platform=node --format=cjs --packages=external --outfile=api/vercel.cjs --footer:js=\"module.exports = app;\" && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs",
+    "preview": "vite preview",
+    "clean": "rm -rf dist server.js",
+    "lint": "tsc --noEmit",
+    "test:geo": "tsx tests/geo-privacy.test.ts && tsx tests/geo-resources-v2.test.ts && tsx tests/will-qa.test.ts",
+    "test:compat": "tsx tests/browser-compat.test.ts && tsx tests/browser-perf.test.ts && tsx tests/cross-browser-voice.test.ts && tsx tests/neo-voice.test.ts",
+    "test:mic": "tsx tests/mic-diagnostics.test.ts",
+    "test:neo": "tsx tests/neo-voice.test.ts",
+    "test:voice-terms": "tsx tests/voice-language-and-terms.test.ts",
+    "test:battery": "node run_tests.mjs",
+    "test:battery:full": "node run_full_battery.mjs",
+    "test:gate": "cd waipl_verification_gate && python -m unittest test_will_app_integration.py test_adversarial_bypass.py -v",
+    "test:gate:http": "tsx tests/gate-http-client.test.ts",
+    "test:gate:manifest": "python scripts/check_gate_manifest.py"
+  },
+  "dependencies": {
+    "@google/genai": "^2.4.0",
+    "@tailwindcss/vite": "^4.1.14",
+    "@vercel/node": "^3.0.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "vite": "^6.2.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/leaflet": "^1.9.22",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.28.2",
+    "tailwindcss": "^4.1.14",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3"
+  },
+  "overrides": {
+    "protobufjs": "^7.6.5",
+    "ws": "^8.20.1"
+  },
+  "engines": {
+    "node": "24.x"
+  }
 }
