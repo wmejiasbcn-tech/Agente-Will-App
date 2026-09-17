@@ -1186,6 +1186,26 @@ function gateBaseUrl() {
 function sharedSecret() {
   return (process.env.GATE_SHARED_SECRET || "").trim();
 }
+function bridgeToken() {
+  return (process.env.GATE_BRIDGE_TOKEN || "").trim();
+}
+function requireBridgeAuth(req) {
+  const expected = bridgeToken();
+  if (!expected) {
+    return { ok: false, payload: failClosed("GATE_BRIDGE_TOKEN missing") };
+  }
+  const auth = String(req.headers.authorization || "");
+  if (!auth.startsWith("Bearer ")) {
+    return { ok: false, payload: failClosed("missing bridge bearer") };
+  }
+  const got = auth.slice(7).trim();
+  const a = Buffer.from(got);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !import_crypto.default.timingSafeEqual(a, b)) {
+    return { ok: false, payload: failClosed("invalid bridge bearer") };
+  }
+  return { ok: true };
+}
 function signHeaders(rawBody) {
   const secret = sharedSecret();
   const ts = Math.floor(Date.now() / 1e3).toString();
@@ -1262,8 +1282,12 @@ async function callGateVerify(cycle, receipt) {
 function registerVerificationGateRoutes(app2) {
   app2.post("/api/verification-gate", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
+    const auth = requireBridgeAuth(req);
+    if (!auth.ok) {
+      res.status(401).json(auth.payload);
+      return;
+    }
     const { httpStatus, payload } = await callGateClose(req.body);
-    res.status(httpStatus >= 400 && httpStatus < 600 ? httpStatus === 401 ? 401 : 200 : 200);
     if (httpStatus === 401) {
       res.status(401).json(payload);
       return;
@@ -1277,6 +1301,11 @@ function registerVerificationGateRoutes(app2) {
   });
   app2.post("/api/verification-gate/verify", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
+    const auth = requireBridgeAuth(req);
+    if (!auth.ok) {
+      res.status(401).json(auth.payload);
+      return;
+    }
     const cycle = req.body?.cycle ?? req.body?.case;
     const receipt = req.body?.receipt;
     if (!cycle || receipt === void 0) {
