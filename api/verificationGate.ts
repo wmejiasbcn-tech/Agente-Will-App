@@ -51,6 +51,30 @@ function sharedSecret(): string {
   return (process.env.GATE_SHARED_SECRET || "").trim();
 }
 
+function bridgeToken(): string {
+  return (process.env.GATE_BRIDGE_TOKEN || "").trim();
+}
+
+/** Client -> Node auth. Must succeed before Node uses GATE_SHARED_SECRET toward Python. */
+function requireBridgeAuth(req: Request): { ok: true } | { ok: false; payload: FailClosed } {
+  const expected = bridgeToken();
+  if (!expected) {
+    return { ok: false, payload: failClosed("GATE_BRIDGE_TOKEN missing") };
+  }
+  const auth = String(req.headers.authorization || "");
+  if (!auth.startsWith("Bearer ")) {
+    return { ok: false, payload: failClosed("missing bridge bearer") };
+  }
+  const got = auth.slice(7).trim();
+  const a = Buffer.from(got);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return { ok: false, payload: failClosed("invalid bridge bearer") };
+  }
+  return { ok: true };
+}
+
+
 function signHeaders(rawBody: string): Record<string, string> {
   const secret = sharedSecret();
   const ts = Math.floor(Date.now() / 1000).toString();
@@ -143,10 +167,12 @@ export async function callGateVerify(cycle: unknown, receipt: unknown) {
 export function registerVerificationGateRoutes(app: Express): void {
   app.post("/api/verification-gate", async (req: Request, res: Response) => {
     res.setHeader("Cache-Control", "no-store");
+    const auth = requireBridgeAuth(req);
+    if (!auth.ok) {
+      res.status(401).json(auth.payload);
+      return;
+    }
     const { httpStatus, payload } = await callGateClose(req.body);
-    res.status(httpStatus >= 400 && httpStatus < 600 ? (httpStatus === 401 ? 401 : 200) : 200);
-    // Always return body; fail-closed uses 200 with CLOSED=false for app consumers,
-    // except auth failures to Python (401) and missing config (503 mapped to body).
     if (httpStatus === 401) {
       res.status(401).json(payload);
       return;
@@ -161,6 +187,11 @@ export function registerVerificationGateRoutes(app: Express): void {
 
   app.post("/api/verification-gate/verify", async (req: Request, res: Response) => {
     res.setHeader("Cache-Control", "no-store");
+    const auth = requireBridgeAuth(req);
+    if (!auth.ok) {
+      res.status(401).json(auth.payload);
+      return;
+    }
     const cycle = req.body?.cycle ?? req.body?.case;
     const receipt = req.body?.receipt;
     if (!cycle || receipt === undefined) {

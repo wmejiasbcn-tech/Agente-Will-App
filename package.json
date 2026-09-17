@@ -19,7 +19,8 @@
     "test:battery:full": "node run_full_battery.mjs",
     "test:gate": "cd waipl_verification_gate && python -m unittest test_will_app_integration.py test_adversarial_bypass.py -v",
     "test:gate:http": "tsx tests/gate-http-client.test.ts",
-    "test:gate:manifest": "python scripts/check_gate_manifest.py"
+    "test:gate:manifest": "python scripts/check_gate_manifest.py",
+    "test:gate:bridge": "npx --yes tsx tests/gate-bridge-auth.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
