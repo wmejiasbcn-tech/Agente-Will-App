@@ -1,7 +1,4 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-
-const execFileAsync = promisify(execFile);
+import { spawn } from "node:child_process";
 
 export type RagQueryContextResult = {
   text: string;
@@ -56,6 +53,58 @@ function buildContext(result: BridgeResponse): string {
   ].join("\n");
 }
 
+function runProcess(
+  command: string,
+  args: string[],
+  input: string,
+  timeoutMs = 20_000
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      env: process.env,
+      windowsHide: true,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (error) reject(error);
+      else resolve(stdout);
+    };
+
+    const timer = setTimeout(() => {
+      child.kill();
+      finish(new Error("Consensus bridge timeout"));
+    }, timeoutMs);
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+      if (stdout.length > 512 * 1024) {
+        child.kill();
+        finish(new Error("Consensus bridge output too large"));
+      }
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.on("error", finish);
+    child.on("close", (code) => {
+      if (code !== 0) {
+        finish(new Error(stderr.trim() || `Consensus bridge exited with ${code}`));
+        return;
+      }
+      finish();
+    });
+
+    child.stdin.end(input);
+  });
+}
+
 function makeBridgeRunner(): BridgeRunner {
   return async (query: string) => {
     const apiKey = process.env.CONSENSUS_API_KEY;
@@ -74,16 +123,10 @@ function makeBridgeRunner(): BridgeRunner {
     });
 
     try {
-      const { stdout } = await execFileAsync(
+      const stdout = await runProcess(
         pythonCommand,
         [bridgeScript, "--rag-repo", ragRepo],
-        {
-          input: payload,
-          env: process.env,
-          timeout: 20_000,
-          maxBuffer: 512 * 1024,
-          windowsHide: true,
-        } as Parameters<typeof execFileAsync>[2]
+        payload
       );
       return JSON.parse(stdout.trim()) as BridgeResponse;
     } catch {
