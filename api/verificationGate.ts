@@ -168,7 +168,7 @@ export function registerVerificationGateRoutes(app: Express): void {
   app.post("/api/verification-gate", async (req: Request, res: Response) => {
     res.setHeader("Cache-Control", "no-store");
     const auth = requireBridgeAuth(req);
-    if (!auth.ok) {
+    if (auth.ok === false) {
       res.status(401).json(auth.payload);
       return;
     }
@@ -188,7 +188,7 @@ export function registerVerificationGateRoutes(app: Express): void {
   app.post("/api/verification-gate/verify", async (req: Request, res: Response) => {
     res.setHeader("Cache-Control", "no-store");
     const auth = requireBridgeAuth(req);
-    if (!auth.ok) {
+    if (auth.ok === false) {
       res.status(401).json(auth.payload);
       return;
     }
