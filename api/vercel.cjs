@@ -1321,6 +1321,116 @@ function registerVerificationGateRoutes(app2) {
   });
 }
 
+// api/ragQueryContext.ts
+var import_node_child_process = require("node:child_process");
+function buildContext(result) {
+  const evidences = Array.isArray(result.evidences) ? result.evidences.slice(0, 3) : [];
+  if (!evidences.length) return "";
+  const lines = evidences.map((evidence, index) => {
+    const metadata = evidence.metadata || {};
+    const journal = typeof metadata.journal_name === "string" ? metadata.journal_name : "";
+    const year = metadata.publish_year != null ? String(metadata.publish_year) : "";
+    const takeaway = typeof metadata.takeaway === "string" ? metadata.takeaway : "";
+    const abstract = typeof metadata.abstract === "string" ? metadata.abstract : "";
+    const detail = takeaway || abstract;
+    return [
+      `${index + 1}. ${evidence.title || "Sin t\xEDtulo"}`,
+      journal || year ? `   ${[journal, year].filter(Boolean).join(" \xB7 ")}` : "",
+      detail ? `   ${detail.slice(0, 700)}` : "",
+      evidence.url ? `   ${evidence.url}` : ""
+    ].filter(Boolean).join("\n");
+  });
+  return [
+    "CONTEXTO EXTERNO \u2014 CONSENSUS",
+    "Estado: EXTERNAL_RETRIEVED_PENDING. Estas referencias son contexto externo recuperado en tiempo de consulta y NO equivalen a conocimiento admitido en el corpus ni a verificaci\xF3n independiente.",
+    ...lines
+  ].join("\n");
+}
+function runProcess(command, args, input, timeoutMs = 2e4) {
+  return new Promise((resolve, reject) => {
+    const child = (0, import_node_child_process.spawn)(command, args, {
+      env: process.env,
+      windowsHide: true,
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    const finish = (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (error) reject(error);
+      else resolve(stdout);
+    };
+    const timer = setTimeout(() => {
+      child.kill();
+      finish(new Error("Consensus bridge timeout"));
+    }, timeoutMs);
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+      if (stdout.length > 512 * 1024) {
+        child.kill();
+        finish(new Error("Consensus bridge output too large"));
+      }
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.on("error", finish);
+    child.on("close", (code) => {
+      if (code !== 0) {
+        finish(new Error(stderr.trim() || `Consensus bridge exited with ${code}`));
+        return;
+      }
+      finish();
+    });
+    child.stdin.end(input);
+  });
+}
+function makeBridgeRunner() {
+  return async (query) => {
+    const apiKey = process.env.CONSENSUS_API_KEY;
+    const ragRepo = process.env.WAIPL_RAG_REPO_PATH;
+    const bridgeScript = process.env.CONSENSUS_RAG_BRIDGE_SCRIPT;
+    const pythonCommand = process.env.CONSENSUS_PYTHON_COMMAND || "python";
+    if (!apiKey || !ragRepo || !bridgeScript) {
+      return { status: "UNAVAILABLE" };
+    }
+    const payload = JSON.stringify({
+      query,
+      domain: "medical_scientific",
+      page_size: 3
+    });
+    try {
+      const stdout = await runProcess(
+        pythonCommand,
+        [bridgeScript, "--rag-repo", ragRepo],
+        payload
+      );
+      return JSON.parse(stdout.trim());
+    } catch {
+      return { status: "UNAVAILABLE" };
+    }
+  };
+}
+async function getRagQueryContext(query, runBridge = makeBridgeRunner()) {
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) {
+    return { text: "", status: "NO_SUFFICIENT_EVIDENCE" };
+  }
+  try {
+    const result = await runBridge(normalizedQuery);
+    const text = buildContext(result);
+    return {
+      text,
+      status: text ? "EXTERNAL_RETRIEVED_PENDING" : "NO_SUFFICIENT_EVIDENCE"
+    };
+  } catch {
+    return { text: "", status: "UNAVAILABLE" };
+  }
+}
+
 // api/app.ts
 import_dotenv.default.config();
 var app = (0, import_express.default)();
@@ -1527,6 +1637,18 @@ app.post("/api/chat", async (req, res) => {
       parts: [{ text: m.content }]
     }));
     let systemInstruction = WAIPL_SYSTEM_INSTRUCTION;
+    const latestUserMessage = [...normalizedMessages].reverse().find((message) => message.role !== "assistant");
+    if (latestUserMessage?.content) {
+      const ragContext = await getRagQueryContext(latestUserMessage.content);
+      if (ragContext.text) {
+        systemInstruction = `${systemInstruction}
+
+# CONTEXTO DE CONSULTA EXTERNA
+${ragContext.text}
+
+Utiliza este contexto como material externo pendiente de verificaci\xC3\xB3n. No lo presentes como conocimiento can\xC3\xB3nico ni como verificaci\xC3\xB3n independiente.`;
+      }
+    }
     let text = "";
     if (process.env.GEMINI_API_KEY) {
       const ai = getGeminiClient();
