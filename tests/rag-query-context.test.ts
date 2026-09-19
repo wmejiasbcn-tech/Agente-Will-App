@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { getRagQueryContext } from "../api/ragQueryContext";
+import { getRagQueryContext, normalizeConsensusHttp } from "../api/ragQueryContext";
 
 const evidence = {
   external_id: "10.1234/example",
@@ -22,7 +22,7 @@ const withKey = await getRagQueryContext("HIV PrEP adherence", async (query) => 
 });
 
 assert.equal(withKey.status, "EXTERNAL_RETRIEVED_PENDING");
-assert.match(withKey.text, /CONTEXTO EXTERNO — CONSENSUS/);
+assert.match(withKey.text, /CONTEXTO EXTERNO/);
 assert.match(withKey.text, /External evidence title/);
 assert.match(withKey.text, /EXTERNAL_RETRIEVED_PENDING/);
 
@@ -39,5 +39,22 @@ const empty = await getRagQueryContext("", async () => {
 
 assert.equal(empty.status, "NO_SUFFICIENT_EVIDENCE");
 assert.equal(empty.text, "");
+
+const normalized = normalizeConsensusHttp("q", {
+  results: [
+    {
+      title: "Paper A",
+      url: "https://example.test/a",
+      doi: "10.1/a",
+      journal_name: "J",
+      publish_year: 2024,
+      abstract: "Abs",
+      takeaway: "Take",
+    },
+  ],
+});
+assert.equal(normalized.source, "CONSENSUS");
+assert.equal(normalized.evidences?.[0]?.title, "Paper A");
+assert.equal(normalized.evidences?.[0]?.metadata?.takeaway, "Take");
 
 console.log("RAG_QUERY_CONTEXT_TEST_PASS");

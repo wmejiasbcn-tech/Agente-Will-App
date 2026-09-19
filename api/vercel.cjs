@@ -1283,7 +1283,7 @@ function registerVerificationGateRoutes(app2) {
   app2.post("/api/verification-gate", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
     const auth = requireBridgeAuth(req);
-    if (!auth.ok) {
+    if (auth.ok === false) {
       res.status(401).json(auth.payload);
       return;
     }
@@ -1302,7 +1302,7 @@ function registerVerificationGateRoutes(app2) {
   app2.post("/api/verification-gate/verify", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
     const auth = requireBridgeAuth(req);
-    if (!auth.ok) {
+    if (auth.ok === false) {
       res.status(401).json(auth.payload);
       return;
     }
@@ -1323,6 +1323,7 @@ function registerVerificationGateRoutes(app2) {
 
 // api/ragQueryContext.ts
 var import_node_child_process = require("node:child_process");
+var CONSENSUS_ENDPOINT = process.env.CONSENSUS_API_ENDPOINT || "https://api.consensus.app/v1/search";
 function buildContext(result) {
   const evidences = Array.isArray(result.evidences) ? result.evidences.slice(0, 3) : [];
   if (!evidences.length) return "";
@@ -1388,30 +1389,105 @@ function runProcess(command, args, input, timeoutMs = 2e4) {
     child.stdin.end(input);
   });
 }
+function asOptionalString(value) {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return void 0;
+}
+function normalizeConsensusHttp(query, payload) {
+  const rawResults = Array.isArray(payload?.results) ? payload.results : [];
+  const evidences = rawResults.slice(0, 3).map((paper) => {
+    const url = asOptionalString(paper?.url) || "";
+    const doi = asOptionalString(paper?.doi);
+    const external_id = doi || asOptionalString(paper?.id) || url || asOptionalString(paper?.title) || "UNKNOWN_EXTERNAL_ID";
+    return {
+      external_id,
+      title: asOptionalString(paper?.title) || "",
+      url,
+      status: "EXTERNAL_RETRIEVED_PENDING",
+      metadata: {
+        provider: "Consensus",
+        provider_endpoint: CONSENSUS_ENDPOINT,
+        journal_name: asOptionalString(paper?.journal_name) || asOptionalString(paper?.journal) || "",
+        publish_year: paper?.publish_year ?? paper?.year ?? null,
+        takeaway: asOptionalString(paper?.takeaway) || "",
+        abstract: asOptionalString(paper?.abstract) || "",
+        doi: doi || ""
+      }
+    };
+  });
+  return {
+    source: "CONSENSUS",
+    source_name: "Consensus",
+    query,
+    status: "EXTERNAL_RETRIEVED_PENDING",
+    evidences
+  };
+}
+async function runConsensusHttp(query) {
+  const apiKey = process.env.CONSENSUS_API_KEY;
+  if (!apiKey) {
+    return { status: "UNAVAILABLE" };
+  }
+  const params = new URLSearchParams({
+    query,
+    page: "0",
+    page_size: "3",
+    include_semantic_score: "true"
+  });
+  const url = `${CONSENSUS_ENDPOINT}?${params.toString()}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2e4);
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "x-api-key": apiKey
+      },
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      return { status: "UNAVAILABLE", error: `HTTP_${response.status}` };
+    }
+    const payload = await response.json();
+    return normalizeConsensusHttp(query, payload);
+  } catch {
+    return { status: "UNAVAILABLE" };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+async function runConsensusSpawn(query) {
+  const ragRepo = process.env.WAIPL_RAG_REPO_PATH;
+  const bridgeScript = process.env.CONSENSUS_RAG_BRIDGE_SCRIPT;
+  const pythonCommand = process.env.CONSENSUS_PYTHON_COMMAND || "python";
+  if (!ragRepo || !bridgeScript) {
+    return { status: "UNAVAILABLE" };
+  }
+  const payload = JSON.stringify({
+    query,
+    domain: "medical_scientific",
+    page_size: 3
+  });
+  try {
+    const stdout = await runProcess(pythonCommand, [bridgeScript, "--rag-repo", ragRepo], payload);
+    return JSON.parse(stdout.trim());
+  } catch {
+    return { status: "UNAVAILABLE" };
+  }
+}
 function makeBridgeRunner() {
   return async (query) => {
-    const apiKey = process.env.CONSENSUS_API_KEY;
-    const ragRepo = process.env.WAIPL_RAG_REPO_PATH;
-    const bridgeScript = process.env.CONSENSUS_RAG_BRIDGE_SCRIPT;
-    const pythonCommand = process.env.CONSENSUS_PYTHON_COMMAND || "python";
-    if (!apiKey || !ragRepo || !bridgeScript) {
-      return { status: "UNAVAILABLE" };
+    if (process.env.CONSENSUS_API_KEY) {
+      const httpResult = await runConsensusHttp(query);
+      if (httpResult.status !== "UNAVAILABLE") return httpResult;
+      if (process.env.CONSENSUS_RAG_BRIDGE_SCRIPT && process.env.WAIPL_RAG_REPO_PATH) {
+        return runConsensusSpawn(query);
+      }
+      return httpResult;
     }
-    const payload = JSON.stringify({
-      query,
-      domain: "medical_scientific",
-      page_size: 3
-    });
-    try {
-      const stdout = await runProcess(
-        pythonCommand,
-        [bridgeScript, "--rag-repo", ragRepo],
-        payload
-      );
-      return JSON.parse(stdout.trim());
-    } catch {
-      return { status: "UNAVAILABLE" };
-    }
+    return runConsensusSpawn(query);
   };
 }
 async function getRagQueryContext(query, runBridge = makeBridgeRunner()) {
