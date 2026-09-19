@@ -6,6 +6,7 @@ import { registerGeoRoutes } from "./geo";
 import { registerVoiceRoutes } from "./voice";
 import { registerVerificationGateRoutes } from "./verificationGate";
 import { scrubVetoedText } from "../src/utils/resourceVeto";
+import { getRagQueryContext } from "./ragQueryContext";
 
 dotenv.config();
 
@@ -235,6 +236,16 @@ app.post("/api/chat", async (req, res) => {
 
     let systemInstruction = WAIPL_SYSTEM_INSTRUCTION;
 
+    const latestUserMessage = [...normalizedMessages]
+      .reverse()
+      .find((message: { role: string; content: string }) => message.role !== "assistant");
+    if (latestUserMessage?.content) {
+      const ragContext = await getRagQueryContext(latestUserMessage.content);
+      if (ragContext.text) {
+        systemInstruction = `${systemInstruction}\n\n# CONTEXTO DE CONSULTA EXTERNA\n${ragContext.text}\n\nUtiliza este contexto como material externo pendiente de verificaciÃ³n. No lo presentes como conocimiento canÃ³nico ni como verificaciÃ³n independiente.`;
+      }
+    }
+
     let text = "";
     if (process.env.GEMINI_API_KEY) {
       const ai = getGeminiClient();
@@ -322,4 +333,3 @@ app.post("/api/explore-topic", async (req, res) => {
 
 export default app;
 export { app };
-
