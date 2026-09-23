@@ -7,6 +7,7 @@ import { splitWillSpeech } from '../src/voice/willVoice';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ui = readFileSync(join(root, 'src/components/WillVoice.tsx'), 'utf8');
 const voice = readFileSync(join(root, 'api/voice.ts'), 'utf8');
+const voicePolicy = readFileSync(join(root, 'src/voice/willVoice.ts'), 'utf8');
 const BASE = process.env.WILL_BASE || 'http://127.0.0.1:8080';
 
 assert.equal(ui.includes('pending ='), false);
@@ -21,6 +22,16 @@ assert.match(voice, /reason: 'exception'/);
 assert.match(voice, /DrwFQsjvHFpLcKyvtbE3/);
 assert.match(voice, /eleven_multilingual_v2/);
 assert.match(voice, /visorTtsOrigin\(\)/);
+assert.match(voice, /stability: WILL_VOICE_STABILITY/);
+assert.match(voice, /similarity_boost: WILL_VOICE_SIMILARITY/);
+assert.match(voice, /use_speaker_boost: WILL_VOICE_SPEAKER_BOOST/);
+assert.match(voice, /seed: WILL_VOICE_SEED/);
+assert.match(voicePolicy, /identityPolicy: 'single-voice-session'/);
+assert.match(voicePolicy, /stability: 0\.82/);
+assert.match(voicePolicy, /similarityBoost: 0\.92/);
+assert.match(voicePolicy, /useSpeakerBoost: true/);
+assert.match(voicePolicy, /seed: 24101986/);
+assert.match(voicePolicy, /Habla y vuelve a pulsar el micrófono cuando termines/);
 
 const long = Array.from({ length: 12 }, (_, i) =>
   `Esta es la frase número ${i + 1} de una respuesta larga de Will sobre reducción de riesgos.`,
