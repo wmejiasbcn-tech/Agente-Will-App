@@ -8,6 +8,11 @@ export const WILL_VOICE = {
   language: 'es',
   locale: 'es-ES',
   outputFormat: 'mp3_44100_128',
+  identityPolicy: 'single-voice-session',
+  stability: 0.82,
+  similarityBoost: 0.92,
+  useSpeakerBoost: true,
+  seed: 24101986,
 };
 
 export type VoiceUiState =
@@ -26,7 +31,7 @@ export type VoiceUiState =
 export const VOICE_STATE_LABEL: Record<VoiceUiState, string> = {
   idle: 'En silencio',
   preparing_listen: 'Preparando escucha',
-  listening: 'Te estoy escuchando.',
+  listening: 'Te estoy escuchando. Habla y vuelve a pulsar el micrófono cuando termines.',
   transcribing: 'Procesando lo que has dicho',
   ready_review: 'Listo para revisar. Envíalo cuando quieras.',
   processing: 'Te he escuchado. Estoy con ello.',
@@ -66,10 +71,10 @@ export function micErrorCopy(reason: string) {
     return 'Este navegador no puede grabar audio aquí. Prueba Chrome o Firefox, o escribe.';
   }
   if (reason === 'empty') {
-    return 'No he recogido audio. Pulsa el micrófono, habla un momento y pulsa otra vez cuando termines.';
+    return 'No he recogido audio. Pulsa el micrófono, habla un momento y vuelve a pulsarlo cuando termines.';
   }
   if (reason === 'unheard') {
-    return 'Te he oído, pero no he entendido las palabras. Acércate un poco, habla un momento y pulsa el micrófono otra vez.';
+    return 'Te he oído, pero no he entendido las palabras. Habla un momento y vuelve a pulsar el micrófono cuando termines.';
   }
   if (reason === 'stt') {
     return 'Te he oído, pero no he podido pasar a escrito lo que has dicho. Pulsa el micrófono otra vez.';
