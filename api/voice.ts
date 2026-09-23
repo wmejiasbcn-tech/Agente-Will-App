@@ -23,6 +23,13 @@ const WILL_TTS = 'https://api.elevenlabs.io/v1/text-to-speech';
 const WILL_STT_KEYTERMS = ['PEP', 'DoxyPEP'];
 const WILL_STT_LANGUAGE = 'es';
 
+// Voice identity is a UX invariant for Will. ElevenLabs TTS is nondeterministic;
+// these settings bias generation toward a steadier, more recognizable delivery.
+const WILL_VOICE_STABILITY = 0.82;
+const WILL_VOICE_SIMILARITY = 0.92;
+const WILL_VOICE_SPEAKER_BOOST = true;
+const WILL_VOICE_SEED = 24101986;
+
 function elevenLabsIdentity() {
   return {
     provider: 'ElevenLabs' as const,
@@ -31,6 +38,12 @@ function elevenLabsIdentity() {
     language: 'es',
     locale: 'es-ES',
     storesAudio: false,
+    voiceSettings: {
+      stability: WILL_VOICE_STABILITY,
+      similarityBoost: WILL_VOICE_SIMILARITY,
+      useSpeakerBoost: WILL_VOICE_SPEAKER_BOOST,
+      seed: WILL_VOICE_SEED,
+    },
   };
 }
 
@@ -99,9 +112,12 @@ async function requestWillSpeech(apiKey: string, text: string) {
     text,
     model_id: WILL_MODEL,
     voice_settings: {
-      stability: 0.5,
-      similarity_boost: 0.8,
+      stability: WILL_VOICE_STABILITY,
+      similarity_boost: WILL_VOICE_SIMILARITY,
+      use_speaker_boost: WILL_VOICE_SPEAKER_BOOST,
+      style: 0,
     },
+    seed: WILL_VOICE_SEED,
   });
   const once = () =>
     fetch(url, {
