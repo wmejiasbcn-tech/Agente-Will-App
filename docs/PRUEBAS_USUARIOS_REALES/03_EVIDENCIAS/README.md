@@ -13,6 +13,7 @@ Cuando una evidencia requiera conservar material sensible, debe mantenerse fuera
 ## Evidencias admisibles para el registro
 
 - descripción factual del comportamiento;
+- registro verificable de envío/convocatoria;
 - captura técnica no identificativa;
 - logs relevantes;
 - referencias a issues;
@@ -25,5 +26,9 @@ Cuando una evidencia requiera conservar material sensible, debe mantenerse fuera
 La relación mínima recomendada es:
 
 TEST-ID → fecha/sesión → evidencia → observación → incidencia/hallazgo.
+
+Para hitos de convocatoria o envío puede utilizarse:
+
+TEST-ID → fecha/hora de envío → evidencia del envío.
 
 Los resultados deben distinguir claramente entre evidencia disponible y valoración posterior.
