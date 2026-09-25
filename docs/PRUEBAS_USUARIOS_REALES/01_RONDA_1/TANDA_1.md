@@ -30,6 +30,20 @@ Obtener una primera lectura desde:
 
 Esta tanda sirve además para detectar problemas que convenga corregir o documentar antes de ampliar la prueba a R1B.
 
+## Hito operativo — envío
+
+El 25/09/2026 quedó realizado el envío de la Tanda 1 a los cinco testers.
+
+| TEST-ID | Fecha de envío | Hora de envío |
+|---|---|---|
+| TEST-001 | 25/09/2026 | 18:44 |
+| TEST-002 | 25/09/2026 | 20:09 |
+| TEST-003 | 25/09/2026 | 20:14 |
+| TEST-004 | 25/09/2026 | 20:16 |
+| TEST-005 | 25/09/2026 | 18:55 |
+
+Este registro acredita exclusivamente el **envío**. No se interpreta como evidencia de apertura, inicio, ejecución o finalización de la prueba.
+
 ## Estado
 
-PLANIFICADO
+ENVÍO REALIZADO — pruebas pendientes de ejecución y registro de resultados.
