@@ -19,6 +19,20 @@ Este documento registra el estado y los metadatos operativos de cada prueba. Los
 | TEST-009 | R1B | Hombre — experiencia Slam | — | — | — | — | — | PLANIFICADO |
 | TEST-010 | R1B | Hombre — sexualidad sin Slam ni Chemsex | — | — | — | — | — | PLANIFICADO |
 
+## Hito operativo — envío de la Tanda 1 (R1A)
+
+El 25/09/2026 se realizó el envío correspondiente a los cinco testers de la Tanda 1. La evidencia disponible acredita el registro de fecha de envío y hora de envío individual.
+
+| TEST-ID | Fecha de envío | Hora de envío | Hecho acreditado |
+|---|---|---|---|
+| TEST-001 | 25/09/2026 | 18:44 | Envío realizado |
+| TEST-002 | 25/09/2026 | 20:09 | Envío realizado |
+| TEST-003 | 25/09/2026 | 20:14 | Envío realizado |
+| TEST-004 | 25/09/2026 | 20:16 | Envío realizado |
+| TEST-005 | 25/09/2026 | 18:55 | Envío realizado |
+
+**Importante:** este hito no acredita por sí mismo apertura, recepción efectiva, inicio de la prueba ni finalización de la prueba. Los estados de los cinco tests permanecen en PLANIFICADO hasta disponer de evidencia adicional.
+
 ## Campos mínimos por prueba
 
 - TEST-ID
