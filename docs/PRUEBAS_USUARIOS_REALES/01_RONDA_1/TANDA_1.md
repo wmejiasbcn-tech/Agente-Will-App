@@ -44,6 +44,6 @@ El 25/09/2026 quedó realizado el envío de la Tanda 1 a los cinco testers.
 
 Este registro acredita exclusivamente el **envío**. No se interpreta como evidencia de apertura, inicio, ejecución o finalización de la prueba.
 
-## Estado
+## Estado de la prueba
 
-ENVÍO REALIZADO — pruebas pendientes de ejecución y registro de resultados.
+PLANIFICADO — el envío ya se ha realizado; la ejecución y el registro de resultados están pendientes.
