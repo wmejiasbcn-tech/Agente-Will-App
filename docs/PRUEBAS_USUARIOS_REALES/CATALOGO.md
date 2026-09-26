@@ -11,7 +11,7 @@ Este catálogo identifica exclusivamente el código de prueba y la perspectiva f
 | TEST-001 | Sanitario — enfermería especializada en infecciosas/VIH (Hospital Clínic) | TECNICA, UX, CONVERSACION, CONTENIDO, RECURSOS | PLANIFICADO |
 | TEST-002 | Sanitario — enfermería especializada en infecciosas/VIH (Hospital Clínic) | TECNICA, UX, CONVERSACION, CONTENIDO, RECURSOS | PLANIFICADO |
 | TEST-003 | Comunitario / asociativo — Stop | UX, CONVERSACION, CONTENIDO, RECURSOS, COBERTURA | PLANIFICADO |
-| TEST-004 | Comunitario / asociativo — Stop | UX, CONVERSACION, CONTENIDO, RECURSOS, COBERTURA | PLANIFICADO |
+| TEST-004 | Comunitario / asociativo — Stop | UX, CONVERSACION, CONTENIDO, RECURSOS, COBERTURA | EN_CURSO |
 | TEST-005 | Usuario con experiencia Chemsex | VOZ, INTERACCION, CONVERSACION, CONTENIDO, COBERTURA | PLANIFICADO |
 
 ## Tanda 2 — R1B
