@@ -10,6 +10,7 @@
 | REGISTRO.md | Registro operativo y estado de cada prueba |
 | 01_RONDA_1/README.md | Marco de la Ronda 1 |
 | 01_RONDA_1/TANDA_1.md | TEST-001 a TEST-005 |
+| 01_RONDA_1/TEST-004.md | Registro individual de TEST-004 y primer feedback recibido |
 | 01_RONDA_1/TANDA_2.md | TEST-006 a TEST-010 |
 | 02_INSTRUMENTOS/PLANTILLA_REGISTRO_TEST.md | Plantilla reutilizable para registrar cada prueba |
 | 03_EVIDENCIAS/README.md | Criterios para evidencias y trazabilidad |
