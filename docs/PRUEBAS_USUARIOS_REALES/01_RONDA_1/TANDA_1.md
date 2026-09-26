@@ -42,8 +42,12 @@ El 25/09/2026 quedó realizado el envío de la Tanda 1 a los cinco testers.
 | TEST-004 | 25/09/2026 | 20:16 |
 | TEST-005 | 25/09/2026 | 18:55 |
 
-Este registro acredita exclusivamente el **envío**. No se interpreta como evidencia de apertura, inicio, ejecución o finalización de la prueba.
+Este registro acredita el envío de la Tanda 1. Posteriormente, TEST-004 ha aportado feedback directo tras interactuar con la aplicación; ese feedback se registra en TEST-004.md. El envío de los demás testers no acredita por sí mismo apertura, inicio, ejecución o finalización.
+
+## Seguimiento — TEST-004
+
+El 26/09/2026 se recibió el primer feedback de TEST-004 (08:18h y 11:01h). El tester queda en estado EN_CURSO.
 
 ## Estado de la prueba
 
-PLANIFICADO — el envío ya se ha realizado; la ejecución y el registro de resultados están pendientes.
+R1A en ejecución. TEST-004: EN_CURSO. Resto de testers: PLANIFICADO.
