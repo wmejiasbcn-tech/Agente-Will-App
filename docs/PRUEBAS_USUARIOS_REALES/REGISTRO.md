@@ -11,7 +11,7 @@ Este documento registra el estado y los metadatos operativos de cada prueba. Los
 | TEST-001 | R1A | Sanitario — enfermería infecciosas/VIH | — | — | — | — | — | PLANIFICADO |
 | TEST-002 | R1A | Sanitario — enfermería infecciosas/VIH | — | — | — | — | — | PLANIFICADO |
 | TEST-003 | R1A | Comunitario / asociativo — Stop | — | — | — | — | — | PLANIFICADO |
-| TEST-004 | R1A | Comunitario / asociativo — Stop | — | — | — | — | — | PLANIFICADO |
+| TEST-004 | R1A | Comunitario / asociativo — Stop | 26/09/2026 | — | — | — | — | EN_CURSO |
 | TEST-005 | R1A | Usuario con experiencia Chemsex | — | — | — | — | — | PLANIFICADO |
 | TEST-006 | R1B | Mujer — sexualidad / salud sexual / placer | — | — | — | — | — | PLANIFICADO |
 | TEST-007 | R1B | Mujer — asociativa / comunitaria | — | — | — | — | — | PLANIFICADO |
@@ -56,6 +56,12 @@ El 25/09/2026 se realizó el envío correspondiente a los cinco testers de la Ta
 ## Regla de trazabilidad
 
 Cuando una prueba se realice con una versión concreta, se debe registrar el **commit o deployment real utilizado**. No debe sustituirse posteriormente por una versión diferente.
+
+## Registro de feedback recibido — TEST-004
+
+El 26/09/2026 se recibió el primer feedback directo de TEST-004, con dos audios a las 08:18h y 11:01h. El registro individual se encuentra en 01_RONDA_1/TEST-004.md.
+
+El feedback recibido documenta una valoración general positiva, una valoración positiva de la respuesta tras preguntas simuladas y una observación individual sobre la calidez de la voz. No se ha registrado ninguna incidencia técnica concreta en estos audios y no se establece todavía ningún hallazgo consolidado.
 
 Cuando sea posible, una incidencia técnica debe poder relacionarse con:
 TEST-ID → sesión/fecha → entorno → comportamiento observado → evidencia → issue/acción.
