@@ -23,7 +23,7 @@ export const WAIPL_KNOWLEDGE_LAYER = {
   flow: [
     'FUENTES',
     'KNOWLEDGE LAYER',
-    'KAIROS / DIKE',
+    'KAIROS (adquisición médico-científica/comunitaria para el RAG) / DIKE (adquisición jurídico-legal y normativa, incluida la dimensión jurídico-legal médica)',
     'CORPUS VALIDADO',
     'RAG',
     'CONOCIMIENTO RELEVANTE',
@@ -32,7 +32,7 @@ export const WAIPL_KNOWLEDGE_LAYER = {
   ],
   kairos: {
     name: 'Kairos',
-    dimension: 'médico + científica + comunitaria',
+    dimension: 'médico-científica + comunitaria (adquisición para la biblioteca RAG de Will App)',
     role: '¿Qué conocimiento tenemos y con qué grado de solidez podemos utilizarlo?',
     functions: [
       'búsqueda',
@@ -44,11 +44,11 @@ export const WAIPL_KNOWLEDGE_LAYER = {
       'actualización',
       'registro del conocimiento pertinente',
     ],
-    limit: 'Kairos no decide por Will. Kairos no sustituye a Dike en validación jurídica.',
+    limit: 'KAIROS no es Will App ni interactúa con el usuario; adquiere y prepara información médico-científica y comunitaria para nutrir su RAG. No decide la admisión al conocimiento canónico.',
   },
   dike: {
     name: 'Dike',
-    dimension: 'legal + jurídica + normativa',
+    dimension: 'jurídico-legal + normativa sobre IA/sistemas agénticos (prioridad UE/España) y jurídico-legal médica: medicina, investigación, práctica clínica y sociosanidad',
     functions: [
       'identificación de fuentes jurídicas',
       'jurisdicción',
@@ -58,7 +58,7 @@ export const WAIPL_KNOWLEDGE_LAYER = {
       'normativa aplicable',
       'trazabilidad',
     ],
-    limit: 'Dike no sustituye a Kairos en conocimiento médico-científico-comunitario.',
+    limit: 'DIKE cubre la dimensión jurídico-legal médica, no la adquisición de información médico-científica y comunitaria, que corresponde a KAIROS. No decide la admisión al conocimiento canónico.',
   },
   ragRule:
     'El RAG recupera conocimiento relevante. No decide, no diagnostica, no prescribe, no recomienda, no dirige, no interpreta la vida de la persona.',
