@@ -63,7 +63,7 @@ export const WAIPL_KNOWLEDGE_LAYER = {
   ragRule:
     'El RAG recupera conocimiento relevante. No decide, no diagnostica, no prescribe, no recomienda, no dirige, no interpreta la vida de la persona.',
   internetRule:
-    'Internet no entra directo a Will. Internet → fuente externa → clasificación → Kairos / Dike según naturaleza → verificación → conocimiento utilizable → Will.',
+    'Internet no entra directamente al agente Will App. Fuentes externas → KAIROS (adquisición médico-científica/comunitaria) y/o DIKE (adquisición jurídico-legal/normativa, incluida la dimensión jurídico-legal médica) según la naturaleza de la información → Vár/VAC-01 y controles de admisión → supervisión humana autorizada → conocimiento canónico → RAG de Will App → agente Will App que interactúa con el usuario.',
   provenance:
     'respuesta → fragmento → documento → fuente → autor/organización → fecha → versión → verificación',
   epistemic: ['VERIFICADO', 'INFERIDO', 'DESCONOCIDO'],
