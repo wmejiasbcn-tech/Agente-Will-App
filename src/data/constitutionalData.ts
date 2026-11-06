@@ -186,9 +186,9 @@ export const CONSTITUTIONAL_ARTICLES: ConstitutionalArticle[] = [
 
 export const ECOSYSTEM_APPENDIX = {
   header: {
-    title: "APÉNDICE CANÓNICO: ECOSISTEMA WAIPL & GRAPHIFY",
+    title: "APÉNDICE CANÓNICO: ECOSISTEMA WAIPL & GRAPHY",
     subtitle: "Gobernanza del Lab, Diferenciación de Contextos y Arquitectura Cognitiva",
-    declaration: "Este apéndice complementa el ADN inmutable de Will App estableciendo los límites operacionales, la estructura del sistema nervioso central del Lab (Graphify) y las reglas de verificación técnica sin alterar la voz ni la relación con el usuario."
+    declaration: "Este apéndice complementa el ADN inmutable de Will App estableciendo los límites operacionales, la estructura del único sistema canónico y Sistema Nervioso Central del Lab (Graphy); Graphify se conserva exclusivamente como plataforma externa de inspiración histórica y las reglas de verificación técnica sin alterar la voz ni la relación con el usuario."
   },
   sections: [
     {
@@ -244,8 +244,8 @@ export const ECOSYSTEM_APPENDIX = {
       ]
     },
     {
-      id: "graphify-cns",
-      title: "Graphify — Sistema Nervioso Central del Lab",
+      id: "graphy-cns",
+      title: "Graphy — Único Sistema Canónico y Sistema Nervioso Central del Lab",
       badge: "ARQUITECTURA DE CONOCIMIENTO",
       summary: "Estructura cognitiva interna (graph.json + graph.html). Orientación para el agente, no para recitar al usuario.",
       items: [
@@ -253,7 +253,7 @@ export const ECOSYSTEM_APPENDIX = {
           label: "Grafo Base del Lab (82 Nodos)",
           description: "Mapa de relaciones, principios, proyectos y agentes del WAIPL. No es una API ejecutable ni interactiva.",
           status: "VERIFICADO" as const,
-          detail: "graphify/write = DENY. Prohibido inventar nodos o modificar el grafo en runtime."
+          detail: "graphy/write = DENY. Prohibido inventar nodos o modificar el grafo en runtime. Graphify es únicamente la plataforma externa de inspiración histórica que dio origen a Graphy."
         },
         {
           label: "Declaración EliteBook (86 Nodos)",
