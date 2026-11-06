@@ -23,7 +23,7 @@ Este documento evita la contaminación entre snapshots históricos y estado actu
 | Vercel serverless | `api/index.ts` | Actual |
 | Dominios | 7, con Prevención autónoma | Actual |
 | Entrada | Protocolo de no presunción | Canon de producto |
-| RAG/Graphify ejecutándose en este repo | No | Estado conocido, no defecto |
+| RAG de Will App / Graphy (SNC) ejecutándose en este repo | No | Estado conocido, no defecto. Graphify es solo la plataforma externa de inspiración histórica; no es una integración de este repo. |
 | CI | Typecheck + build | Añadido |
 | Runner batería | `WILL_URL`, default `http://localhost:8080` | Corregido |
 
