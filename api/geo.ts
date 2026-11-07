@@ -128,7 +128,7 @@ function rejectSite(tags: Record<string, string>, name: string) {
     return true;
   }
   const a = (tags.amenity || tags.healthcare || tags.office || '').toLowerCase();
-  if (['pharmacy', 'dentist', 'veterinary', 'community_centre', 'arts_centre', 'library', 'theatre', 'townhall'].includes(a)) {
+  if (['pharmacy', 'dentist', 'veterinary', 'podiatrist', 'physiotherapist', 'optometrist', 'audiologist', 'community_centre', 'arts_centre', 'library', 'theatre', 'townhall'].includes(a)) {
     return true;
   }
   const relevanceText = `${name} ${tags.description || ''} ${tags['healthcare:speciality'] || ''} ${tags.healthcare || ''}`.toLowerCase();
