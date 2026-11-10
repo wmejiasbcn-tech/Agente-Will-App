@@ -6,7 +6,7 @@ import { ResourcesView } from './components/ResourcesView';
 import { HowWillWorksView } from './components/HowWillWorksView';
 import { OtherResourcesView } from './components/OtherResourcesView';
 import { EmergencyModal } from './components/EmergencyModal';
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics, type BeforeSendEvent } from '@vercel/analytics/react';
 import { SpaceShell, WillScene } from './components/visual/SpaceShell';
 import { PagerArrows } from './components/PagerArrows';
 import { unlockWillAudio } from './voice/willVoice';
@@ -175,7 +175,14 @@ export default function App() {
         onClose={() => setIsEmergencyOpen(false)}
       />
       {/* Vercel Web Analytics */}
-      <Analytics />
+      <Analytics
+        beforeSend={(event: BeforeSendEvent) => {
+          const u = new URL(event.url);
+          u.search = '';
+          u.hash = '';
+          return { ...event, url: u.toString() };
+        }}
+      />
     </SpaceShell>
   );
 }
